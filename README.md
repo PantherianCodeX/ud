@@ -1,379 +1,162 @@
-# PRP (Product Requirement prompts)
+# uDocket Legal AI Platform
+
+> **AI-native, observability-first legal interview analysis platform**  
+> Transcribe → Analyze → Compose — from one canonical legal analysis, for multiple audiences.
+
+---
+
+## 🔎 Overview
+
+uDocket is a multi-service SaaS platform for legal teams. It ingests **legal intake interviews / consultations** (audio or text), performs deep **legal-domain analysis**, and produces multiple **audience-specific outputs** from a single structured analysis:
+
+- **Structured knowledge graph** of the consultation:
+  - Matters, parties, relationships
+  - Legal issues & risks
+  - Timelines & events
+  - Gaps / missing information
+  - Concrete **Actions** (follow-ups & tasks)
+- **Parallel outputs** from the same analysis:
+  - Client-friendly summary  
+  - Lawyer / internal brief  
+  - Internal issues + Actions view  
+
+The system is:
+
+- **Microservice-based** (target ≈18 services)
+- **AI-heavy & type-safe** (LangGraph + Pydantic v2)
+- **Observability-first** (LangSmith, Langfuse, OpenTelemetry)
+- **Strictly linted, typed & tested** across Python and TypeScript
+
+---
+
+## ✨ Key Features
+
+- **Interview → Insight pipeline**
+  - Ingest audio or transcript
+  - Batch transcription + diarization via external speech services (Azure first target)
+  - Canonical `Transcript` and `MatterAnalysis` domain models
+
+- **3 AI graphs (LangGraph)**
+  - **Transcribe graph** – orchestrates external batch transcription + diarization
+  - **Analyze graph** – builds structured `MatterAnalysis` (issues, relationships, timeline, gaps, Actions)
+  - **Compose graph** – generates multiple documents (client, lawyer, internal) from the same analysis
 
-- A collection of prompts i use in my every day work
+- **Legal-ready data model**
+  - Matters, parties, roles
+  - Issues & risk flags
+  - Relationship graph (adjacency lists)
+  - Timeline events
+  - Gaps & Actions
+
+- **Strong observability & evals**
+  - LangGraph + **LangSmith** for LLM tracing and evaluation
+  - **Langfuse** as open-source LLM observability (traces, metrics, costs) built on OpenTelemetry
+  - System metrics via Prometheus + Grafana
 
-## Video Walkthrough
+- **Production-grade foundations**
+  - Postgres + **pgvector** for combined relational & vector search
+  - Celery for async & scheduled work
+  - Kubernetes + Helm for deployment
+  - **Budibase** for rapid internal/admin tools
 
-👉 https://www.youtube.com/watch?v=KVOZ9s1S9Gk&lc=UgzfwxvFjo6pKEyPo1R4AaABAg
+---
 
-### ☕ Support This Work
+## 🏗️ High-Level Architecture
 
-**Found value in these resources?**
+**Core flow:**
 
-👉 **Buy me a coffee:** https://coff.ee/wirasm
+1. **Ingest**
+   - User uploads audio or provides a transcript
+   - `speech-service`:
+     - For audio: submits batch transcription + diarization jobs to external provider(s)
+     - Uses Celery workers to poll & ingest results
+   - Stores canonical `Transcript` in Postgres
 
-I spent a considerable amount of time creating these resources and prompts. If you find value in this project, please consider buying me a coffee to support my work.
+2. **Analyze**
+   - `analysis-service` runs the **Analyze LangGraph**:
+     - Entity & party extraction
+     - Issue & risk detection
+     - Relationship graph (adjacency lists)
+     - Timeline reconstruction
+     - Gaps & Actions derivation
+   - Persists `MatterAnalysis` + embeddings (pgvector)
 
-That will help me maintain and improve the resources available for free
+3. **Compose**
+   - `compose-service` runs the **Compose LangGraph**:
+     - Inputs: `MatterAnalysis` + audience profile(s)
+     - Outputs: client summary, lawyer brief, internal issues+Actions report
 
-______________________________________________________________________
+4. **Deliver & review**
+   - **Next.js + React + TypeScript** SaaS UI
+   - Streamlit dashboards for internal analytics/ops
+   - Budibase-built internal tools for admin & ops
 
-### 🎯 Transform Your Team with AI Engineering Workshops
+5. **Observe & evaluate**
+   - LangGraph graphs instrumented with:
+     - **LangSmith** for tracing/evals
+     - **Langfuse** for LLM observability
+   - System telemetry via OpenTelemetry → OTEL Collector → Prometheus/Grafana
 
-**Ready to move beyond toy demos to production-ready AI systems?**
+---
 
-👉 **Book a workshop:** https://www.rasmuswiding.com/
+## 🧰 Tech Stack
 
-✅ **What you'll get:**
+### Backend (Python)
 
-- Put your team on a path to become AI power users
-- Learn the exact PRP methodology used by top engineering teams
-- Hands-on training with Claude Code, PRPs, and real codebases
-- From beginner to advanced AI engineering workshops for teams and individuals
+- **Language / Framework**
+  - Python 3.x
+  - FastAPI (ASGI, async, OpenAPI)
 
-💡 **Perfect for:** Engineering teams, Product teams, and developers who want AI that actually works in production
+- **Domain & data**
+  - Pydantic v2 for domain and API models
+  - SQLAlchemy + Alembic for ORM & migrations
+  - PostgreSQL for relational data
+  - **pgvector** for vector similarity search inside Postgres
 
-Let's talk!
-Contact me directly at rasmus@widinglabs.com
+- **AI orchestration & observability**
+  - **LangGraph** for durable, graph-based AI workflows
+  - **LangSmith** for tracing, debugging, and evaluating LLM apps
+  - **Langfuse** for open-source LLM engineering & observability (traces, evals, metrics)
 
-# AI Engineering Resources for Claude Code
+- **Async & background**
+  - Celery for distributed task queue (speech jobs, heavy analysis, bulk compose, maintenance)
 
-A comprehensive library of assets and context engineering for Agentic Engineering, optimized for Claude Code. This repository provides the Product Requirement Prompt (PRP) methodology, pre-configured commands, and extensive documentation to enable AI-assisted development that delivers production-ready code on the first pass.
+- **Config, logging, PII**
+  - pydantic-settings for typed configuration
+  - structlog for structured logging
+  - Microsoft Presidio for PII detection & anonymization
 
-## What is PRP?
+### Frontend (TypeScript)
 
-Product Requirement Prompt (PRP)
+- **Main app**
+  - Next.js + React + TypeScript (strict)
+  - `next-intl` for i18n: translations, date/number formatting, and i18n routing for Next.js
 
-## In short
+- **Testing**
+  - Jest/Vitest + React Testing Library for unit/component tests
+  - **Playwright** for E2E tests (cross-browser, cross-platform)
 
-A PRP is PRD + curated codebase intelligence + agent/runbook—the minimum viable packet an AI needs to plausibly ship production-ready code on the first pass.
+### Admin / Internal tools
 
-Product Requirement Prompt (PRP) is a structured prompt methodology first established in summer 2024 with context engineering at heart. A PRP supplies an AI coding agent with everything it needs to deliver a vertical slice of working software—no more, no less.
+- **Budibase** self-hosted for internal/admin apps & CRUD dashboards over Postgres + APIs
 
-### How PRP Differs from Traditional PRD
+### Observability & Infra
 
-A traditional PRD clarifies what the product must do and why customers need it, but deliberately avoids how it will be built.
+- OpenTelemetry for traces & metrics
+- Prometheus + Grafana for system metrics and dashboards
+- OTEL Collector for routing telemetry
+- Docker (multi-stage, BuildKit) for containers
+- Kubernetes + Helm for deployments
 
-A PRP keeps the goal and justification sections of a PRD yet adds three AI-critical layers:
+### Dev Tooling
 
-### Context
+- **uv** – extremely fast Python package & project manager, written in Rust
+- doit – task automation
+- Commitizen (+ AI plugin) – conventional commits
+- semantic-release – automated versioning & changelogs
 
-Precise file paths and content, library versions and library context, code snippets examples. LLMs generate higher-quality code when given direct, in-prompt references instead of broad descriptions. Usage of a ai_docs/ directory to pipe in library and other docs.
+---
 
-## Getting Started
+## 🧱 Repository Structure (high-level)
 
-### Option 1: Copy Resources to Your Existing Project
-
-1. **Copy the Claude commands** to your project:
-
-   ```bash
-   # From your project root
-   cp -r /path/to/PRPs-agentic-eng/.claude/commands .claude/
-   ```
-
-2. **Copy the PRP templates and runner**:
-
-   ```bash
-   cp -r /path/to/PRPs-agentic-eng/PRPs/templates PRPs/
-   cp -r /path/to/PRPs-agentic-eng/PRPs/scripts PRPs/
-   cp /path/to/PRPs-agentic-eng/PRPs/README.md PRPs/
-   ```
-
-3. **Copy AI documentation** (optional but recommended):
-
-   ```bash
-   cp -r /path/to/PRPs-agentic-eng/PRPs/ai_docs PRPs/
-   ```
-
-### Option 2: Clone and Start a New Project
-
-1. **Clone this repository**:
-
-   ```bash
-   git clone https://github.com/Wirasm/PRPs-agentic-eng.git
-   cd PRPs-agentic-eng
-   ```
-
-2. **Create your project structure**:
-
-   ```bash
-   # Example for a Python project
-   mkdir -p src/tests
-   touch src/__init__.py
-   touch pyproject.toml
-   touch CLAUDE.md
-   ```
-
-3. **Initialize with UV** (for Python projects):
-
-   ```bash
-   uv venv
-   uv sync
-   ```
-
-## Using Claude Commands
-
-The `.claude/commands/` directory contains 12 pre-configured commands that appear as slash commands in Claude Code.
-
-### Available Commands
-
-1. **PRP Creation & Execution**:
-
-   - `/create-base-prp` - Generate comprehensive PRPs with research
-   - `/execute-base-prp` - Execute PRPs against codebase
-   - `/planning-create` - Create planning documents with diagrams
-   - `/spec-create-adv` - Advanced specification creation
-   - `/spec-execute` - Execute specifications
-
-2. **Code Review & Refactoring**:
-
-   - `/review-general` - General code review
-   - `/review-staged-unstaged` - Review git changes
-   - `/refactor-simple` - Simple refactoring tasks
-
-3. **Git & GitHub**:
-
-   - `/create-pr` - Create pull requests
-
-4. **Utilities**:
-
-   - `/prime-core` - Prime Claude with project context
-   - `/onboarding` - Onboarding process for new team members
-   - `/debug` - Debugging workflow
-
-### How to Use Commands
-
-1. **In Claude Code**, type `/` to see available commands
-2. **Select a command** and provide arguments when prompted
-3. **Example usage**:
-   ```
-   /create-base-prp user authentication system with OAuth2
-   ```
-
-## Using PRPs
-
-### Creating a PRP
-
-1. **Use the template** as a starting point:
-
-   ```bash
-   cp PRPs/templates/prp_base.md PRPs/my-feature.md
-   ```
-
-2. **Fill in the sections**:
-
-   - Goal: What needs to be built
-   - Why: Business value and user impact
-   - Context: Documentation, code examples, gotchas
-   - Implementation Blueprint: Tasks and pseudocode
-   - Validation Loop: Executable tests
-
-3. **Or use Claude to generate one**:
-
-   ```
-   /create-base-prp implement user authentication with JWT tokens
-   ```
-
-### Executing a PRP
-
-1. **Using the runner script**:
-
-   ```bash
-   # Interactive mode (recommended for development)
-   uv run PRPs/scripts/prp_runner.py --prp my-feature --interactive
-
-   # Headless mode (for CI/CD)
-   uv run PRPs/scripts/prp_runner.py --prp my-feature --output-format json
-
-   # Streaming JSON (for real-time monitoring)
-   uv run PRPs/scripts/prp_runner.py --prp my-feature --output-format stream-json
-   ```
-
-2. **Using Claude commands**:
-
-   ```
-   /execute-base-prp PRPs/my-feature.md
-   ```
-
-### PRP Best Practices
-
-1. **Context is King**: Include ALL necessary documentation, examples, and caveats
-2. **Validation Loops**: Provide executable tests/lints the AI can run and fix
-3. **Information Dense**: Use keywords and patterns from the codebase
-4. **Progressive Success**: Start simple, validate, then enhance
-
-### Example PRP Structure
-
-```markdown
-## Goal
-
-Implement user authentication with JWT tokens
-
-## Why
-
-- Enable secure user sessions
-- Support API authentication
-- Replace basic auth with industry standard
-
-## What
-
-JWT-based authentication system with login, logout, and token refresh
-
-### Success Criteria
-
-- [ ] Users can login with email/password
-- [ ] JWT tokens expire after 24 hours
-- [ ] Refresh tokens work correctly
-- [ ] All endpoints properly secured
-
-## All Needed Context
-
-### Documentation & References
-
-- url: https://jwt.io/introduction/
-  why: JWT structure and best practices
-
-- file: src/auth/basic_auth.py
-  why: Current auth pattern to replace
-
-- doc: https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/
-  section: OAuth2 with Password and JWT
-
-### Known Gotchas
-
-# CRITICAL: Use RS256 algorithm for production
-
-# CRITICAL: Store refresh tokens in httpOnly cookies
-
-# CRITICAL: Implement token blacklist for logout
-
-## Implementation Blueprint
-
-[... detailed implementation plan ...]
-
-## Validation Loop
-
-### Level 1: Syntax & Style
-
-uv run ruff check src/ --fix
-uv run mypy --strict src/
-
-### Level 2: Unit Tests
-
-uv run pytest tests/test_auth.py -v
-
-### Level 3: Integration Test
-
-curl -X POST http://localhost:8000/auth/login \
- -H "Content-Type: application/json" \
- -d '{"email": "test@example.com", "password": "testpass"}'
-```
-
-## Project Structure Recommendations
-
-```
-your-project/
-|-- .claude/
-|   |-- commands/          # Claude Code commands
-|   `-- settings.json      # Tool permissions
-|-- PRPs/
-|   |-- templates/         # PRP templates
-|   |-- scrips/           # PRP runner
-|   |-- ai_docs/          # Library documentation
-|   |-- completed/        # Finished PRPs
-|   `-- *.md              # Active PRPs
-|-- CLAUDE.md             # Project-specific guidelines
-|-- src/                  # Your source code
-`-- tests/                # Your tests
-```
-
-## Setting Up CLAUDE.md
-
-Create a `CLAUDE.md` file in your project root with:
-
-1. **Core Principles**: KISS, YAGNI, etc.
-2. **Code Structure**: File size limits, function length
-3. **Architecture**: How your project is organized
-4. **Testing**: Test patterns and requirements
-5. **Style Conventions**: Language-specific guidelines
-6. **Development Commands**: How to run tests, lint, etc.
-
-See the example CLAUDE.md in this repository for a comprehensive template.
-
-## Advanced Usage
-
-### Running Multiple Claude Sessions
-
-Use Git worktrees for parallel development:
-
-```bash
-git worktree add -b feature-auth ../project-auth
-git worktree add -b feature-api ../project-api
-
-# Run Claude in each worktree
-cd ../project-auth && claude
-cd ../project-api && claude
-```
-
-### CI/CD Integration
-
-Use the PRP runner in headless mode:
-
-```yaml
-# GitHub Actions example
-- name: Execute PRP
-  run: |
-    uv run PRPs/scripts/prp_runner.py \
-      --prp implement-feature \
-      --output-format json > result.json
-```
-
-### Custom Commands
-
-Create your own commands in `.claude/commands/`:
-
-```markdown
-# .claude/commands/my-command.md
-
-# My Custom Command
-
-Do something specific to my project.
-
-## Arguments: $ARGUMENTS
-
-[Your command implementation]
-```
-
-## Resources Included
-
-### Documentation (PRPs/ai_docs/)
-
-- `cc_base.md` - Core Claude Code documentation
-- `cc_actions_sdk.md` - GitHub Actions and SDK integration
-- `cc_best_practices.md` - Best practices guide
-- `cc_settings.md` - Configuration and security
-- `cc_tutorials.md` - Step-by-step tutorials
-
-### Templates (PRPs/templates/)
-
-- `prp_base.md` - Comprehensive PRP template with validation
-- `prp_spec.md` - Specification template
-- `prp_planning_base.md` - Planning template with diagrams
-
-### Example PRP
-
-- `example-from-workshop-mcp-crawl4ai-refactor-1.md` - Real-world refactoring example
-
-## License
-
-MIT License
-
-## Support
-
-I spent a considerable amount of time creating these resources and prompts. If you find value in this project, please consider buying me a coffee to support my work.
-
-👉 **Buy me a coffee:** https://coff.ee/wirasm
-
-______________________________________________________________________
-
-Remember: The goal is one-pass implementation success through comprehensive context. Happy coding with Claude Code!
+> Vertical layout. To be determined.

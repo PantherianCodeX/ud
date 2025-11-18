@@ -20,7 +20,7 @@ Architecture-wise, it is:
 
 * **Microservice-based** (target ~18 services over time).
 * AI-heavy (LangGraph + LangSmith + Langfuse).
-* **Async-first** via Celery (Redis/RabbitMQ) for long-running tasks.
+* **Async-first** via Celery (RabbitMQ) for long-running tasks.
 * Built on **Postgres + pgvector** for structured + semantic data.
 * Exposed via a **Next.js + React + TypeScript** SaaS app with built-in i18n (English first, more locales later).
 * Using **Budibase** as a self-hosted low-code layer for fast internal/admin tools.
@@ -132,7 +132,7 @@ is slow, inconsistent, and hard to audit — especially given **privileged, PII-
 * **Pydantic v2** for domain & API models.
 * **SQLAlchemy + Alembic** for ORM + migrations.
 * **Postgres + pgvector** for relational + semantic search.
-* **Celery** with Redis (initially) as broker/result backend.
+* **Celery** with RabbitMQ as broker/result backend.
 * **LangGraph + LangSmith + Langfuse** for AI workflow orchestration & observability.
 * **Presidio** for PII detection/anonymization.
 
@@ -173,21 +173,6 @@ is slow, inconsistent, and hard to audit — especially given **privileged, PII-
 * **doit** for task automation.
 * **Commitizen** (+ AI plugin) for conventional commits.
 * **semantic-release** for automatic versioning & changelogs.
-
----
-
-# 5. Monorepo Structure (high level)
-
-Very briefly:
-
-* `services/` – each microservice (FastAPI/Celery/Streamlit/etc.).
-* `libs/` – shared Python + TS packages (domain models, db-core, logging-core, ai-core, celery-core, api-types, ui-components).
-* `frontend/` – Next.js web app and future admin console.
-* `infra/` – Helm charts, K8s templates.
-* `ops/` – Docker Compose, Prometheus, Grafana, OTEL collector.
-* `configs/` – shared lint/type/security configs.
-* `tooling/` – doit tasks, semantic-release config, pre-commit config.
-* `docs/` – PRD/TDD, architecture, runbooks.
 
 ---
 

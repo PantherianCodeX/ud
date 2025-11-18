@@ -116,7 +116,7 @@ project-root/
 │   │       └── index.ts   # Domain public API
 │   ├── infrastructure/    # Technical concerns
 │   │   ├── database/      # DB connections
-│   │   ├── cache/         # Redis, etc.
+│   │   ├── cache/         # RabbitMQ, etc.
 │   │   ├── messaging/     # Queues, events
 │   │   └── monitoring/    # Logs, metrics
 │   ├── interfaces/        # External interfaces

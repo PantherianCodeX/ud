@@ -89,7 +89,7 @@ postgres-data/
 *.sql.tmp
 
 ###############################################
-# REDIS / CELERY / BACKGROUND WORKERS
+# RABBITMQ / CELERY / BACKGROUND WORKERS
 ###############################################
 *.pid
 *.sock
