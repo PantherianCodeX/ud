@@ -359,7 +359,6 @@ On **main / release branches**:
   * Type-first mindset: hooks, components, and API calls are fully typed.
 * **Reviews**
 
-  * At least one senior reviewer for core-domain or cross-cutting changes.
   * No direct pushes to main; branch protection enforces green CI and review approval.
 
 ---
@@ -377,5 +376,3 @@ With all of the above in place:
 * Style debates are offloaded to tools; humans focus on architecture and domain correctness.
 * Strong typing + property-based testing make it much harder for subtle regressions in your LangGraph workflows and domain logic to sneak in.
 * The same standards apply across services, shared libs, and frontends — enforced by pre-commit and CI from day one.
-
-If you’d like, I can now turn **section 6** into an explicit “Engineering Quality Requirements” block with numbered requirements (MUST/SHOULD) that you can paste *verbatim* into your TDD.
