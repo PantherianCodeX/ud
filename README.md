@@ -255,8 +255,8 @@ JWT-based authentication system with login, logout, and token refresh
 
 ### Level 1: Syntax & Style
 
-ruff check src/ --fix
-mypy src/
+uv run ruff check src/ --fix
+uv run mypy --strict src/
 
 ### Level 2: Unit Tests
 

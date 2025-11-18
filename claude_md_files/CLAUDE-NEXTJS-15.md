@@ -323,6 +323,7 @@ function UserForm(): ReactElement {
 - **MUST use React Testing Library** for all component tests
 - **MUST test user behavior** not implementation details
 - **MUST mock external dependencies** appropriately
+- **MUST include Playwright E2E tests** for core product flows (authentication, tenant switching, ingest → analysis → compose)
 
 ### Test Configuration (Vitest + React Testing Library)
 
@@ -355,6 +356,19 @@ export default defineConfig({
     },
   },
 });
+```
+
+### E2E Tests with Playwright (PROJECT STANDARD)
+
+- Use **Playwright Test** for end-to-end coverage of key SaaS flows (sign-in, tenant switch, ingest → analyze → compose).
+- Keep Playwright specs under `e2e/` or `apps/web/e2e/` and reuse shared helpers where they exist in this repo.
+
+```bash
+# Install once at the workspace root if not present
+npx playwright install --with-deps
+
+# Run E2E tests locally
+npx playwright test
 ```
 
 ### Test Example (WITH MANDATORY DOCUMENTATION)

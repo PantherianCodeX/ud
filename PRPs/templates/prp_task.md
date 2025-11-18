@@ -88,7 +88,7 @@ UPDATE path/to/file:
 
 ```
 CHECKPOINT syntax:
-  - RUN: ruff check && mypy .
+  - RUN: uv run ruff check . && uv run mypy --strict .
   - FIX: Any reported issues
   - CONTINUE: Only when clean
 

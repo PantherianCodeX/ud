@@ -206,13 +206,13 @@ ROUTES:
 
 ```bash
 # Run after each file creation - fix before proceeding
-npm run lint                    # ESLint checks with TypeScript rules
-npx tsc --noEmit               # TypeScript type checking (no JS output)
-npm run format                 # Prettier formatting
+npm run lint                        # ESLint checks with TypeScript rules
+npx tsc --noEmit --strict           # TypeScript type checking (no JS output, strict mode)
+npm run format                     # Prettier formatting
 
 # Project-wide validation
-npm run lint:fix               # Auto-fix linting issues
-npm run type-check             # Full TypeScript validation
+npm run lint:fix                   # Auto-fix linting issues
+npm run type-check                 # Full TypeScript validation
 
 # Expected: Zero errors. If errors exist, READ output and fix before proceeding.
 ```
@@ -232,6 +232,16 @@ npm test -- hooks/
 npm test -- --coverage --watchAll=false
 
 # Expected: All tests pass. If failing, debug root cause and fix implementation.
+```
+
+### Level 3: End-to-End Tests (Core Flows)
+
+```bash
+# Playwright E2E for core user journeys
+npx playwright install --with-deps
+npx playwright test
+
+# Expected: Critical flows (authentication, primary feature paths) covered and passing.
 ```
 
 ### Level 3: Integration Testing (System Validation)

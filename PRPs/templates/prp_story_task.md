@@ -80,14 +80,14 @@ ______________________________________________________________________
 
 ```bash
 # Run after each file creation - fix before proceeding
-ruff check src/{new_files} --fix     # Auto-format and fix linting issues
-mypy src/{new_files}                 # Type checking with specific files
-ruff format src/{new_files}          # Ensure consistent formatting
+uv run ruff check src/{new_files} --fix     # Auto-format and fix linting issues
+uv run mypy --strict src/{new_files}        # Strict type checking with specific files
+uv run ruff format src/{new_files}          # Ensure consistent formatting
 
 # Project-wide validation
-ruff check src/ --fix
-mypy src/
-ruff format src/
+uv run ruff check src/ --fix
+uv run mypy --strict src/
+uv run ruff format src/
 
 # Expected: Zero errors. If errors exist, READ output and fix before proceeding.
 ```

@@ -273,11 +273,11 @@ The plugin uses these standard validation commands:
 
 ```bash
 # Syntax & Style
-ruff check --fix
-mypy .
+uv run ruff check --fix
+uv run mypy --strict .
 
 # Unit Tests
-pytest tests/ -v
+uv run pytest tests/ -v
 
 # Or for JavaScript/TypeScript
 npm run lint
@@ -315,11 +315,8 @@ Ensure Claude Code restarted after installation. Check available commands:
 If validation commands fail, ensure your environment has the required tools:
 
 ```bash
-# Install Python linters
-pip install ruff mypy
-
-# Or with uv
-uv pip install ruff mypy
+# Install Python linters (recommended for this workflow)
+uv add --dev ruff mypy pytest
 ```
 
 ## Development

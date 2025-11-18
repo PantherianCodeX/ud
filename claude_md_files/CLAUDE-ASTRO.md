@@ -501,6 +501,18 @@ test("POST /api/newsletter validates email", async () => {
 });
 ```
 
+### End-to-End Tests with Playwright (PROJECT STANDARD)
+
+When this Astro app is part of the main SaaS frontend, end-to-end coverage SHOULD be implemented with **Playwright Test**:
+
+- Cover critical journeys (authentication, ingest, analysis/compose views) via Playwright specs.
+- Reuse the workspace-level Playwright configuration and helpers instead of introducing a separate E2E framework.
+
+```bash
+# Example: run shared Playwright suite from workspace root
+npx playwright test
+```
+
 ## 🎨 Component Guidelines (ASTRO-SPECIFIC)
 
 ### Astro Component Structure (MANDATORY)

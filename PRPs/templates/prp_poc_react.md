@@ -233,9 +233,9 @@ component_pattern: [PascalCase/kebab-case/existing project convention]
 
 ```bash
 # TypeScript and linting validation
-npm run lint                     # ESLint with React/TS rules
-npx tsc --noEmit                # Type checking without build
-npm run format                   # Prettier formatting
+npm run lint                         # ESLint with React/TS rules
+npx tsc --noEmit --strict            # Type checking without build, strict mode
+npm run format                       # Prettier formatting
 
 # Build validation
 npm run build                    # Production build succeeds
@@ -257,8 +257,12 @@ npm run dev                      # Dev server starts successfully
 # ✓ Mock data displays realistically
 
 # Basic automated testing
-npm test                         # Smoke tests pass
-npm test -- --coverage           # Basic coverage report
+npm test                             # Smoke tests pass
+npm test -- --coverage               # Basic coverage report
+
+# Optional: lightweight E2E for demo flows
+npx playwright install --with-deps
+npx playwright test --project=chromium
 
 # Screenshot/recording for stakeholders
 # Document any issues or limitations discovered

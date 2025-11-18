@@ -96,7 +96,11 @@ uv run PRPs/scripts/prp_runner.py --prp [prp-name] --output-format stream-json
 
 ```bash
 # Level 1: Syntax & Style
-ruff check --fix && mypy .
+uv run ruff check --fix
+uv run mypy --strict .
+
+# (Optional) Additional static typing
+uv run pyright --level strict
 
 # Level 2: Unit Tests
 uv run pytest tests/ -v

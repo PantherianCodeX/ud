@@ -152,7 +152,7 @@ function ContactForm(): ReactElement {
    * @returns Promise resolving to success or error state
    */
   const [state, submitAction, isPending] = useActionState(
-    async (previousState: any, formData: FormData) => {
+    async (_previousState: unknown, formData: FormData) => {
       // Extract and validate form data
       const result = contactSchema.safeParse({
         email: formData.get('email'),
@@ -396,6 +396,16 @@ function UserForm(): JSX.Element {
 - **MUST test user behavior** not implementation details
 - **MUST mock external dependencies** appropriately
 - **NEVER skip tests** for new features or bug fixes
+
+### E2E Tests with Playwright (PROJECT STANDARD)
+
+- For React apps that participate in the main SaaS frontend, end-to-end tests **MUST** be written with **Playwright Test**, covering the core product flows (authentication, ingest, analysis, compose).
+- Co-locate E2E specs under a dedicated `e2e/` directory and reuse shared fixtures/utilities from the root test harness when available.
+
+```bash
+# Run Playwright E2E locally
+npx playwright test
+```
 
 ### SonarQube Quality Gates (MUST PASS ALL)
 

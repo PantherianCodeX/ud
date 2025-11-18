@@ -136,12 +136,23 @@ uv run ruff check .
 # Fix linting issues automatically
 uv run ruff check --fix .
 
-# Type checking
-uv run mypy src/
+# Static typing (project-standard)
+uv run mypy --strict src/
+uv run pyright --level strict src/
+
+# Additional static analysis
+uv run pylint src/
 
 # Run pre-commit hooks
 uv run pre-commit run --all-files
 ```
+
+### Project-wide engineering standards (Python)
+
+- **Linting & formatting**: Ruff is the primary linter/formatter, with **Pylint** as a secondary static-analysis pass for potential bugs and design smells.
+- **Static typing**: Both **Mypy** and **Pyright** are required in **strict** mode for core packages; new modules must pass `mypy --strict` and `pyright --level strict`.
+- **Testing & coverage**: Tests are run with **pytest** + `pytest-cov`, with **Hypothesis** used for property-based tests on critical logic and `pytest-asyncio` / `pytest-xdist` where appropriate.
+- **Pre-commit & CI**: Python checks (Ruff, Pylint, Mypy, Pyright, pytest) are wired through a shared `pre-commit` configuration and CI gates; code must be green locally and in CI before merge.
 
 ## 📋 Style & Conventions
 

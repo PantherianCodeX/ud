@@ -268,7 +268,7 @@ ______________________________________________________________________
 - **Foundation (Level 1):**
   - Creates database migration for likes table
   - Sets up TypeScript interfaces
-  - Runs syntax checking: `ruff check --fix && mypy .`
+  - Runs syntax checking: `uv run ruff check --fix && uv run mypy --strict .`
 - **Structure (Level 2):**
   - Implements API endpoints following the contract
   - Creates React component with proper state management
@@ -311,7 +311,7 @@ Every feature goes through 4 levels of quality control, just like building inspe
 ### **Level 1: Foundation Check**
 
 ```bash
-ruff check --fix && mypy .
+uv run ruff check --fix && uv run mypy --strict .
 ```
 
 *Like checking if the foundation is level and meets building codes*  
