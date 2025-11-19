@@ -62,11 +62,12 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 # Per-module options for test files
+# JUSTIFIED: Test functions often use fixtures that don't need explicit typing
+# Keep other strict checks enabled to maintain quality
 [[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
-disallow_untyped_calls = false
-disallow_incomplete_defs = false
+module = ["tests.*", "*/tests/*"]
+disallow_untyped_defs = false  # JUSTIFIED: Test functions use pytest fixtures with implicit types
+disallow_untyped_decorators = false  # JUSTIFIED: pytest.mark decorators don't have type stubs
 
 # Per-module options for third-party libraries without stubs
 [[tool.mypy.overrides]]

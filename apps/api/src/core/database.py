@@ -6,6 +6,7 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Database connection and session management."""
+
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
@@ -43,10 +44,12 @@ async_session_maker = async_sessionmaker(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """
-    FastAPI dependency for database sessions.
+    """FastAPI dependency for database sessions.
 
     Provides an async database session with automatic commit/rollback.
+
+    Yields:
+        AsyncSession: The database session for the request.
     """
     async with async_session_maker() as session:
         try:
@@ -70,10 +73,15 @@ async def init_db() -> None:
 
 
 async def check_db_health() -> bool:
-    """Check database connectivity for health endpoint."""
+    """Check database connectivity for health endpoint.
+
+    Returns:
+        True if database is reachable, False otherwise.
+    """
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-        return True
-    except Exception:
+    except Exception:  # noqa: BLE001 - Health check should catch all connection errors
         return False
+    else:
+        return True

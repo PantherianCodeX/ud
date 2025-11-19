@@ -39,25 +39,25 @@ load-plugins = [
 enable = "all"
 
 [tool.pylint.messages_control]
-# Minimal disable list - only genuine conflicts
+# Minimal disable list - only genuine conflicts with justifications
 disable = [
-    # Conflicts with Ruff/Black formatting
-    "line-too-long",           # Handled by Ruff
-    "bad-indentation",         # Handled by Ruff
-    "bad-continuation",        # Handled by Ruff
+    # JUSTIFIED: Formatting handled by Ruff - duplicate checking causes conflicts
+    "line-too-long",           # Ruff handles line length enforcement
+    "bad-indentation",         # Ruff handles indentation
+    "bad-continuation",        # Ruff handles continuation style
 
-    # Conflicts with Pydantic models
-    "too-few-public-methods",  # Pydantic models often have few methods
-    "no-self-argument",        # Pydantic validators
-    "no-self-use",            # Pydantic validators
+    # JUSTIFIED: Pydantic model patterns require these exemptions
+    "too-few-public-methods",  # Pydantic models are data classes with few methods
+    "no-self-argument",        # Pydantic validators use 'cls' as first argument
+    "no-self-use",             # Pydantic validators may not use self
 
-    # Overly restrictive for tests
-    "redefined-outer-name",    # pytest fixtures redefine names
+    # JUSTIFIED: pytest fixture injection pattern
+    "redefined-outer-name",    # pytest fixtures intentionally shadow outer names
 
-    # Duplicate detection can be noisy
-    "duplicate-code",          # Will enable selectively
+    # JUSTIFIED: Duplicate detection disabled - enable via CI when needed
+    "duplicate-code",          # High false positive rate, better suited for periodic scans
 
-    # Docstring rules handled by Ruff
+    # JUSTIFIED: Docstring rules handled by Ruff with Google style
     "missing-module-docstring",
     "missing-class-docstring",
     "missing-function-docstring",

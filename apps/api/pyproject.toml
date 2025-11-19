@@ -3,19 +3,38 @@ name = "udocket-api"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.32.0",
-    "sqlalchemy>=2.0.44",
-    "asyncpg>=0.30.0",
-    "alembic>=1.17.2",
-    "pydantic>=2.12.4",
-    "pydantic-settings>=2.12.0",
-    "structlog>=25.5.0",
-    "python-jose[cryptography]>=3.3.0",
-    "passlib[bcrypt]>=1.7.4",
-    "python-multipart>=0.0.20",
+    # Web framework
+    "fastapi>=0.115.0,<0.116.0",
+    "uvicorn[standard]>=0.32.0,<0.33.0",
+    "python-multipart>=0.0.20,<0.1.0",
+
+    # Database
+    "sqlalchemy>=2.0.44,<3.0.0",
+    "asyncpg>=0.30.0,<0.31.0",
+    "alembic>=1.17.2,<2.0.0",
+
+    # Data models and validation
+    "pydantic>=2.12.4,<3.0.0",
+    "pydantic-settings>=2.12.0,<3.0.0",
+
+    # Logging
+    "structlog>=25.5.0,<26.0.0",
+
+    # Authentication (roadmap)
+    "python-jose[cryptography]>=3.3.0,<4.0.0",
+    "passlib[bcrypt]>=1.7.4,<2.0.0",
+
+    # Workspace packages
     "py-domain",
+    "py-ai-core",
+]
+
+[tool.uv]
+dev-dependencies = [
+    # Dev dependencies inherited from root workspace
+    # Package-specific dev deps can be added here if needed
 ]
 
 [tool.uv.sources]
 py-domain = { workspace = true }
+py-ai-core = { workspace = true }

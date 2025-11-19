@@ -1,0 +1,15 @@
+# Copyright (c) 2025 uDocket. All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the confidential and proprietary information of uDocket.
+# You shall not disclose such confidential information and shall use it only
+# in accordance with the terms of the license agreement you entered into with uDocket.
+"""Analysis workflow slice.
+
+Legal analysis orchestration using LangGraph:
+- Entity extraction (parties, organizations, dates, locations)
+- Issue identification and categorization
+- Timeline construction
+- Relationship mapping
+"""

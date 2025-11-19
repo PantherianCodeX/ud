@@ -6,6 +6,7 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Matter-related domain models."""
+
 from typing import Literal
 from uuid import UUID
 

@@ -6,12 +6,14 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Alembic migration environment configuration."""
+
 import asyncio
 from logging.config import fileConfig
+from typing import Any
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
-from alembic import context
 
 from src.core.config import settings
 from src.core.database import Base
@@ -28,8 +30,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    """
-    Run migrations in 'offline' mode.
+    """Run migrations in 'offline' mode.
 
     This configures the context with just a URL and not an Engine,
     though an Engine is acceptable here as well. By skipping the Engine
@@ -47,7 +48,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def do_run_migrations(connection):
+def do_run_migrations(connection: Any) -> None:  # noqa: ANN401 - Alembic passes Connection dynamically
     """Run migrations with connection."""
     context.configure(
         connection=connection,

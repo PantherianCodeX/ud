@@ -6,6 +6,7 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Core infrastructure modules."""
+
 from .config import settings
 from .database import Base, async_session_maker, check_db_health, engine, get_db, init_db
 from .exceptions import (
@@ -13,7 +14,7 @@ from .exceptions import (
     AuthorizationError,
     DatabaseError,
     ResourceNotFoundError,
-    UDocketException,
+    UDocketError,
     ValidationError,
 )
 from .logging import configure_logging, get_logger
@@ -24,7 +25,7 @@ __all__ = [
     "Base",
     "DatabaseError",
     "ResourceNotFoundError",
-    "UDocketException",
+    "UDocketError",
     "ValidationError",
     "async_session_maker",
     "check_db_health",

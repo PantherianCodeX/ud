@@ -11,14 +11,15 @@ NOTE: This is a simplified JWT implementation for Phase 1 development.
 Full Keycloak OIDC integration is planned for Phase 2+.
 See ROADMAP.md Phase 2 for Keycloak integration details.
 """
-from datetime import datetime, timedelta, timezone
+
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from jose import JWTError, jwt
 from pydantic import BaseModel, Field
 
-from ...core.config import settings
-from ...core.exceptions import AuthenticationError
+from src.core.config import settings
+from src.core.exceptions import AuthenticationError
 
 
 class TokenData(BaseModel):
@@ -41,8 +42,7 @@ class UserStub(BaseModel):
 
 
 def create_access_token(user: UserStub) -> str:
-    """
-    Create a JWT access token for a user.
+    """Create a JWT access token for a user.
 
     Args:
         user: User to create token for
@@ -50,14 +50,14 @@ def create_access_token(user: UserStub) -> str:
     Returns:
         Encoded JWT token string
     """
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
+    expire = datetime.now(UTC) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
 
     payload = {
         "user_id": str(user.id),
         "email": user.email,
         "roles": user.roles,
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
     }
 
     encoded: str = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
@@ -65,8 +65,7 @@ def create_access_token(user: UserStub) -> str:
 
 
 def decode_access_token(token: str) -> TokenData:
-    """
-    Decode and validate a JWT access token.
+    """Decode and validate a JWT access token.
 
     Args:
         token: Encoded JWT token string
@@ -78,11 +77,7 @@ def decode_access_token(token: str) -> TokenData:
         AuthenticationError: If token is invalid or expired
     """
     try:
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret_key,
-            algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 
         user_id = UUID(payload.get("user_id"))
         email = payload.get("email")
@@ -90,16 +85,19 @@ def decode_access_token(token: str) -> TokenData:
         exp = payload.get("exp")
 
         if not user_id or not email:
-            raise AuthenticationError("Invalid token payload")
+            msg = "Invalid token payload"
+            raise AuthenticationError(msg)
 
         return TokenData(
             user_id=user_id,
             email=email,
             roles=roles,
-            exp=datetime.fromtimestamp(exp) if exp else None
+            exp=datetime.fromtimestamp(exp, tz=UTC) if exp else None,
         )
 
     except JWTError as e:
-        raise AuthenticationError(f"Token validation failed: {e!s}")
+        msg = f"Token validation failed: {e!s}"
+        raise AuthenticationError(msg) from e
     except ValueError as e:
-        raise AuthenticationError(f"Invalid token format: {e!s}")
+        msg = f"Invalid token format: {e!s}"
+        raise AuthenticationError(msg) from e

@@ -6,15 +6,20 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Base models with common fields and configuration."""
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
 def _utc_now() -> datetime:
-    """Get current UTC datetime (timezone-aware)."""
-    return datetime.now(timezone.utc)
+    """Get current UTC datetime (timezone-aware).
+
+    Returns:
+        Current datetime with UTC timezone.
+    """
+    return datetime.now(UTC)
 
 
 class BaseEntity(BaseModel):
@@ -32,7 +37,7 @@ class BaseEntity(BaseModel):
                 "created_at": "2025-01-15T10:00:00Z",
                 "updated_at": "2025-01-15T10:00:00Z",
             }
-        }
+        },
     )
 
 

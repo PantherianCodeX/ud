@@ -6,9 +6,9 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Structured logging configuration with structlog."""
+
 import logging
 import sys
-from typing import Any
 
 import structlog
 from structlog.types import EventDict, Processor
@@ -16,8 +16,21 @@ from structlog.types import EventDict, Processor
 from .config import settings
 
 
-def add_app_context(logger: Any, method_name: str, event_dict: EventDict) -> EventDict:
-    """Add application context to all log entries."""
+def add_app_context(
+    _logger: structlog.stdlib.BoundLogger,
+    _method_name: str,
+    event_dict: EventDict,
+) -> EventDict:
+    """Add application context to all log entries.
+
+    Args:
+        _logger: Logger instance (unused, required by protocol).
+        _method_name: Method name (unused, required by protocol).
+        event_dict: Event dictionary to enrich.
+
+    Returns:
+        Enriched event dictionary with app context.
+    """
     event_dict["app_name"] = settings.app_name
     event_dict["app_version"] = settings.app_version
     event_dict["environment"] = settings.environment
@@ -26,7 +39,6 @@ def add_app_context(logger: Any, method_name: str, event_dict: EventDict) -> Eve
 
 def configure_logging() -> None:
     """Configure structlog with appropriate processors."""
-
     # Determine processors based on environment
     processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,
@@ -65,6 +77,13 @@ def configure_logging() -> None:
 
 # Get logger instance
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
-    """Get a configured logger instance."""
+    """Get a configured logger instance.
+
+    Args:
+        name: Logger name (typically __name__).
+
+    Returns:
+        Configured BoundLogger instance.
+    """
     logger: structlog.stdlib.BoundLogger = structlog.get_logger(name)
     return logger

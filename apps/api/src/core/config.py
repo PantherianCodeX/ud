@@ -6,6 +6,7 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Configuration management with Pydantic settings."""
+
 from pydantic import Field, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -47,12 +48,20 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS origins from comma-separated string or list."""
+        """Parse CORS origins from comma-separated string or list.
+
+        Args:
+            v: Either a comma-separated string or list of origins.
+
+        Returns:
+            List of CORS origin strings.
+        """
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
         return v
 
 
 # Global settings instance
-# Pydantic BaseSettings loads from environment, so constructor args are optional
+# Pydantic Settings loads required fields from environment variables,
+# making constructor arguments optional at instantiation despite required field annotations
 settings = Settings()  # pyright: ignore[reportCallIssue]

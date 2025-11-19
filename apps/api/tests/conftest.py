@@ -6,18 +6,19 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Pytest configuration and fixtures."""
+
 import asyncio
-from typing import AsyncGenerator, Generator
-from uuid import UUID, uuid4
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.main import app
 from src.core import Base, get_db
+from src.main import app
 from src.platform.auth.jwt import UserStub, create_access_token
-
 
 # Test database URL (in-memory SQLite for fast tests)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -32,7 +33,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 async def db_engine():
     """Create test database engine."""
     engine = create_async_engine(
@@ -52,8 +53,8 @@ async def db_engine():
     await engine.dispose()
 
 
-@pytest.fixture(scope="function")
-async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
+@pytest.fixture
+async def db_session(db_engine: Any) -> AsyncGenerator[AsyncSession, None]:  # noqa: ANN401 - pytest fixture type
     """Create test database session."""
     async_session = async_sessionmaker(
         db_engine,
@@ -66,11 +67,11 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession, None]:
         await session.rollback()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def client(db_session: AsyncSession) -> Generator[TestClient, None, None]:
     """Create test client with database override."""
 
-    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+    def override_get_db() -> Generator[AsyncSession, None, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db

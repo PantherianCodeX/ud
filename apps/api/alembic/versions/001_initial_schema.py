@@ -11,23 +11,22 @@ Revision ID: 001_initial
 Revises:
 Create Date: 2025-01-15
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers
-revision: str = '001_initial'
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "001_initial"
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     """Upgrade database schema."""
     # Enable pgvector extension
-    op.execute('CREATE EXTENSION IF NOT EXISTS vector')
+    op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
     # Phase 1: No tables yet, just extension
     # Tables will be added in Phase 2+ as vertical slices are implemented
@@ -36,4 +35,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade database schema."""
     # Drop pgvector extension
-    op.execute('DROP EXTENSION IF EXISTS vector')
+    op.execute("DROP EXTENSION IF EXISTS vector")

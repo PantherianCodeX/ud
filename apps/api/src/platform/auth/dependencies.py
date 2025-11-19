@@ -10,24 +10,25 @@
 NOTE: This is a stub implementation for Phase 1.
 Full Keycloak OIDC integration planned for Phase 2+.
 """
-from collections.abc import Callable, Coroutine
-from typing import Annotated, Any
+
+from collections.abc import Callable
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from ...core.exceptions import AuthenticationError
+from src.core.exceptions import AuthenticationError
+
 from .jwt import UserStub, decode_access_token
 
 # Security scheme
 security = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None,
 ) -> UserStub:
-    """
-    FastAPI dependency to get current authenticated user.
+    """FastAPI dependency to get current authenticated user.
 
     Validates JWT token and returns user information.
 
@@ -52,7 +53,7 @@ async def get_current_user(
 
         # In Phase 1, we reconstruct a stub user from token data
         # In Phase 2+, this will query Keycloak or a user service
-        user = UserStub(
+        return UserStub(
             id=token_data.user_id,
             email=token_data.email,
             full_name=token_data.email.split("@")[0],  # Stub
@@ -60,19 +61,18 @@ async def get_current_user(
             is_active=True,
         )
 
-        return user
-
     except AuthenticationError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
-async def require_role(required_role: str) -> Callable[[Annotated[UserStub, Depends(get_current_user)]], Coroutine[Any, Any, UserStub]]:
-    """
-    FastAPI dependency factory to require a specific role.
+def require_role(
+    required_role: str,
+) -> Callable[[UserStub], UserStub]:
+    """FastAPI dependency factory to require a specific role.
 
     Args:
         required_role: Role required to access endpoint
@@ -80,11 +80,12 @@ async def require_role(required_role: str) -> Callable[[Annotated[UserStub, Depe
     Returns:
         Dependency function that checks user role
     """
-    async def role_checker(user: Annotated[UserStub, Depends(get_current_user)]) -> UserStub:
+
+    def role_checker(user: Annotated[UserStub, Depends(get_current_user)]) -> UserStub:
         if required_role not in user.roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Role '{required_role}' required"
+                detail=f"Role '{required_role}' required",
             )
         return user
 

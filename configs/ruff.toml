@@ -26,29 +26,33 @@ select = [
 
 # Minimal ignore list - only unavoidable conflicts
 ignore = [
-    # Conflicts with other rules or project requirements
-    "COM812",  # Conflicts with formatter
-    "ISC001",  # Conflicts with formatter
+    # JUSTIFIED: Formatter conflicts - these rules conflict with ruff's own formatter
+    "COM812",  # Trailing comma (conflicts with formatter)
+    "ISC001",  # Implicit string concatenation (conflicts with formatter)
 
-    # Documentation - will be enforced but with appropriate exemptions
-    "D100",    # Missing docstring in public module (enforced via per-file)
-    "D104",    # Missing docstring in public package (enforced via per-file)
+    # JUSTIFIED: Documentation patterns handled via per-file ignores
+    # Module/package docstrings enforced where appropriate, exempted for __init__.py
+    "D100",    # Missing docstring in public module
+    "D104",    # Missing docstring in public package
 
-    # Type annotations - redundant with mypy/pyright
-    "ANN101",  # Missing type annotation for self
-    "ANN102",  # Missing type annotation for cls
+    # NOTE: ANN101/ANN102 removed in ruff - self/cls are no longer checked
 
-    # Specific project needs
-    "S101",    # Use of assert (pytest requires asserts in tests)
-    "TRY003",  # Long exception messages (prefer detailed error messages)
+    # JUSTIFIED: Testing requirements
+    "S101",    # Use of assert (pytest testing framework requires assert statements)
 
-    # Django/FastAPI specific (not applicable)
-    "DJ",      # Django-specific rules
+    # JUSTIFIED: Error message clarity over brevity
+    "TRY003",  # Long exception messages (detailed error messages improve debuggability)
 
-    # Overly restrictive for this project
-    "FIX002",  # Line contains TODO (we track TODOs intentionally)
-    "TD002",   # Missing author in TODO
-    "TD003",   # Missing issue link in TODO
+    # JUSTIFIED: Not applicable to this project
+    "DJ",      # Django-specific rules (FastAPI project)
+
+    # JUSTIFIED: Development workflow
+    "FIX002",  # Line contains TODO (TODOs tracked in issue system)
+    "TD002",   # Missing author in TODO (tracked in git history)
+    "TD003",   # Missing issue link in TODO (tracked externally)
+
+    # JUSTIFIED: Pydantic patterns
+    "RUF012",  # Pydantic model_config is intentionally a mutable class attribute
 ]
 
 # Allow autofix for all enabled rules
@@ -59,35 +63,63 @@ unfixable = []
 preview = true
 
 [lint.per-file-ignores]
-# Test files
+# Test files - minimal ignores for testing patterns
 "tests/**/*.py" = [
-    "S101",      # Allow assert in tests
-    "PLR2004",   # Magic value comparison
-    "ANN001",    # Missing type annotation for function argument
-    "ANN201",    # Missing return type
-    "D100",      # Missing docstring in public module
-    "D103",      # Missing docstring in public function
+    "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
+    "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
+    "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
 ]
 "**/tests/**/*.py" = [
-    "S101",
-    "PLR2004",
-    "ANN001",
-    "ANN201",
-    "D100",
-    "D103",
+    "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
+    "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
+    "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
 ]
-
-# Migration files
-"**/alembic/versions/*.py" = [
-    "D100",      # Missing module docstring
-    "D103",      # Missing function docstring
-    "ANN001",    # Missing type annotation
-    "ANN201",    # Missing return type
+"**/test_*.py" = [
+    "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
+    "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
+    "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
+    "INP001",    # JUSTIFIED: Test files don't need to be in packages
+    "CPY001",    # JUSTIFIED: Test files don't need copyright headers
+    "PLC0415",   # JUSTIFIED: Test methods may import in function body for isolation
 ]
-
-# Config files
+# Conftest files
 "**/conftest.py" = [
-    "D100",
+    "D103",      # JUSTIFIED: Pytest fixtures are self-documenting via descriptive names
+    "ANN001",    # JUSTIFIED: Pytest fixtures use dependency injection
+    "ANN201",    # JUSTIFIED: Pytest fixtures use dependency injection
+    "DOC402",    # JUSTIFIED: Pytest fixtures yield values implicitly
+    "DOC201",    # JUSTIFIED: Pytest fixtures return values implicitly
+    "INP001",    # JUSTIFIED: Test directories don't need to be packages
+]
+# Tooling scripts
+"tooling/*.py" = [
+    "CPY001",    # JUSTIFIED: Internal tooling scripts don't need copyright
+    "T201",      # JUSTIFIED: Tooling scripts need print for user output
+    "DOC201",    # JUSTIFIED: Internal tooling docstrings can be simplified
+    "D107",      # JUSTIFIED: Internal tooling __init__ methods don't need docstrings
+    "C901",      # JUSTIFIED: Tooling scripts may have complex functions
+    "PLR0912",   # JUSTIFIED: Tooling scripts may have many branches
+    "PLR0915",   # JUSTIFIED: Tooling scripts may have many statements
+    "PLR0914",   # JUSTIFIED: Tooling scripts may have many local variables
+    "PLR1702",   # JUSTIFIED: Tooling scripts may have nested blocks
+    "TRY300",    # JUSTIFIED: Tooling scripts may use try/except for control flow
+    "E501",      # JUSTIFIED: Tooling scripts may have long lines for readability
+    "INP001",    # JUSTIFIED: Tooling directory is not a package
+]
+
+# Migration files - auto-generated by Alembic
+"**/alembic/versions/*.py" = [
+    "D100",      # JUSTIFIED: Auto-generated migration files have standard format
+    "D103",      # JUSTIFIED: Auto-generated functions (upgrade/downgrade) are self-documenting
+    "INP001",    # JUSTIFIED: Migration directory is implicit namespace package
+    "ANN001",    # JUSTIFIED: Auto-generated code doesn't have type annotations
+    "ANN201",    # JUSTIFIED: Auto-generated code doesn't have type annotations
+]
+# Alembic env.py - configuration file
+"**/alembic/env.py" = [
+    "INP001",    # JUSTIFIED: Alembic directory is implicit namespace package
+    "ANN001",    # JUSTIFIED: Alembic boilerplate functions
+    "ANN201",    # JUSTIFIED: Alembic boilerplate functions
 ]
 
 [lint.pydocstyle]

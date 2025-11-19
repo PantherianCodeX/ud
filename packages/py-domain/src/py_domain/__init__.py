@@ -6,6 +6,7 @@
 # You shall not disclose such confidential information and shall use it only
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """uDocket domain models package."""
+
 from .analysis import (
     Action,
     ActionPriority,
@@ -24,28 +25,28 @@ from .transcript import SpeakerTurn, Transcript
 __version__ = "0.1.0"
 
 __all__ = [
+    "Action",
+    "ActionPriority",
+    "ActionStatus",
     # Base
     "BaseEntity",
     "BaseRequest",
     "BaseResponse",
+    "Gap",
     "HealthCheck",
+    "Issue",
+    "IssueSeverity",
     # Matter
     "Matter",
-    "Party",
-    "Relationship",
-    "MatterStatus",
-    "PartyRole",
     # Analysis
     "MatterAnalysis",
-    "Issue",
+    "MatterStatus",
+    "Party",
+    "PartyRole",
+    "Relationship",
+    "SpeakerTurn",
     "TimelineEvent",
-    "Action",
-    "Gap",
-    "IssueSeverity",
     "TimelineEventType",
-    "ActionPriority",
-    "ActionStatus",
     # Transcript
     "Transcript",
-    "SpeakerTurn",
 ]
