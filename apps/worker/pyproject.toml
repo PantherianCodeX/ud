@@ -1,0 +1,11 @@
+[project]
+name = "udocket-worker"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.5.3",
+    "py-domain",
+]
+
+[tool.uv.sources]
+py-domain = { workspace = true }

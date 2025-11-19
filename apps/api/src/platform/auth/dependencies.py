@@ -1,0 +1,91 @@
+# Copyright (c) 2025 uDocket. All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the confidential and proprietary information of uDocket.
+# You shall not disclose such confidential information and shall use it only
+# in accordance with the terms of the license agreement you entered into with uDocket.
+"""FastAPI dependencies for authentication.
+
+NOTE: This is a stub implementation for Phase 1.
+Full Keycloak OIDC integration planned for Phase 2+.
+"""
+from collections.abc import Callable, Coroutine
+from typing import Annotated, Any
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from ...core.exceptions import AuthenticationError
+from .jwt import UserStub, decode_access_token
+
+# Security scheme
+security = HTTPBearer(auto_error=False)
+
+
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None
+) -> UserStub:
+    """
+    FastAPI dependency to get current authenticated user.
+
+    Validates JWT token and returns user information.
+
+    Args:
+        credentials: HTTP Bearer token credentials
+
+    Returns:
+        Current user information
+
+    Raises:
+        HTTPException: If authentication fails
+    """
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        token_data = decode_access_token(credentials.credentials)
+
+        # In Phase 1, we reconstruct a stub user from token data
+        # In Phase 2+, this will query Keycloak or a user service
+        user = UserStub(
+            id=token_data.user_id,
+            email=token_data.email,
+            full_name=token_data.email.split("@")[0],  # Stub
+            roles=token_data.roles,
+            is_active=True,
+        )
+
+        return user
+
+    except AuthenticationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+async def require_role(required_role: str) -> Callable[[Annotated[UserStub, Depends(get_current_user)]], Coroutine[Any, Any, UserStub]]:
+    """
+    FastAPI dependency factory to require a specific role.
+
+    Args:
+        required_role: Role required to access endpoint
+
+    Returns:
+        Dependency function that checks user role
+    """
+    async def role_checker(user: Annotated[UserStub, Depends(get_current_user)]) -> UserStub:
+        if required_role not in user.roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role '{required_role}' required"
+            )
+        return user
+
+    return role_checker

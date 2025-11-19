@@ -12,13 +12,13 @@ User request: $1
 
 - Check current branch: `git branch --show-current`
 - Check if on main/master:
-  ```bash
-  CURRENT_BRANCH=$(git branch --show-current)
-  if [[ "$CURRENT_BRANCH" != "main" && "$CURRENT_BRANCH" != "master" && "$CURRENT_BRANCH" != "development" ]]; then
-    echo "Warning: Currently on branch '$CURRENT_BRANCH', not main/master/development"
-    echo "Proceeding with branch creation from current branch"
-  fi
-  ```
+      ```bash
+      CURRENT_BRANCH=$(git branch --show-current)
+      if [[ "$CURRENT_BRANCH" != "main" && "$CURRENT_BRANCH" != "master" && "$CURRENT_BRANCH" != "development" ]]; then
+        echo "Warning: Currently on branch '$CURRENT_BRANCH', not main/master/development"
+        echo "Proceeding with branch creation from current branch"
+      fi
+      ```
 - Note: We proceed regardless, but log the warning
 
 **Step 2: Generate Branch Name**

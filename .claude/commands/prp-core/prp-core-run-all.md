@@ -1,5 +1,3 @@
-______________________________________________________________________
-
 ## description: Run all prp core commands in sequence from feature request to pr
 
 Feature: $ARGUMENTS

@@ -1,0 +1,9 @@
+[project]
+name = "udocket-py-ai-core"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "langgraph>=1.0.3",
+    "langsmith>=0.4.43",
+    "langfuse>=3.10.0",
+]
