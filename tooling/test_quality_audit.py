@@ -216,43 +216,73 @@ class TestScanFileForIgnores:
 class TestParseRuffConfigIgnores:
     """Test parsing of ruff.toml config ignores."""
 
-    def test_parse_global_ignores(self) -> None:
-        """Test parsing global ignore list."""
+    def test_parse_global_ignores_with_justifications(self) -> None:
+        """Test parsing global ignore list extracts per-code justifications."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             config_file = tmp_path / "ruff.toml"
             config_file.write_text("""
 [lint]
 ignore = [
-    "E501",  # JUSTIFIED: Long lines allowed
-    "W503",  # JUSTIFIED: Line break preference
+    "E501",  # JUSTIFIED: Long lines allowed for URLs
+    "W503",  # JUSTIFIED: Line break preference for readability
 ]
 """)
 
             entries = parse_ruff_config_ignores(config_file)
-            assert len(entries) >= 1
+            assert len(entries) == 2
+            # Each code should have its own entry with justification
+            e501_entry = next((e for e in entries if "E501" in e.codes), None)
+            w503_entry = next((e for e in entries if "W503" in e.codes), None)
+            assert e501_entry is not None
+            assert "Long lines" in e501_entry.justification
+            assert w503_entry is not None
+            assert "Line break" in w503_entry.justification
 
-    def test_parse_per_file_ignores(self) -> None:
-        """Test parsing per-file ignore patterns."""
+    def test_parse_per_file_ignores_with_justifications(self) -> None:
+        """Test parsing per-file ignore patterns extracts justifications."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             config_file = tmp_path / "ruff.toml"
             config_file.write_text("""
 [lint.per-file-ignores]
 "tests/*.py" = [
-    "S101",  # JUSTIFIED: Assert in tests
+    "S101",  # JUSTIFIED: Assert in tests is required by pytest
+    "PLR2004",  # JUSTIFIED: Magic values in tests are test fixtures
 ]
 """)
 
             entries = parse_ruff_config_ignores(config_file)
-            # Parser focuses on global ignores, per-file parsing is basic
-            # This tests that the function doesn't crash on per-file patterns
-            assert isinstance(entries, list)
+            assert len(entries) == 2
+            # Each code should have its own entry
+            s101_entry = next((e for e in entries if "S101" in e.codes), None)
+            assert s101_entry is not None
+            assert s101_entry.applies_to == "tests/*.py"
+            assert "Assert" in s101_entry.justification or "pytest" in s101_entry.justification
 
     def test_parse_nonexistent_config(self) -> None:
         """Test parsing nonexistent config returns empty list."""
         entries = parse_ruff_config_ignores(Path("/nonexistent/ruff.toml"))
         assert entries == []
+
+    def test_parse_ignore_without_justification_reports_missing(self) -> None:
+        """Test that ignores without justification are flagged."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "ruff.toml"
+            config_file.write_text("""
+[lint]
+ignore = [
+    "E501",
+    "W503",  # JUSTIFIED: Has justification
+]
+""")
+
+            entries = parse_ruff_config_ignores(config_file)
+            e501_entry = next((e for e in entries if "E501" in e.codes), None)
+            assert e501_entry is not None
+            # Should indicate missing justification
+            assert "No justification" in e501_entry.justification or not e501_entry.justification
 
 
 class TestParseMypyConfigIgnores:
@@ -528,7 +558,7 @@ class TestGenerateMarkdownManifest:
             generate_markdown_manifest(report, output_path)
 
             content = output_path.read_text()
-            assert "Config File Ignores" in content
+            assert "Config Ignores (Justified)" in content
             assert "ruff.toml" in content
 
 

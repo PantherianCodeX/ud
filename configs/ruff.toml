@@ -26,33 +26,17 @@ select = [
 
 # Minimal ignore list - only unavoidable conflicts
 ignore = [
-    # JUSTIFIED: Formatter conflicts - these rules conflict with ruff's own formatter
-    "COM812",  # Trailing comma (conflicts with formatter)
-    "ISC001",  # Implicit string concatenation (conflicts with formatter)
-
-    # JUSTIFIED: Documentation patterns handled via per-file ignores
-    # Module/package docstrings enforced where appropriate, exempted for __init__.py
-    "D100",    # Missing docstring in public module
-    "D104",    # Missing docstring in public package
-
-    # NOTE: ANN101/ANN102 removed in ruff - self/cls are no longer checked
-
-    # JUSTIFIED: Testing requirements
-    "S101",    # Use of assert (pytest testing framework requires assert statements)
-
-    # JUSTIFIED: Error message clarity over brevity
-    "TRY003",  # Long exception messages (detailed error messages improve debuggability)
-
-    # JUSTIFIED: Not applicable to this project
-    "DJ",      # Django-specific rules (FastAPI project)
-
-    # JUSTIFIED: Development workflow
-    "FIX002",  # Line contains TODO (TODOs tracked in issue system)
-    "TD002",   # Missing author in TODO (tracked in git history)
-    "TD003",   # Missing issue link in TODO (tracked externally)
-
-    # JUSTIFIED: Pydantic patterns
-    "RUF012",  # Pydantic model_config is intentionally a mutable class attribute
+    "COM812",  # JUSTIFIED: Trailing comma conflicts with ruff formatter
+    "ISC001",  # JUSTIFIED: Implicit string concatenation conflicts with formatter
+    "D100",    # JUSTIFIED: Module docstrings enforced via per-file ignores where appropriate
+    "D104",    # JUSTIFIED: Package docstrings enforced via per-file ignores where appropriate
+    "S101",    # JUSTIFIED: Assert required by pytest testing framework
+    "TRY003",  # JUSTIFIED: Detailed error messages improve debuggability
+    "DJ",      # JUSTIFIED: Django rules not applicable to FastAPI project
+    "FIX002",  # JUSTIFIED: TODOs tracked in issue system not inline
+    "TD002",   # JUSTIFIED: TODO authors tracked in git history
+    "TD003",   # JUSTIFIED: TODO issue links tracked externally
+    "RUF012",  # JUSTIFIED: Pydantic model_config is intentionally mutable class attribute
 ]
 
 # Allow autofix for all enabled rules

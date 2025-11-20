@@ -221,7 +221,10 @@ def scan_file_for_ignores(file_path: Path, root: Path) -> list[IgnoreEntry]:
 
 
 def parse_ruff_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
-    """Parse ignore directives from ruff.toml."""
+    """Parse ignore directives from ruff.toml.
+
+    Creates one ConfigIgnoreEntry per code, each with its own justification.
+    """
     entries: list[ConfigIgnoreEntry] = []
 
     if not config_path.exists():
@@ -232,15 +235,14 @@ def parse_ruff_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
 
     current_section = ""
     in_ignore_list = False
-    current_codes: list[str] = []
-    current_justifications: list[str] = []
     current_file_pattern = "global"
 
     for line in lines:
         # Track section changes
-        section_match = re.match(r"\[([\w.]+)\]", line)
+        section_match = re.match(r"\[([^\]]+)\]", line)
         if section_match:
             current_section = section_match.group(1)
+            in_ignore_list = False
             continue
 
         # Track per-file-ignores patterns
@@ -256,34 +258,30 @@ def parse_ruff_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
             current_file_pattern = "global"
             continue
 
-        # Inside an ignore list
-        if in_ignore_list:
-            # Check for end of list
-            if "]" in line and not re.search(r'"[^"]*\]', line):
-                # Save accumulated ignores
-                if current_codes:
-                    entries.append(
-                        ConfigIgnoreEntry(
-                            file_path=str(config_path),
-                            section=current_section,
-                            codes=current_codes.copy(),
-                            justification="; ".join(current_justifications) if current_justifications else "No justification",
-                            applies_to=current_file_pattern,
-                        )
-                    )
-                current_codes = []
-                current_justifications = []
-                in_ignore_list = False
-                continue
+        # End of list
+        if in_ignore_list and "]" in line and not re.search(r'"[^"]*\]', line):
+            in_ignore_list = False
+            current_file_pattern = "global"
+            continue
 
-            # Extract code and justification
+        # Inside an ignore list - extract each code with its justification
+        if in_ignore_list:
             code_match = re.search(r'"([A-Z0-9]+)"', line)
             if code_match:
-                current_codes.append(code_match.group(1))
-                # Look for justification comment
+                code = code_match.group(1)
+                # Look for justification comment on this line
                 comment_match = re.search(r"#\s*JUSTIFIED:\s*(.+)", line)
-                if comment_match:
-                    current_justifications.append(f"{code_match.group(1)}: {comment_match.group(1).strip()}")
+                justification = comment_match.group(1).strip() if comment_match else "No justification"
+
+                entries.append(
+                    ConfigIgnoreEntry(
+                        file_path=str(config_path),
+                        section=current_section,
+                        codes=[code],
+                        justification=justification,
+                        applies_to=current_file_pattern,
+                    )
+                )
 
     return entries
 
@@ -488,18 +486,36 @@ def generate_markdown_manifest(report: AuditReport, output_path: Path) -> None:
 
     # Config ignores
     if report.config_ignores:
-        lines.extend([
-            "## Config File Ignores",
-            "",
-            "| File | Section | Codes | Applies To | Justification |",
-            "|------|---------|-------|------------|---------------|",
-        ])
-        for cfg in report.config_ignores:
-            codes_str = ", ".join(cfg.codes[:5])
-            if len(cfg.codes) > 5:
-                codes_str += f"... (+{len(cfg.codes) - 5})"
-            lines.append(f"| {cfg.file_path} | {cfg.section} | {codes_str} | {cfg.applies_to} | {cfg.justification[:50]} |")
-        lines.append("")
+        # Separate justified from unjustified
+        unjustified = [e for e in report.config_ignores if e.justification == "No justification"]
+        justified = [e for e in report.config_ignores if e.justification != "No justification"]
+
+        if unjustified:
+            lines.extend([
+                "## ❌ Config Ignores Missing Justification",
+                "",
+                "| File | Section | Code | Applies To |",
+                "|------|---------|------|------------|",
+            ])
+            for cfg in unjustified:
+                code = cfg.codes[0] if cfg.codes else "unknown"
+                # Use relative path for readability
+                file_display = cfg.file_path.split("/")[-1] if "/" in cfg.file_path else cfg.file_path
+                lines.append(f"| {file_display} | {cfg.section} | {code} | {cfg.applies_to} |")
+            lines.append("")
+
+        if justified:
+            lines.extend([
+                "## ✅ Config Ignores (Justified)",
+                "",
+                "| File | Section | Code | Applies To | Justification |",
+                "|------|---------|------|------------|---------------|",
+            ])
+            for cfg in justified:
+                code = cfg.codes[0] if cfg.codes else "unknown"
+                file_display = cfg.file_path.split("/")[-1] if "/" in cfg.file_path else cfg.file_path
+                lines.append(f"| {file_display} | {cfg.section} | {code} | {cfg.applies_to} | {cfg.justification} |")
+            lines.append("")
 
     # Baseline drift
     if report.baseline_drift:
