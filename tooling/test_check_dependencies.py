@@ -254,7 +254,9 @@ dependencies = ["pytest>=8.0.0"]
 
             success, errors = check_package(pkg_dir, root_dir)
             assert success is False
-            assert any("dev dependencies in runtime" in error.lower() for error in errors)
+            assert any(
+                "dev dependencies in runtime" in error.lower() for error in errors
+            )
 
 
 class TestCheckRootWorkspace:
@@ -305,7 +307,10 @@ members = ["packages/*"]
 
             success, errors = check_root_workspace(tmp_path)
             assert success is False
-            assert any("dev dependencies in [project.dependencies]" in error.lower() for error in errors)
+            assert any(
+                "dev dependencies in [project.dependencies]" in error.lower()
+                for error in errors
+            )
 
     def test_runtime_deps_in_root(self) -> None:
         """Test detection of runtime deps in root workspace."""
@@ -326,7 +331,10 @@ members = ["packages/*"]
 
             success, errors = check_root_workspace(tmp_path)
             assert success is False
-            assert any("runtime dependencies should be in individual packages" in error.lower() for error in errors)
+            assert any(
+                "runtime dependencies should be in individual packages" in error.lower()
+                for error in errors
+            )
 
     def test_missing_workspace_config(self) -> None:
         """Test detection of missing workspace configuration."""

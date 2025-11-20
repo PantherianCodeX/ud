@@ -1,6 +1,6 @@
 # Quality Ignores Manifest
 
-Generated: 2025-11-20T00:43:14.814573+00:00
+Generated: 2025-11-20T00:51:08.320282+00:00
 
 ## Summary
 
@@ -8,7 +8,7 @@ Generated: 2025-11-20T00:43:14.814573+00:00
 - Ignores without justification: 0
 - Blanket ignores (warning): 0
 - Properly justified ignores: 5
-- Config ignores: 53
+- Config ignores: 68
 
 ## Code Ignores
 
@@ -79,3 +79,23 @@ Generated: 2025-11-20T00:43:14.814573+00:00
 | ruff.toml | lint.per-file-ignores | INP001 | **/alembic/env.py | Alembic directory is implicit namespace package |
 | ruff.toml | lint.per-file-ignores | ANN001 | **/alembic/env.py | Alembic boilerplate functions |
 | ruff.toml | lint.per-file-ignores | ANN201 | **/alembic/env.py | Alembic boilerplate functions |
+| pyproject.toml | tool.mypy.overrides | disallow_untyped_defs | tests.*, */tests/* | Test functions use pytest fixtures with implicit types |
+| pyproject.toml | tool.mypy.overrides | disallow_untyped_decorators | tests.*, */tests/* | pytest.mark decorators don't have type stubs |
+| pyproject.toml | tool.mypy.overrides | ignore_missing_imports | jose.*, passlib.*, structlog.*, alembic.*, celery.*, rabbitmq.*, fastapi.*, uvicorn.* | Third-party libraries without type stubs |
+| pyproject.toml | tool.mypy.overrides | ignore_errors | alembic.versions.* | Auto-generated migration files have dynamic patterns |
+| pylint.toml | tool.pylint.messages_control | line-too-long | global | Ruff handles line length enforcement |
+| pylint.toml | tool.pylint.messages_control | bad-indentation | global | Ruff handles indentation |
+| pylint.toml | tool.pylint.messages_control | bad-continuation | global | Ruff handles continuation style |
+| pylint.toml | tool.pylint.messages_control | too-few-public-methods | global | Pydantic models are data classes with few methods |
+| pylint.toml | tool.pylint.messages_control | no-self-argument | global | Pydantic validators use cls as first argument |
+| pylint.toml | tool.pylint.messages_control | no-self-use | global | Pydantic validators may not use self |
+| pylint.toml | tool.pylint.messages_control | redefined-outer-name | global | pytest fixtures intentionally shadow outer names |
+| pylint.toml | tool.pylint.messages_control | duplicate-code | global | High false positive rate, better suited for periodic scans |
+| pylint.toml | tool.pylint.messages_control | missing-module-docstring | global | Docstring rules handled by Ruff with Google style |
+| pylint.toml | tool.pylint.messages_control | missing-class-docstring | global | Docstring rules handled by Ruff with Google style |
+| pylint.toml | tool.pylint.messages_control | missing-function-docstring | global | Docstring rules handled by Ruff with Google style |
+
+## ⚠️ Baseline Drift Detected
+
+- configs/pyproject.toml: Config has been modified since baseline was recorded
+- configs/pylint.toml: Config has been modified since baseline was recorded

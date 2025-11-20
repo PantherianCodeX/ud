@@ -86,7 +86,9 @@ class AuditReport:
 
     timestamp: str
     code_ignores: list[IgnoreEntry] = field(default_factory=_empty_ignore_list)
-    config_ignores: list[ConfigIgnoreEntry] = field(default_factory=_empty_config_ignore_list)
+    config_ignores: list[ConfigIgnoreEntry] = field(
+        default_factory=_empty_config_ignore_list
+    )
     config_errors: list[str] = field(default_factory=_empty_str_list)
     baseline_drift: list[str] = field(default_factory=_empty_str_list)
     summary: dict[str, int] = field(default_factory=_empty_summary)
@@ -137,7 +139,11 @@ def find_python_files(root: Path, exclude_test_files: bool = True) -> list[Path]
         "htmlcov",
     }
 
-    files = [path for path in root.rglob("*.py") if not any(excluded in path.parts for excluded in exclude_dirs)]
+    files = [
+        path
+        for path in root.rglob("*.py")
+        if not any(excluded in path.parts for excluded in exclude_dirs)
+    ]
 
     if exclude_test_files:
         # Exclude test files as they contain test fixture data with intentional ignores
@@ -154,7 +160,12 @@ def extract_justification(line: str, prev_line: str | None) -> tuple[bool, str]:
         if match:
             # Extract text after the ignore directive
             ignore_end = max(
-                (m.end() for p in IGNORE_PATTERNS.values() for m in [re.search(p, line, re.IGNORECASE)] if m),
+                (
+                    m.end()
+                    for p in IGNORE_PATTERNS.values()
+                    for m in [re.search(p, line, re.IGNORECASE)]
+                    if m
+                ),
                 default=0,
             )
             justification = line[ignore_end:].strip(" #-")
@@ -189,12 +200,18 @@ def scan_file_for_ignores(file_path: Path, root: Path) -> list[IgnoreEntry]:
             if match:
                 # Extract specific codes if present
                 codes_str = match.group(1) if match.lastindex and match.group(1) else ""
-                codes = [c.strip() for c in codes_str.split(",") if c.strip()] if codes_str else []
+                codes = (
+                    [c.strip() for c in codes_str.split(",") if c.strip()]
+                    if codes_str
+                    else []
+                )
 
                 # Get previous line for justification check
                 prev_line = lines[line_num - 2] if line_num > 1 else None
 
-                has_justification, justification = extract_justification(line, prev_line)
+                has_justification, justification = extract_justification(
+                    line, prev_line
+                )
 
                 # Determine severity
                 if not has_justification:
@@ -271,7 +288,11 @@ def parse_ruff_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
                 code = code_match.group(1)
                 # Look for justification comment on this line
                 comment_match = re.search(r"#\s*JUSTIFIED:\s*(.+)", line)
-                justification = comment_match.group(1).strip() if comment_match else "No justification"
+                justification = (
+                    comment_match.group(1).strip()
+                    if comment_match
+                    else "No justification"
+                )
 
                 entries.append(
                     ConfigIgnoreEntry(
@@ -287,7 +308,16 @@ def parse_ruff_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
 
 
 def parse_mypy_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
-    """Parse ignore directives from mypy config in pyproject.toml."""
+    """Parse ignore directives from mypy config in pyproject.toml.
+
+    Extracts:
+    - ignore_missing_imports = true
+    - ignore_errors = true
+    - disallow_untyped_defs = false
+    - disallow_untyped_decorators = false
+
+    Each with its own justification from inline # JUSTIFIED: comments.
+    """
     entries: list[ConfigIgnoreEntry] = []
 
     if not config_path.exists():
@@ -295,34 +325,122 @@ def parse_mypy_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
 
     content = config_path.read_text(encoding="utf-8")
 
-    # Find override sections with ignores
-    override_pattern = r"\[\[tool\.mypy\.overrides\]\]([^[]+)"
+    # Find override sections - match until the next section header or end
+    override_pattern = r"\[\[tool\.mypy\.overrides\]\](.*?)(?=\[\[|\[tool\.|\Z)"
     for match in re.finditer(override_pattern, content, re.DOTALL):
         section_content = match.group(1)
+        section_lines = section_content.split("\n")
 
-        # Check for ignore_missing_imports or ignore_errors
-        if "ignore_missing_imports = true" in section_content or "ignore_errors = true" in section_content:
-            # Extract module patterns
-            module_match = re.search(r"module\s*=\s*\[([^\]]+)\]", section_content)
-            if module_match:
-                modules_str = module_match.group(1)
-                modules = [m.strip().strip('"').strip("'") for m in modules_str.split(",")]
+        # Extract module patterns - use DOTALL to match across newlines
+        module_match = re.search(
+            r"module\s*=\s*\[([^\]]+)\]", section_content, re.DOTALL
+        )
+        if not module_match:
+            # Try single module format: module = "pattern"
+            single_module = re.search(
+                r'module\s*=\s*["\']([^"\']+)["\']', section_content
+            )
+            if single_module:
+                modules = [single_module.group(1)]
+            else:
+                continue
+        else:
+            modules_str = module_match.group(1)
+            # Extract all quoted strings from the module list
+            modules = re.findall(r'["\']([^"\']+)["\']', modules_str)
 
-                # Look for justification comment before the override
-                start_pos = match.start()
-                prev_content = content[:start_pos]
-                comment_match = re.search(r"#\s*(.+)\n\s*$", prev_content)
-                justification = comment_match.group(1).strip() if comment_match else "No justification"
+        applies_to = ", ".join(modules)
 
-                ignore_type = "ignore_errors" if "ignore_errors = true" in section_content else "ignore_missing_imports"
+        # Look for justification comment before the override section
+        start_pos = match.start()
+        prev_content = content[:start_pos]
+        section_comment_match = re.search(r"#\s*JUSTIFIED:\s*(.+)\n\s*$", prev_content)
+        section_justification = (
+            section_comment_match.group(1).strip() if section_comment_match else ""
+        )
+
+        # Check each line for ignore directives
+        ignore_directives = [
+            ("ignore_missing_imports", r"ignore_missing_imports\s*=\s*true"),
+            ("ignore_errors", r"ignore_errors\s*=\s*true"),
+            ("disallow_untyped_defs", r"disallow_untyped_defs\s*=\s*false"),
+            ("disallow_untyped_decorators", r"disallow_untyped_decorators\s*=\s*false"),
+        ]
+
+        for directive_name, directive_pattern in ignore_directives:
+            for line in section_lines:
+                if re.search(directive_pattern, line):
+                    # Look for inline justification
+                    inline_match = re.search(r"#\s*JUSTIFIED:\s*(.+)", line)
+                    if inline_match:
+                        justification = inline_match.group(1).strip()
+                    elif section_justification:
+                        justification = section_justification
+                    else:
+                        justification = "No justification"
+
+                    entries.append(
+                        ConfigIgnoreEntry(
+                            file_path=str(config_path),
+                            section="tool.mypy.overrides",
+                            codes=[directive_name],
+                            justification=justification,
+                            applies_to=applies_to,
+                        )
+                    )
+                    break  # Only add once per directive per section
+
+    return entries
+
+
+def parse_pylint_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
+    """Parse ignore directives from pylint config in pylint.toml.
+
+    Extracts disabled rules from [tool.pylint.messages_control] disable list,
+    each with its own justification from inline # JUSTIFIED: comments.
+    """
+    entries: list[ConfigIgnoreEntry] = []
+
+    if not config_path.exists():
+        return entries
+
+    content = config_path.read_text(encoding="utf-8")
+    lines = content.split("\n")
+
+    in_disable_list = False
+
+    for line in lines:
+        # Check for disable list start
+        if re.match(r"disable\s*=\s*\[", line):
+            in_disable_list = True
+            continue
+
+        # Check for list end
+        if in_disable_list and "]" in line and not re.search(r'"[^"]*\]', line):
+            in_disable_list = False
+            continue
+
+        # Inside disable list - extract each rule
+        if in_disable_list:
+            rule_match = re.search(r'"([a-z0-9-]+)"', line)
+            if rule_match:
+                rule = rule_match.group(1)
+
+                # Look for inline justification
+                comment_match = re.search(r"#\s*JUSTIFIED:\s*(.+)", line)
+                justification = (
+                    comment_match.group(1).strip()
+                    if comment_match
+                    else "No justification"
+                )
 
                 entries.append(
                     ConfigIgnoreEntry(
                         file_path=str(config_path),
-                        section="tool.mypy.overrides",
-                        codes=[ignore_type],
+                        section="tool.pylint.messages_control",
+                        codes=[rule],
                         justification=justification,
-                        applies_to=", ".join(modules),
+                        applies_to="global",
                     )
                 )
 
@@ -349,7 +467,9 @@ def check_config_strictness(root: Path) -> list[str]:
     mypy_config = root / "configs" / "pyproject.toml"
     if mypy_config.exists():
         content = mypy_config.read_text(encoding="utf-8")
-        if not re.search(r"^\s*strict\s*=\s*true", content, re.MULTILINE | re.IGNORECASE):
+        if not re.search(
+            r"^\s*strict\s*=\s*true", content, re.MULTILINE | re.IGNORECASE
+        ):
             errors.append(f"{mypy_config}: 'strict = true' must be set")
 
         required_settings = ["disallow_untyped_defs", "disallow_any_generics"]
@@ -383,10 +503,14 @@ def load_baseline(baseline_path: Path) -> dict[str, str]:
 
 def save_baseline(baseline_path: Path, hashes: dict[str, str]) -> None:
     """Save baseline config hashes to file."""
-    baseline_path.write_text(json.dumps(hashes, indent=2, sort_keys=True), encoding="utf-8")
+    baseline_path.write_text(
+        json.dumps(hashes, indent=2, sort_keys=True), encoding="utf-8"
+    )
 
 
-def check_baseline_drift(root: Path, baseline_path: Path) -> tuple[list[str], dict[str, str]]:
+def check_baseline_drift(
+    root: Path, baseline_path: Path
+) -> tuple[list[str], dict[str, str]]:
     """Check if config files have drifted from baseline."""
     drift: list[str] = []
     current_hashes: dict[str, str] = {}
@@ -410,7 +534,9 @@ def check_baseline_drift(root: Path, baseline_path: Path) -> tuple[list[str], di
         for file_path, current_hash in current_hashes.items():
             baseline_hash = baseline.get(file_path)
             if baseline_hash and baseline_hash != current_hash:
-                drift.append(f"{file_path}: Config has been modified since baseline was recorded")
+                drift.append(
+                    f"{file_path}: Config has been modified since baseline was recorded"
+                )
             elif not baseline_hash:
                 drift.append(f"{file_path}: New config file not in baseline")
 
@@ -440,10 +566,12 @@ def generate_markdown_manifest(report: AuditReport, output_path: Path) -> None:
 
     # Code ignores by severity
     if report.code_ignores:
-        lines.extend([
-            "## Code Ignores",
-            "",
-        ])
+        lines.extend(
+            [
+                "## Code Ignores",
+                "",
+            ]
+        )
 
         # Group by severity
         errors = [e for e in report.code_ignores if e.severity == "error"]
@@ -451,88 +579,124 @@ def generate_markdown_manifest(report: AuditReport, output_path: Path) -> None:
         info = [e for e in report.code_ignores if e.severity == "info"]
 
         if errors:
-            lines.extend([
-                "### ❌ Missing Justification (Must Fix)",
-                "",
-                "| File | Line | Type | Content |",
-                "|------|------|------|---------|",
-            ])
+            lines.extend(
+                [
+                    "### ❌ Missing Justification (Must Fix)",
+                    "",
+                    "| File | Line | Type | Content |",
+                    "|------|------|------|---------|",
+                ]
+            )
             for e in errors:
-                lines.append(f"| {e.file_path} | {e.line_number} | {e.ignore_type} | `{e.content[:60]}` |")
+                lines.append(
+                    f"| {e.file_path} | {e.line_number} | {e.ignore_type} | `{e.content[:60]}` |"
+                )
             lines.append("")
 
         if warnings:
-            lines.extend([
-                "### ⚠️ Blanket Ignores (Should Specify Codes)",
-                "",
-                "| File | Line | Type | Content |",
-                "|------|------|------|---------|",
-            ])
+            lines.extend(
+                [
+                    "### ⚠️ Blanket Ignores (Should Specify Codes)",
+                    "",
+                    "| File | Line | Type | Content |",
+                    "|------|------|------|---------|",
+                ]
+            )
             for e in warnings:
-                lines.append(f"| {e.file_path} | {e.line_number} | {e.ignore_type} | `{e.content[:60]}` |")
+                lines.append(
+                    f"| {e.file_path} | {e.line_number} | {e.ignore_type} | `{e.content[:60]}` |"
+                )
             lines.append("")
 
         if info:
-            lines.extend([
-                "### ✅ Properly Justified",
-                "",
-                "| File | Line | Type | Codes | Justification |",
-                "|------|------|------|-------|---------------|",
-            ])
+            lines.extend(
+                [
+                    "### ✅ Properly Justified",
+                    "",
+                    "| File | Line | Type | Codes | Justification |",
+                    "|------|------|------|-------|---------------|",
+                ]
+            )
             for e in info:
                 codes_str = ", ".join(e.ignore_codes) if e.ignore_codes else "all"
-                lines.append(f"| {e.file_path} | {e.line_number} | {e.ignore_type} | {codes_str} | {e.justification[:50]} |")
+                lines.append(
+                    f"| {e.file_path} | {e.line_number} | {e.ignore_type} | {codes_str} | {e.justification[:50]} |"
+                )
             lines.append("")
 
     # Config ignores
     if report.config_ignores:
         # Separate justified from unjustified
-        unjustified = [e for e in report.config_ignores if e.justification == "No justification"]
-        justified = [e for e in report.config_ignores if e.justification != "No justification"]
+        unjustified = [
+            e for e in report.config_ignores if e.justification == "No justification"
+        ]
+        justified = [
+            e for e in report.config_ignores if e.justification != "No justification"
+        ]
 
         if unjustified:
-            lines.extend([
-                "## ❌ Config Ignores Missing Justification",
-                "",
-                "| File | Section | Code | Applies To |",
-                "|------|---------|------|------------|",
-            ])
+            lines.extend(
+                [
+                    "## ❌ Config Ignores Missing Justification",
+                    "",
+                    "| File | Section | Code | Applies To |",
+                    "|------|---------|------|------------|",
+                ]
+            )
             for cfg in unjustified:
                 code = cfg.codes[0] if cfg.codes else "unknown"
                 # Use relative path for readability
-                file_display = cfg.file_path.split("/")[-1] if "/" in cfg.file_path else cfg.file_path
-                lines.append(f"| {file_display} | {cfg.section} | {code} | {cfg.applies_to} |")
+                file_display = (
+                    cfg.file_path.split("/")[-1]
+                    if "/" in cfg.file_path
+                    else cfg.file_path
+                )
+                lines.append(
+                    f"| {file_display} | {cfg.section} | {code} | {cfg.applies_to} |"
+                )
             lines.append("")
 
         if justified:
-            lines.extend([
-                "## ✅ Config Ignores (Justified)",
-                "",
-                "| File | Section | Code | Applies To | Justification |",
-                "|------|---------|------|------------|---------------|",
-            ])
+            lines.extend(
+                [
+                    "## ✅ Config Ignores (Justified)",
+                    "",
+                    "| File | Section | Code | Applies To | Justification |",
+                    "|------|---------|------|------------|---------------|",
+                ]
+            )
             for cfg in justified:
                 code = cfg.codes[0] if cfg.codes else "unknown"
-                file_display = cfg.file_path.split("/")[-1] if "/" in cfg.file_path else cfg.file_path
-                lines.append(f"| {file_display} | {cfg.section} | {code} | {cfg.applies_to} | {cfg.justification} |")
+                file_display = (
+                    cfg.file_path.split("/")[-1]
+                    if "/" in cfg.file_path
+                    else cfg.file_path
+                )
+                lines.append(
+                    f"| {file_display} | {cfg.section} | {code} | {cfg.applies_to} | {cfg.justification} |"
+                )
             lines.append("")
 
     # Baseline drift
     if report.baseline_drift:
-        lines.extend([
-            "## ⚠️ Baseline Drift Detected",
-            "",
-        ])
+        lines.extend(
+            [
+                "## ⚠️ Baseline Drift Detected",
+                "",
+            ]
+        )
         for drift in report.baseline_drift:
             lines.append(f"- {drift}")
         lines.append("")
 
     # Config errors
     if report.config_errors:
-        lines.extend([
-            "## ❌ Configuration Errors",
-            "",
-        ])
+        lines.extend(
+            [
+                "## ❌ Configuration Errors",
+                "",
+            ]
+        )
         for error in report.config_errors:
             lines.append(f"- {error}")
         lines.append("")
@@ -596,8 +760,15 @@ def run_audit(
 
     # 2. Parse config ignores
     print("  Parsing config file ignores...")
-    report.config_ignores.extend(parse_ruff_config_ignores(root / "configs" / "ruff.toml"))
-    report.config_ignores.extend(parse_mypy_config_ignores(root / "configs" / "pyproject.toml"))
+    report.config_ignores.extend(
+        parse_ruff_config_ignores(root / "configs" / "ruff.toml")
+    )
+    report.config_ignores.extend(
+        parse_mypy_config_ignores(root / "configs" / "pyproject.toml")
+    )
+    report.config_ignores.extend(
+        parse_pylint_config_ignores(root / "configs" / "pylint.toml")
+    )
 
     # 3. Check config strictness
     print("  Checking config strictness...")
@@ -651,11 +822,25 @@ def run_audit(
 
 def main() -> int:
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Quality audit: ignores manifest and config baseline enforcement")
-    parser.add_argument("--manifest", action="store_true", help="Generate markdown manifest of all ignores")
-    parser.add_argument("--update-baseline", action="store_true", help="Update config baseline with current hashes")
-    parser.add_argument("--dry-run", action="store_true", help="Run checks without writing files")
-    parser.add_argument("--root", type=Path, default=None, help="Project root directory")
+    parser = argparse.ArgumentParser(
+        description="Quality audit: ignores manifest and config baseline enforcement"
+    )
+    parser.add_argument(
+        "--manifest",
+        action="store_true",
+        help="Generate markdown manifest of all ignores",
+    )
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="Update config baseline with current hashes",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Run checks without writing files"
+    )
+    parser.add_argument(
+        "--root", type=Path, default=None, help="Project root directory"
+    )
 
     args = parser.parse_args()
 

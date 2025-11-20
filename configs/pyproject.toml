@@ -62,8 +62,6 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 # Per-module options for test files
-# JUSTIFIED: Test functions often use fixtures that don't need explicit typing
-# Keep other strict checks enabled to maintain quality
 [[tool.mypy.overrides]]
 module = ["tests.*", "*/tests/*"]
 disallow_untyped_defs = false  # JUSTIFIED: Test functions use pytest fixtures with implicit types
@@ -81,9 +79,9 @@ module = [
     "fastapi.*",
     "uvicorn.*",
 ]
-ignore_missing_imports = true
+ignore_missing_imports = true  # JUSTIFIED: Third-party libraries without type stubs
 
 # Alembic migration files
 [[tool.mypy.overrides]]
 module = "alembic.versions.*"
-ignore_errors = true
+ignore_errors = true  # JUSTIFIED: Auto-generated migration files have dynamic patterns

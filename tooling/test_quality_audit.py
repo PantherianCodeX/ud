@@ -17,6 +17,7 @@ from quality_audit import (
     generate_markdown_manifest,
     load_baseline,
     parse_mypy_config_ignores,
+    parse_pylint_config_ignores,
     parse_ruff_config_ignores,
     save_baseline,
     scan_file_for_ignores,
@@ -154,7 +155,9 @@ class TestScanFileForIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text("x = 1  # type: ignore[arg-type]  # because API mismatch\n")
+            test_file.write_text(
+                "x = 1  # type: ignore[arg-type]  # because API mismatch\n"
+            )
 
             entries = scan_file_for_ignores(test_file, tmp_path)
             assert len(entries) == 1
@@ -178,7 +181,9 @@ class TestScanFileForIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text("x = 1  # pylint: disable=invalid-name  # because legacy\n")
+            test_file.write_text(
+                "x = 1  # pylint: disable=invalid-name  # because legacy\n"
+            )
 
             entries = scan_file_for_ignores(test_file, tmp_path)
             assert len(entries) == 1
@@ -258,7 +263,10 @@ ignore = [
             s101_entry = next((e for e in entries if "S101" in e.codes), None)
             assert s101_entry is not None
             assert s101_entry.applies_to == "tests/*.py"
-            assert "Assert" in s101_entry.justification or "pytest" in s101_entry.justification
+            assert (
+                "Assert" in s101_entry.justification
+                or "pytest" in s101_entry.justification
+            )
 
     def test_parse_nonexistent_config(self) -> None:
         """Test parsing nonexistent config returns empty list."""
@@ -282,7 +290,10 @@ ignore = [
             e501_entry = next((e for e in entries if "E501" in e.codes), None)
             assert e501_entry is not None
             # Should indicate missing justification
-            assert "No justification" in e501_entry.justification or not e501_entry.justification
+            assert (
+                "No justification" in e501_entry.justification
+                or not e501_entry.justification
+            )
 
 
 class TestParseMypyConfigIgnores:
@@ -293,11 +304,11 @@ class TestParseMypyConfigIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             config_file = tmp_path / "pyproject.toml"
-            # Use array syntax for module to match parser expectation
             config_file.write_text("""
 [tool.mypy]
 strict = true
 
+# JUSTIFIED: Third-party libraries without stubs
 [[tool.mypy.overrides]]
 module = [
     "jose.*",
@@ -307,28 +318,222 @@ ignore_missing_imports = true
 """)
 
             entries = parse_mypy_config_ignores(config_file)
-            # Parser may or may not find entries depending on regex matching
-            # This tests the function doesn't crash and returns a list
-            assert isinstance(entries, list)
+            assert len(entries) >= 1
+            imports_entry = next(
+                (e for e in entries if "ignore_missing_imports" in e.codes), None
+            )
+            assert imports_entry is not None
+            assert "jose.*" in imports_entry.applies_to
+            assert "passlib.*" in imports_entry.applies_to
+            assert "Third-party" in imports_entry.justification
 
     def test_parse_ignore_errors(self) -> None:
         """Test parsing ignore_errors overrides."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             config_file = tmp_path / "pyproject.toml"
-            # Use array syntax to match parser expectation
             config_file.write_text("""
 [tool.mypy]
 strict = true
 
+# JUSTIFIED: Auto-generated migration files
 [[tool.mypy.overrides]]
 module = ["alembic.versions.*"]
 ignore_errors = true
 """)
 
             entries = parse_mypy_config_ignores(config_file)
-            # This tests the function doesn't crash and returns a list
-            assert isinstance(entries, list)
+            assert len(entries) >= 1
+            errors_entry = next(
+                (e for e in entries if "ignore_errors" in e.codes), None
+            )
+            assert errors_entry is not None
+            assert "alembic.versions.*" in errors_entry.applies_to
+            assert "Auto-generated" in errors_entry.justification
+
+    def test_parse_disallow_untyped_defs_false(self) -> None:
+        """Test parsing disallow_untyped_defs = false overrides."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text("""
+[tool.mypy]
+strict = true
+
+# JUSTIFIED: Test functions use pytest fixtures
+[[tool.mypy.overrides]]
+module = ["tests.*", "*/tests/*"]
+disallow_untyped_defs = false  # JUSTIFIED: Test functions use pytest fixtures with implicit types
+disallow_untyped_decorators = false  # JUSTIFIED: pytest.mark decorators don't have type stubs
+""")
+
+            entries = parse_mypy_config_ignores(config_file)
+            # Should find both disallow_untyped_defs and disallow_untyped_decorators
+            defs_entry = next(
+                (e for e in entries if "disallow_untyped_defs" in e.codes), None
+            )
+            decorators_entry = next(
+                (e for e in entries if "disallow_untyped_decorators" in e.codes), None
+            )
+            assert defs_entry is not None
+            assert decorators_entry is not None
+            assert "tests.*" in defs_entry.applies_to
+            assert (
+                "pytest" in defs_entry.justification.lower()
+                or "test" in defs_entry.justification.lower()
+            )
+
+    def test_parse_multiple_overrides(self) -> None:
+        """Test parsing multiple override sections."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text("""
+[tool.mypy]
+strict = true
+
+# JUSTIFIED: Test relaxations
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false  # JUSTIFIED: pytest fixtures
+
+# JUSTIFIED: Third-party stubs missing
+[[tool.mypy.overrides]]
+module = ["jose.*", "passlib.*"]
+ignore_missing_imports = true
+
+# JUSTIFIED: Migration files are auto-generated
+[[tool.mypy.overrides]]
+module = ["alembic.versions.*"]
+ignore_errors = true
+""")
+
+            entries = parse_mypy_config_ignores(config_file)
+            # Should find at least 3 entries
+            assert len(entries) >= 3
+            # Verify different types found
+            codes = {e.codes[0] for e in entries}
+            assert "disallow_untyped_defs" in codes
+            assert "ignore_missing_imports" in codes
+            assert "ignore_errors" in codes
+
+    def test_missing_justification_reported(self) -> None:
+        """Test that missing justifications are reported."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text("""
+[tool.mypy]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["jose.*"]
+ignore_missing_imports = true
+""")
+
+            entries = parse_mypy_config_ignores(config_file)
+            assert len(entries) >= 1
+            # Should have "No justification" or similar
+            assert any(
+                "No justification" in e.justification or not e.justification
+                for e in entries
+            )
+
+
+class TestParsePylintConfigIgnores:
+    """Test parsing of pylint config ignores."""
+
+    def test_parse_disabled_rules(self) -> None:
+        """Test parsing disabled rules from pylint config."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pylint.toml"
+            config_file.write_text("""
+[tool.pylint.messages_control]
+disable = [
+    # JUSTIFIED: Formatting handled by Ruff
+    "line-too-long",  # JUSTIFIED: Ruff handles line length
+    "bad-indentation",  # JUSTIFIED: Ruff handles indentation
+
+    # JUSTIFIED: Pydantic patterns
+    "too-few-public-methods",  # JUSTIFIED: Pydantic models
+]
+""")
+
+            entries = parse_pylint_config_ignores(config_file)
+            assert len(entries) == 3
+
+            # Check each rule has its own justification
+            line_too_long = next(
+                (e for e in entries if "line-too-long" in e.codes), None
+            )
+            assert line_too_long is not None
+            assert "Ruff" in line_too_long.justification
+
+            pydantic = next(
+                (e for e in entries if "too-few-public-methods" in e.codes), None
+            )
+            assert pydantic is not None
+            assert "Pydantic" in pydantic.justification
+
+    def test_parse_without_justifications(self) -> None:
+        """Test detection of rules without justifications."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pylint.toml"
+            config_file.write_text("""
+[tool.pylint.messages_control]
+disable = [
+    "line-too-long",
+    "bad-indentation",
+]
+""")
+
+            entries = parse_pylint_config_ignores(config_file)
+            assert len(entries) == 2
+            # All should have "No justification"
+            assert all(e.justification == "No justification" for e in entries)
+
+    def test_parse_mixed_justifications(self) -> None:
+        """Test parsing with some rules justified and some not."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pylint.toml"
+            config_file.write_text("""
+[tool.pylint.messages_control]
+disable = [
+    "line-too-long",  # JUSTIFIED: Ruff handles this
+    "bad-indentation",
+    "too-few-public-methods",  # JUSTIFIED: Pydantic models
+]
+""")
+
+            entries = parse_pylint_config_ignores(config_file)
+            assert len(entries) == 3
+
+            justified = [e for e in entries if e.justification != "No justification"]
+            unjustified = [e for e in entries if e.justification == "No justification"]
+
+            assert len(justified) == 2
+            assert len(unjustified) == 1
+
+    def test_nonexistent_config(self) -> None:
+        """Test handling of nonexistent config file."""
+        entries = parse_pylint_config_ignores(Path("/nonexistent/pylint.toml"))
+        assert entries == []
+
+    def test_empty_disable_list(self) -> None:
+        """Test parsing empty disable list."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pylint.toml"
+            config_file.write_text("""
+[tool.pylint.messages_control]
+disable = []
+""")
+
+            entries = parse_pylint_config_ignores(config_file)
+            assert len(entries) == 0
 
 
 class TestCheckConfigStrictness:
@@ -522,7 +727,13 @@ class TestGenerateMarkdownManifest:
                 config_ignores=[],
                 config_errors=[],
                 baseline_drift=[],
-                summary={"total_code_ignores": 1, "errors": 1, "warnings": 0, "info": 0, "config_ignores": 0},
+                summary={
+                    "total_code_ignores": 1,
+                    "errors": 1,
+                    "warnings": 0,
+                    "info": 0,
+                    "config_ignores": 0,
+                },
             )
 
             generate_markdown_manifest(report, output_path)
@@ -552,7 +763,13 @@ class TestGenerateMarkdownManifest:
                 ],
                 config_errors=[],
                 baseline_drift=[],
-                summary={"total_code_ignores": 0, "errors": 0, "warnings": 0, "info": 0, "config_ignores": 1},
+                summary={
+                    "total_code_ignores": 0,
+                    "errors": 0,
+                    "warnings": 0,
+                    "info": 0,
+                    "config_ignores": 1,
+                },
             )
 
             generate_markdown_manifest(report, output_path)

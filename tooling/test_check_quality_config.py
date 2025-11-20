@@ -215,7 +215,9 @@ class TestCheckInlineIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text("x = 1  # pylint: disable=invalid-name  # because legacy\n")
+            test_file.write_text(
+                "x = 1  # pylint: disable=invalid-name  # because legacy\n"
+            )
 
             errors = check_inline_ignores(test_file)
             assert len(errors) == 0
@@ -225,7 +227,9 @@ class TestCheckInlineIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text("# JUSTIFIED: This is necessary for compatibility\nx = 1  # type: ignore\n")
+            test_file.write_text(
+                "# JUSTIFIED: This is necessary for compatibility\nx = 1  # type: ignore\n"
+            )
 
             errors = check_inline_ignores(test_file)
             assert len(errors) == 0

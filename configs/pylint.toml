@@ -41,26 +41,17 @@ enable = "all"
 [tool.pylint.messages_control]
 # Minimal disable list - only genuine conflicts with justifications
 disable = [
-    # JUSTIFIED: Formatting handled by Ruff - duplicate checking causes conflicts
-    "line-too-long",           # Ruff handles line length enforcement
-    "bad-indentation",         # Ruff handles indentation
-    "bad-continuation",        # Ruff handles continuation style
-
-    # JUSTIFIED: Pydantic model patterns require these exemptions
-    "too-few-public-methods",  # Pydantic models are data classes with few methods
-    "no-self-argument",        # Pydantic validators use 'cls' as first argument
-    "no-self-use",             # Pydantic validators may not use self
-
-    # JUSTIFIED: pytest fixture injection pattern
-    "redefined-outer-name",    # pytest fixtures intentionally shadow outer names
-
-    # JUSTIFIED: Duplicate detection disabled - enable via CI when needed
-    "duplicate-code",          # High false positive rate, better suited for periodic scans
-
-    # JUSTIFIED: Docstring rules handled by Ruff with Google style
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "missing-function-docstring",
+    "line-too-long",  # JUSTIFIED: Ruff handles line length enforcement
+    "bad-indentation",  # JUSTIFIED: Ruff handles indentation
+    "bad-continuation",  # JUSTIFIED: Ruff handles continuation style
+    "too-few-public-methods",  # JUSTIFIED: Pydantic models are data classes with few methods
+    "no-self-argument",  # JUSTIFIED: Pydantic validators use cls as first argument
+    "no-self-use",  # JUSTIFIED: Pydantic validators may not use self
+    "redefined-outer-name",  # JUSTIFIED: pytest fixtures intentionally shadow outer names
+    "duplicate-code",  # JUSTIFIED: High false positive rate, better suited for periodic scans
+    "missing-module-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+    "missing-class-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+    "missing-function-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
 ]
 
 # Enable additional checks
