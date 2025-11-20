@@ -13,7 +13,7 @@ import ast
 import sys
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 # Known standard library modules (not exhaustive, add as needed)
 STDLIB_MODULES = {
@@ -96,6 +96,7 @@ class ImportVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.imports: set[str] = set()
 
+    @override
     def visit_Import(self, node: ast.Import) -> None:
         """Visit import statements."""
         for alias in node.names:
@@ -104,6 +105,7 @@ class ImportVisitor(ast.NodeVisitor):
             self.imports.add(module)
         self.generic_visit(node)
 
+    @override
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         """Visit from...import statements."""
         if node.module:
@@ -168,7 +170,7 @@ def get_package_internal_modules(package_dir: Path) -> set[str]:
     For example, py-domain has modules: py_domain, base, matter, analysis, etc.
     Also detects internal app modules like 'core', 'config', etc.
     """
-    internal_modules = set()
+    internal_modules: set[str] = set()
 
     # Check if this is a src-layout package
     src_dir = package_dir / "src"
@@ -202,7 +204,7 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
     Returns:
         Tuple of (success: bool, errors: list[str])
     """
-    errors = []
+    errors: list[str] = []
     pyproject_path = package_dir / "pyproject.toml"
 
     # Skip TypeScript packages (they use package.json instead)
@@ -231,8 +233,8 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
     internal_modules = get_package_internal_modules(package_dir)
 
     # Get declared dependencies
-    runtime_deps = set()
-    dev_deps = set()
+    runtime_deps: set[str] = set()
+    dev_deps: set[str] = set()
 
     for dep in project.get("dependencies", []):
         pkg = get_package_name(dep)
@@ -244,14 +246,14 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
 
     # Find all Python files and extract imports
     python_files = find_python_files(package_dir)
-    all_imports = set()
+    all_imports: set[str] = set()
 
     for py_file in python_files:
         file_imports = extract_imports(py_file)
         all_imports.update(file_imports)
 
     # Map imports to package names
-    required_packages = set()
+    required_packages: set[str] = set()
     for imp in all_imports:
         if imp in STDLIB_MODULES:
             continue
@@ -295,7 +297,7 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
     # Check that dev dependencies are in dev section
     dev_should_be_dev = required_packages & DEV_DEPENDENCIES
     dev_missing_from_dev = dev_should_be_dev - dev_deps
-    if dev_missing_from_dev and dev_missing_from_dev not in runtime_deps:
+    if dev_missing_from_dev:
         # Only warn if they're used but not declared anywhere
         actually_missing = dev_missing_from_dev - runtime_deps
         if actually_missing:
@@ -308,7 +310,7 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
 
 def check_root_workspace(root_dir: Path) -> tuple[bool, list[str]]:
     """Check the root workspace pyproject.toml."""
-    errors = []
+    errors: list[str] = []
     pyproject_path = root_dir / "pyproject.toml"
 
     if not pyproject_path.exists():
@@ -326,8 +328,8 @@ def check_root_workspace(root_dir: Path) -> tuple[bool, list[str]]:
     project_deps = config.get("project", {}).get("dependencies", [])
     config.get("tool", {}).get("uv", {}).get("dev-dependencies", [])
 
-    runtime_in_project = set()
-    dev_in_project = set()
+    runtime_in_project: set[str] = set()
+    dev_in_project: set[str] = set()
 
     for dep in project_deps:
         pkg = get_package_name(dep)
@@ -355,7 +357,7 @@ def main() -> int:
     """Main entry point."""
     root_dir = Path(__file__).parent.parent
 
-    all_errors = []
+    all_errors: list[str] = []
 
     # Check root workspace
     success, errors = check_root_workspace(root_dir)
