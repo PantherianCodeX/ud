@@ -23,8 +23,9 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent  # project root
 
@@ -68,7 +69,7 @@ def build_prompt(prp_path: Path) -> str:
     return META_HEADER + prp_path.read_text()
 
 
-def stream_json_output(process: subprocess.Popen) -> Iterator[Dict[str, Any]]:
+def stream_json_output(process: subprocess.Popen) -> Iterator[dict[str, Any]]:
     """Parse streaming JSON output line by line."""
     for line in process.stdout:
         line = line.strip()
@@ -80,7 +81,7 @@ def stream_json_output(process: subprocess.Popen) -> Iterator[Dict[str, Any]]:
                 print(f"Line content: {line}", file=sys.stderr)
 
 
-def handle_json_output(output: str) -> Dict[str, Any]:
+def handle_json_output(output: str) -> dict[str, Any]:
     """Parse the JSON output from Claude Code."""
     try:
         return json.loads(output)
@@ -187,7 +188,7 @@ def run_model(
 
         elif output_format == "json":
             # Handle complete JSON output
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True)
             if result.returncode != 0:
                 print(
                     f"Claude Code failed with exit code {result.returncode}",

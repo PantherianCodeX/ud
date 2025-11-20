@@ -7,7 +7,7 @@
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Configuration management with Pydantic settings."""
 
-from pydantic import Field, PostgresDsn, field_validator
+from pydantic import Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -44,21 +44,6 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = Field(default="INFO", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     log_json: bool = True
-
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
-        """Parse CORS origins from comma-separated string or list.
-
-        Args:
-            v: Either a comma-separated string or list of origins.
-
-        Returns:
-            List of CORS origin strings.
-        """
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
 
 
 # Global settings instance

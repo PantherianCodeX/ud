@@ -565,8 +565,7 @@ def discover_config_files(root: Path) -> list[Path]:
     # All TOML files in configs directory
     configs_dir = root / "configs"
     if configs_dir.exists():
-        for toml_file in configs_dir.glob("*.toml"):
-            config_files.append(toml_file)
+        config_files.extend(configs_dir.glob("*.toml"))
 
     # Check root pyproject.toml for quality tool configs
     root_pyproject = root / "pyproject.toml"

@@ -22,7 +22,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -66,14 +65,13 @@ def run_command(
     print(f"→ Running: {command_name} {arguments}", file=sys.stderr)
 
     if capture_output:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=False, capture_output=True, text=True)
         return result.returncode, result.stdout
-    else:
-        result = subprocess.run(cmd)
-        return result.returncode, ""
+    result = subprocess.run(cmd, check=False)
+    return result.returncode, ""
 
 
-def extract_prp_path(output: str) -> Optional[str]:
+def extract_prp_path(output: str) -> str | None:
     """Extract PRP file path from prp-core-create output.
 
     Looks for patterns like:
@@ -81,19 +79,19 @@ def extract_prp_path(output: str) -> Optional[str]:
     - Full path to PRP file
     """
     # Try to find .claude/PRPs/features/*.md pattern
-    match = re.search(r'\.claude/PRPs/features/[a-z0-9_-]+\.md', output)
+    match = re.search(r"\.claude/PRPs/features/[a-z0-9_-]+\.md", output)
     if match:
         return match.group(0)
 
     # Try to find quoted path
-    match = re.search(r'`([^`]*\.claude/PRPs/features/[^`]+\.md)`', output)
+    match = re.search(r"`([^`]*\.claude/PRPs/features/[^`]+\.md)`", output)
     if match:
         return match.group(1)
 
     return None
 
 
-def workflow_create(feature_description: str) -> Optional[str]:
+def workflow_create(feature_description: str) -> str | None:
     """Step 1: Create PRP.
 
     Returns:
@@ -171,7 +169,7 @@ def workflow_commit() -> bool:
     return True
 
 
-def workflow_pr(pr_title: Optional[str] = None) -> bool:
+def workflow_pr(pr_title: str | None = None) -> bool:
     """Step 4: Create PR.
 
     Returns:
