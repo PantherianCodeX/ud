@@ -547,6 +547,46 @@ def save_baseline(baseline_path: Path, hashes: dict[str, str]) -> None:
     )
 
 
+def discover_config_files(root: Path) -> list[Path]:
+    """Dynamically discover all quality config files in the codebase.
+
+    Finds:
+    - pyrightconfig.json at root
+    - All *.toml files in configs/ directory
+    - Any pyproject.toml with [tool.mypy], [tool.ruff], or [tool.pylint] sections
+    """
+    config_files: list[Path] = []
+
+    # Pyright config at root
+    pyright_config = root / "pyrightconfig.json"
+    if pyright_config.exists():
+        config_files.append(pyright_config)
+
+    # All TOML files in configs directory
+    configs_dir = root / "configs"
+    if configs_dir.exists():
+        for toml_file in configs_dir.glob("*.toml"):
+            config_files.append(toml_file)
+
+    # Check root pyproject.toml for quality tool configs
+    root_pyproject = root / "pyproject.toml"
+    if root_pyproject.exists():
+        content = root_pyproject.read_text(encoding="utf-8")
+        # Only track if it has quality tool configs
+        if any(
+            section in content
+            for section in [
+                "[tool.mypy]",
+                "[tool.ruff]",
+                "[tool.pylint]",
+                "[tool.pyright]",
+            ]
+        ):
+            config_files.append(root_pyproject)
+
+    return sorted(config_files)
+
+
 def check_baseline_drift(
     root: Path, baseline_path: Path
 ) -> tuple[list[str], dict[str, str]]:
@@ -554,12 +594,7 @@ def check_baseline_drift(
     drift: list[str] = []
     current_hashes: dict[str, str] = {}
 
-    config_files = [
-        root / "pyrightconfig.json",
-        root / "configs" / "pyproject.toml",
-        root / "configs" / "ruff.toml",
-        root / "configs" / "pylint.toml",
-    ]
+    config_files = discover_config_files(root)
 
     for config_file in config_files:
         if config_file.exists():

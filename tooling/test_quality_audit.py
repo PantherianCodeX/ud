@@ -12,6 +12,7 @@ from quality_audit import (
     check_baseline_drift,
     check_config_strictness,
     compute_file_hash,
+    discover_config_files,
     extract_justification,
     find_python_files,
     generate_markdown_manifest,
@@ -892,6 +893,257 @@ disallow_any_generics = true
 
             errors = check_config_strictness(tmp_path)
             assert len(errors) > 0
+
+
+class TestDiscoverConfigFiles:
+    """Test dynamic config file discovery."""
+
+    def test_discover_all_config_files(self) -> None:
+        """Test discovery of all config file types."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Create pyright config
+            (tmp_path / "pyrightconfig.json").write_text(
+                '{"typeCheckingMode": "strict"}'
+            )
+
+            # Create configs directory with all toml files
+            configs_dir = tmp_path / "configs"
+            configs_dir.mkdir()
+            (configs_dir / "pyproject.toml").write_text("[tool.mypy]\nstrict = true")
+            (configs_dir / "ruff.toml").write_text('[lint]\nselect = ["ALL"]')
+            (configs_dir / "pylint.toml").write_text("[tool.pylint]")
+
+            discovered = discover_config_files(tmp_path)
+            rel_paths = [str(f.relative_to(tmp_path)) for f in discovered]
+
+            assert "pyrightconfig.json" in rel_paths
+            assert "configs/pyproject.toml" in rel_paths
+            assert "configs/ruff.toml" in rel_paths
+            assert "configs/pylint.toml" in rel_paths
+
+    def test_discover_root_pyproject_with_quality_tools(self) -> None:
+        """Test that root pyproject.toml is discovered if it has quality configs."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Create root pyproject with mypy config
+            (tmp_path / "pyproject.toml").write_text("[tool.mypy]\nstrict = true")
+
+            discovered = discover_config_files(tmp_path)
+            rel_paths = [str(f.relative_to(tmp_path)) for f in discovered]
+
+            assert "pyproject.toml" in rel_paths
+
+    def test_ignore_root_pyproject_without_quality_tools(self) -> None:
+        """Test that root pyproject.toml is ignored if no quality configs."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Create root pyproject with only uv config
+            (tmp_path / "pyproject.toml").write_text("[tool.uv]\ndev-dependencies = []")
+
+            discovered = discover_config_files(tmp_path)
+            rel_paths = [str(f.relative_to(tmp_path)) for f in discovered]
+
+            assert "pyproject.toml" not in rel_paths
+
+    def test_discover_handles_missing_configs_dir(self) -> None:
+        """Test discovery when configs directory doesn't exist."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Only create pyright config, no configs dir
+            (tmp_path / "pyrightconfig.json").write_text(
+                '{"typeCheckingMode": "strict"}'
+            )
+
+            discovered = discover_config_files(tmp_path)
+            assert len(discovered) == 1
+            assert discovered[0].name == "pyrightconfig.json"
+
+
+class TestBaselineEnforcement:
+    """Test baseline enforcement - these tests must fail on uncommitted drift."""
+
+    def test_actual_codebase_baseline_no_drift(self) -> None:
+        """CRITICAL: Verify actual codebase configs match baseline.
+
+        This test runs against the REAL codebase, not a temp directory.
+        If this fails, someone modified quality configs without updating baseline.
+        This is intentional - baseline updates require explicit approval.
+        """
+        root = Path(__file__).parent.parent
+        baseline_path = root / "tooling" / ".quality_baseline.json"
+
+        if not baseline_path.exists():
+            pytest.skip("No baseline file exists yet")
+
+        drift, _current_hashes = check_baseline_drift(root, baseline_path)
+
+        # This test MUST pass for CI to succeed
+        # If it fails, you must either:
+        # 1. Revert unauthorized config changes
+        # 2. Get approval and run: uv run python tooling/quality_audit.py --update-baseline
+        assert drift == [], (
+            f"BASELINE DRIFT DETECTED - Config files modified without approval:\n"
+            f"{chr(10).join(f'  - {d}' for d in drift)}\n\n"
+            f"To fix: Either revert changes or get approval and update baseline with:\n"
+            f"  uv run python tooling/quality_audit.py --update-baseline"
+        )
+
+    def test_actual_codebase_configs_pass_strictness(self) -> None:
+        """CRITICAL: Verify actual codebase configs maintain strictness.
+
+        This test runs against the REAL codebase to ensure:
+        - Pyright is in strict mode
+        - Mypy is in strict mode with required settings
+        - Ruff selects ALL rules
+        """
+        root = Path(__file__).parent.parent
+
+        errors = check_config_strictness(root)
+
+        assert errors == [], (
+            f"CONFIG STRICTNESS VIOLATIONS:\n{chr(10).join(f'  - {e}' for e in errors)}"
+        )
+
+    def test_actual_codebase_no_unjustified_ignores(self) -> None:
+        """CRITICAL: Verify no inline ignores without justification.
+
+        This test runs against the REAL codebase to ensure all inline
+        ignores (type: ignore, noqa, pylint: disable) have justifications.
+        """
+        root = Path(__file__).parent.parent
+        python_files = find_python_files(root)
+
+        all_entries: list[IgnoreEntry] = []
+        for py_file in python_files:
+            all_entries.extend(scan_file_for_ignores(py_file, root))
+
+        unjustified = [e for e in all_entries if e.severity == "error"]
+
+        assert unjustified == [], (
+            f"UNJUSTIFIED IGNORES DETECTED:\n"
+            f"{chr(10).join(f'  - {e.file_path}:{e.line_number}: {e.content[:60]}' for e in unjustified)}"
+        )
+
+
+class TestConfigFileCompleteness:
+    """Test that all config files are dynamically indexed."""
+
+    def test_all_config_files_tracked_for_baseline(self) -> None:
+        """Test that baseline drift tracks all expected config files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Create all config files
+            (tmp_path / "pyrightconfig.json").write_text(
+                '{"typeCheckingMode": "strict"}'
+            )
+
+            configs_dir = tmp_path / "configs"
+            configs_dir.mkdir()
+
+            (configs_dir / "pyproject.toml").write_text("""
+[tool.mypy]
+strict = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+""")
+            (configs_dir / "ruff.toml").write_text('[lint]\nselect = ["ALL"]')
+            (configs_dir / "pylint.toml").write_text("""
+[tool.pylint.messages_control]
+disable = []
+""")
+
+            # Check baseline drift - should track all 4 config files
+            baseline_path = tmp_path / ".baseline.json"
+            _drift, current_hashes = check_baseline_drift(tmp_path, baseline_path)
+
+            # Verify all expected config files are tracked
+            expected_files = {
+                "pyrightconfig.json",
+                "configs/pyproject.toml",
+                "configs/ruff.toml",
+                "configs/pylint.toml",
+            }
+            assert set(current_hashes.keys()) == expected_files
+
+    def test_all_config_parsers_called(self) -> None:
+        """Test that all config file parsers are invoked during audit."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Create all config files with ignores
+            (tmp_path / "pyrightconfig.json").write_text("""{
+  "_justifications": {"reportMissingTypeStubs": "Test justification"},
+  "typeCheckingMode": "strict",
+  "reportMissingTypeStubs": false
+}""")
+
+            configs_dir = tmp_path / "configs"
+            configs_dir.mkdir()
+
+            (configs_dir / "pyproject.toml").write_text("""
+[tool.mypy]
+strict = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = ["test.*"]
+ignore_missing_imports = true  # JUSTIFIED: Test modules
+""")
+            (configs_dir / "ruff.toml").write_text("""
+[lint]
+select = ["ALL"]
+ignore = [
+    "E501",  # JUSTIFIED: Test ignore
+]
+""")
+            (configs_dir / "pylint.toml").write_text("""
+[tool.pylint.messages_control]
+disable = [
+    "line-too-long",  # JUSTIFIED: Test disable
+]
+""")
+
+            # Parse all configs
+            pyright_entries = parse_pyright_config_ignores(
+                tmp_path / "pyrightconfig.json"
+            )
+            mypy_entries = parse_mypy_config_ignores(configs_dir / "pyproject.toml")
+            ruff_entries = parse_ruff_config_ignores(configs_dir / "ruff.toml")
+            pylint_entries = parse_pylint_config_ignores(configs_dir / "pylint.toml")
+
+            # Verify each parser found ignores
+            assert len(pyright_entries) == 1, "Pyright parser should find 1 ignore"
+            assert len(mypy_entries) == 1, "Mypy parser should find 1 ignore"
+            assert len(ruff_entries) == 1, "Ruff parser should find 1 ignore"
+            assert len(pylint_entries) == 1, "Pylint parser should find 1 ignore"
+
+    def test_missing_config_file_not_fatal(self) -> None:
+        """Test that missing config files don't cause fatal errors."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            # Only create some config files
+            (tmp_path / "pyrightconfig.json").write_text(
+                '{"typeCheckingMode": "strict"}'
+            )
+
+            configs_dir = tmp_path / "configs"
+            configs_dir.mkdir()
+            (configs_dir / "ruff.toml").write_text('[lint]\nselect = ["ALL"]')
+
+            # Parsers should handle missing files gracefully
+            mypy_entries = parse_mypy_config_ignores(configs_dir / "pyproject.toml")
+            pylint_entries = parse_pylint_config_ignores(configs_dir / "pylint.toml")
+
+            assert mypy_entries == []
+            assert pylint_entries == []
 
 
 if __name__ == "__main__":

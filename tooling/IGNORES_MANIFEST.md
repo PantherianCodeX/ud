@@ -1,6 +1,6 @@
 # Quality Ignores Manifest
 
-Generated: 2025-11-20T00:56:46.269828+00:00
+Generated: 2025-11-20T22:15:26.146871+00:00
 
 ## Summary
 
@@ -98,7 +98,3 @@ Generated: 2025-11-20T00:56:46.269828+00:00
 | pyrightconfig.json | pyright | reportImplicitStringConcatenation | global | Conflicts with ruff formatter concatenation style |
 | pyrightconfig.json | pyright | reportUnusedCallResult | global | Many functions return values for optional chaining |
 | pyrightconfig.json | pyright | reportMissingSuperCall | global | Not all classes require super().__init__ calls |
-
-## ⚠️ Baseline Drift Detected
-
-- pyrightconfig.json: Config has been modified since baseline was recorded

@@ -54,3 +54,32 @@ dev-dependencies = [
     # Build and automation
     "doit>=0.36.0,<0.37.0",
 ]
+
+[tool.pytest.ini_options]
+# Test discovery configuration
+testpaths = [
+    "tooling",
+    "packages",
+]
+# Exclude apps from default collection - they need separate test runs with env vars
+norecursedirs = [
+    "apps",
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    "build",
+    "dist",
+]
+# Async test support
+asyncio_mode = "auto"
+# Strict markers - unknown markers will fail
+addopts = [
+    "--strict-markers",
+    "-ra",  # Show extra test summary for all except passed
+]
+# Custom markers
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests requiring external services",
+]
