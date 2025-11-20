@@ -18,6 +18,7 @@ from quality_audit import (
     load_baseline,
     parse_mypy_config_ignores,
     parse_pylint_config_ignores,
+    parse_pyright_config_ignores,
     parse_ruff_config_ignores,
     save_baseline,
     scan_file_for_ignores,
@@ -533,6 +534,75 @@ disable = []
 """)
 
             entries = parse_pylint_config_ignores(config_file)
+            assert len(entries) == 0
+
+
+class TestParsePyrightConfigIgnores:
+    """Test parsing of pyright config ignores."""
+
+    def test_parse_disabled_reports(self) -> None:
+        """Test parsing report* settings set to false."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyrightconfig.json"
+            config_file.write_text("""{
+  "_justifications": {
+    "reportMissingTypeStubs": "Third-party libs without stubs",
+    "reportUnusedCallResult": "Optional chaining pattern"
+  },
+  "typeCheckingMode": "strict",
+  "reportMissingTypeStubs": false,
+  "reportUnusedCallResult": false,
+  "reportUnusedImport": true
+}""")
+
+            entries = parse_pyright_config_ignores(config_file)
+            assert len(entries) == 2
+
+            stubs_entry = next(
+                (e for e in entries if "reportMissingTypeStubs" in e.codes), None
+            )
+            assert stubs_entry is not None
+            assert "Third-party" in stubs_entry.justification
+
+            call_entry = next(
+                (e for e in entries if "reportUnusedCallResult" in e.codes), None
+            )
+            assert call_entry is not None
+            assert "chaining" in call_entry.justification
+
+    def test_parse_without_justifications(self) -> None:
+        """Test detection of disabled reports without justifications."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyrightconfig.json"
+            config_file.write_text("""{
+  "typeCheckingMode": "strict",
+  "reportMissingTypeStubs": false,
+  "reportUnusedCallResult": false
+}""")
+
+            entries = parse_pyright_config_ignores(config_file)
+            assert len(entries) == 2
+            assert all(e.justification == "No justification" for e in entries)
+
+    def test_nonexistent_config(self) -> None:
+        """Test handling of nonexistent config file."""
+        entries = parse_pyright_config_ignores(Path("/nonexistent/pyrightconfig.json"))
+        assert entries == []
+
+    def test_ignore_true_settings(self) -> None:
+        """Test that report* = true settings are not tracked as ignores."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyrightconfig.json"
+            config_file.write_text("""{
+  "typeCheckingMode": "strict",
+  "reportUnusedImport": true,
+  "reportUnusedVariable": true
+}""")
+
+            entries = parse_pyright_config_ignores(config_file)
             assert len(entries) == 0
 
 

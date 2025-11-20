@@ -447,6 +447,45 @@ def parse_pylint_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
     return entries
 
 
+def parse_pyright_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
+    """Parse ignore directives from pyrightconfig.json.
+
+    Extracts report* settings set to false (disabling checks).
+    Since JSON doesn't support comments, justifications are stored in a
+    separate structure within the JSON file.
+    """
+    entries: list[ConfigIgnoreEntry] = []
+
+    if not config_path.exists():
+        return entries
+
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return entries
+
+    # Known pyright settings that can be disabled (set to false)
+    # Each needs a justification in a separate "_justifications" key
+    justifications = config.get("_justifications", {})
+
+    for key, value in config.items():
+        # Only track report* settings set to false
+        if key.startswith("report") and value is False:
+            justification = justifications.get(key, "No justification")
+
+            entries.append(
+                ConfigIgnoreEntry(
+                    file_path=str(config_path),
+                    section="pyright",
+                    codes=[key],
+                    justification=justification,
+                    applies_to="global",
+                )
+            )
+
+    return entries
+
+
 def check_config_strictness(root: Path) -> list[str]:
     """Check that config files maintain required strictness settings."""
     errors: list[str] = []
@@ -768,6 +807,9 @@ def run_audit(
     )
     report.config_ignores.extend(
         parse_pylint_config_ignores(root / "configs" / "pylint.toml")
+    )
+    report.config_ignores.extend(
+        parse_pyright_config_ignores(root / "pyrightconfig.json")
     )
 
     # 3. Check config strictness

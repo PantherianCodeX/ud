@@ -1,6 +1,6 @@
 # Quality Ignores Manifest
 
-Generated: 2025-11-20T00:51:08.320282+00:00
+Generated: 2025-11-20T00:56:46.269828+00:00
 
 ## Summary
 
@@ -8,7 +8,7 @@ Generated: 2025-11-20T00:51:08.320282+00:00
 - Ignores without justification: 0
 - Blanket ignores (warning): 0
 - Properly justified ignores: 5
-- Config ignores: 68
+- Config ignores: 72
 
 ## Code Ignores
 
@@ -94,8 +94,11 @@ Generated: 2025-11-20T00:51:08.320282+00:00
 | pylint.toml | tool.pylint.messages_control | missing-module-docstring | global | Docstring rules handled by Ruff with Google style |
 | pylint.toml | tool.pylint.messages_control | missing-class-docstring | global | Docstring rules handled by Ruff with Google style |
 | pylint.toml | tool.pylint.messages_control | missing-function-docstring | global | Docstring rules handled by Ruff with Google style |
+| pyrightconfig.json | pyright | reportMissingTypeStubs | global | Third-party libraries without stubs should not block development |
+| pyrightconfig.json | pyright | reportImplicitStringConcatenation | global | Conflicts with ruff formatter concatenation style |
+| pyrightconfig.json | pyright | reportUnusedCallResult | global | Many functions return values for optional chaining |
+| pyrightconfig.json | pyright | reportMissingSuperCall | global | Not all classes require super().__init__ calls |
 
 ## ⚠️ Baseline Drift Detected
 
-- configs/pyproject.toml: Config has been modified since baseline was recorded
-- configs/pylint.toml: Config has been modified since baseline was recorded
+- pyrightconfig.json: Config has been modified since baseline was recorded
