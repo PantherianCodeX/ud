@@ -110,7 +110,7 @@ jobs:
           - check_name: "Bandit"
             run: "uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json"
           - check_name: "Safety"
-            run: "uv run safety check --json"
+            run: "uv run safety scan --json --policy-file .safety-policy.yml"
 
     steps:
       - uses: actions/checkout@v4

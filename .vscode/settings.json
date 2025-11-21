@@ -7,5 +7,9 @@
   "python.linting.enabled": true,
   "python.terminal.activateEnvironment": true,
   "python.testing.pytestEnabled": true,
-  "python.testing.pytestArgs": ["-c", "${workspaceFolder}/configs/pytest.ini"]
+  "python.testing.pytestArgs": [
+    "-c",
+    "${workspaceFolder}/configs/pytest.ini"
+  ],
+  "python.REPL.enableREPLSmartSend": false
 }

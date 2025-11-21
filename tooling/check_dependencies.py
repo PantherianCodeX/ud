@@ -289,6 +289,7 @@ class PackageContext:
     runtime_deps: set[str]
     dev_deps: set[str]
     internal_modules: set[str]
+    project_dependencies: list[str]
 
 
 def _prepare_package_context(
@@ -309,6 +310,7 @@ def _prepare_package_context(
     project = config["project"]
     package_name = project.get("name", package_dir.name)
     runtime_deps, dev_deps = _get_declared_dependencies(config)
+    project_dependencies = list(project.get("dependencies", []))
     internal_modules = get_package_internal_modules(package_dir)
 
     context = PackageContext(
@@ -319,6 +321,7 @@ def _prepare_package_context(
         runtime_deps=runtime_deps,
         dev_deps=dev_deps,
         internal_modules=internal_modules,
+        project_dependencies=project_dependencies,
     )
     return context, [], False
 
@@ -357,6 +360,20 @@ def _map_imports_to_packages(all_imports: set[str], internal_modules: set[str], 
                 pass
             required_packages.add(pkg_name)
     return required_packages
+
+
+def _check_dependency_version_bounds(context: PackageContext, workspace_packages: set[str]) -> list[str]:
+    """Ensure third-party dependencies declare lower and upper bounds."""
+    errors: list[str] = []
+    for dep in context.project_dependencies:
+        pkg = get_package_name(dep)
+        if pkg in workspace_packages or pkg.startswith("udocket-"):
+            continue
+        if ">=" not in dep:
+            errors.append(f"{context.package_name}: '{dep}' missing lower bound (>=)")
+        if "<" not in dep:
+            errors.append(f"{context.package_name}: '{dep}' missing upper bound (<)")
+    return errors
 
 
 def _check_missing_dependencies(
@@ -409,12 +426,17 @@ def _check_dev_dependencies_missing_from_dev(
     return errors
 
 
-def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
+def check_package(
+    package_dir: Path,
+    root_dir: Path,
+    workspace_packages: set[str] | None = None,
+) -> tuple[bool, list[str]]:
     """Check a single package/app for dependency issues.
 
     Args:
         package_dir: Directory containing the package or application.
         root_dir: Repository root used for relative error reporting.
+        workspace_packages: Optional set of workspace package names for skipping version bound enforcement.
 
     Returns:
         tuple[bool, list[str]]: Success flag and any error messages.
@@ -426,6 +448,7 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
         return False, prep_errors
     assert context is not None
 
+    workspace_packages = workspace_packages or _load_workspace_package_names(root_dir)
     errors: list[str] = []
     all_imports = _get_all_imports(context.package_dir)
     all_declared = context.runtime_deps | context.dev_deps
@@ -456,6 +479,8 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
             context.runtime_deps,
         )
     )
+
+    errors.extend(_check_dependency_version_bounds(context, workspace_packages))
 
     return not errors, errors
 
@@ -513,18 +538,37 @@ def check_root_workspace(root_dir: Path) -> tuple[bool, list[str]]:
     return not errors, errors
 
 
-def _check_packages(root_dir: Path, all_errors: list[str]) -> None:
+def _load_workspace_package_names(root_dir: Path) -> set[str]:
+    """Load workspace package names from the root pyproject."""
+    pyproject_path = root_dir / "pyproject.toml"
+    if not pyproject_path.exists():
+        return set()
+    config = load_pyproject(pyproject_path)
+    workspace_members = config.get("tool", {}).get("uv", {}).get("workspace", {}).get("members", [])
+    names: set[str] = set()
+    for member in workspace_members:
+        member_path = root_dir / member
+        pyproject_file = member_path / "pyproject.toml"
+        if not pyproject_file.exists():
+            continue
+        inner_config = load_pyproject(pyproject_file)
+        if project_name := inner_config.get("project", {}).get("name"):
+            names.add(project_name)
+    return names
+
+
+def _check_packages(root_dir: Path, workspace_packages: set[str], all_errors: list[str]) -> None:
     """Check all packages in the 'packages' directory."""
     packages_dir = root_dir / "packages"
     if packages_dir.exists():
         for package_dir in sorted(packages_dir.iterdir()):
             if package_dir.is_dir() and not package_dir.name.startswith("."):
-                success, errors = check_package(package_dir, root_dir)
+                success, errors = check_package(package_dir, root_dir, workspace_packages)
                 if not success:
                     all_errors.extend(errors)
 
 
-def _check_apps(root_dir: Path, all_errors: list[str]) -> None:
+def _check_apps(root_dir: Path, workspace_packages: set[str], all_errors: list[str]) -> None:
     """Check all applications in the 'apps' directory."""
     apps_dir = root_dir / "apps"
     if apps_dir.exists():
@@ -532,7 +576,7 @@ def _check_apps(root_dir: Path, all_errors: list[str]) -> None:
             if app_dir.is_dir() and not app_dir.name.startswith("."):
                 pyproject = app_dir / "pyproject.toml"
                 if pyproject.exists():
-                    success, errors = check_package(app_dir, root_dir)
+                    success, errors = check_package(app_dir, root_dir, workspace_packages)
                     if not success:
                         all_errors.extend(errors)
 
@@ -552,11 +596,13 @@ def main() -> int:
     if not success:
         all_errors.extend(errors)
 
+    workspace_packages = _load_workspace_package_names(root_dir)
+
     # Check all packages
-    _check_packages(root_dir, all_errors)
+    _check_packages(root_dir, workspace_packages, all_errors)
 
     # Check all apps
-    _check_apps(root_dir, all_errors)
+    _check_apps(root_dir, workspace_packages, all_errors)
 
     # Print summary
     if all_errors:

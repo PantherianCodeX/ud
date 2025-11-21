@@ -66,7 +66,7 @@ Each app declares all dependencies it uses:
 name = "udocket-api"
 dependencies = [
     # Web framework
-    "fastapi>=0.115.0,<0.116.0",
+    "fastapi>=0.121.3,<0.122.0",
     "uvicorn[standard]>=0.32.0,<0.33.0",
 
     # Database
@@ -337,7 +337,7 @@ Tests cover:
    ```toml
    dependencies = [
        # Web framework
-       "fastapi>=0.115.0,<0.116.0",
+       "fastapi>=0.121.3,<0.122.0",
        "uvicorn[standard]>=0.32.0,<0.33.0",
 
        # Database

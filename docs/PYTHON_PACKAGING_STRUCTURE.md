@@ -192,7 +192,7 @@ name = "udocket-api"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi>=0.121.3,<0.122.0",
     "udocket-domain",                      # Reference by distribution name
 ]
 
@@ -640,7 +640,7 @@ name = "udocket-api"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.115.0",
+    "fastapi>=0.121.3,<0.122.0",
     "udocket-domain",
 ]
 

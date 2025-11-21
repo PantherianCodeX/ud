@@ -34,7 +34,7 @@ class TestGetPackageName:
 
     def test_package_with_version(self) -> None:
         """Test package with version constraint."""
-        assert get_package_name("fastapi>=0.115.0") == "fastapi"
+        assert get_package_name("fastapi>=0.121.3") == "fastapi"
         assert get_package_name("pydantic>=2.12.4<3.0.0") == "pydantic"
         assert get_package_name("pytest~=8.0") == "pytest"
 
@@ -136,14 +136,14 @@ class TestExtractImports:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
 
-            test_file.write_text("""
-import os
-import sys
-from pathlib import Path
-from typing import Any, Dict
-from fastapi import FastAPI
-from pydantic import BaseModel
-""")
+            test_file.write_text(
+                "import os\n"
+                "import sys\n"
+                "from pathlib import Path\n"
+                "from typing import Any, Dict\n"
+                "from fastapi import FastAPI\n"
+                "from pydantic import BaseModel\n"
+            )
 
             imports = extract_imports(test_file)
             assert "os" in imports
@@ -180,22 +180,22 @@ class TestCheckPackage:
 
             # Create pyproject.toml
             pyproject = pkg_dir / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "mypackage"
-version = "0.1.0"
-dependencies = ["pydantic>=2.0.0"]
-
-[tool.uv.dev-dependencies]
-pytest = ">=8.0.0"
-""")
+            pyproject.write_text(
+                "[project]\n"
+                'name = "mypackage"\n'
+                'version = "0.1.0"\n'
+                'dependencies = ["pydantic>=2.0.0,<3.0.0"]\n'
+                "\n"
+                "[tool.uv.dev-dependencies]\n"
+                'pytest = ">=8.0.0"\n'
+            )
 
             # Create source file
             src_dir = pkg_dir / "src" / "mypackage"
             src_dir.mkdir(parents=True)
             (src_dir / "__init__.py").write_text("from pydantic import BaseModel")
 
-            success, errors = check_package(pkg_dir, root_dir)
+            success, errors = check_package(pkg_dir, root_dir, workspace_packages=set())
             assert success is True
             assert len(errors) == 0
 
@@ -211,19 +211,14 @@ pytest = ">=8.0.0"
 
             # Create pyproject.toml WITHOUT fastapi
             pyproject = pkg_dir / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "mypackage"
-version = "0.1.0"
-dependencies = []
-""")
+            pyproject.write_text('[project]\nname = "mypackage"\nversion = "0.1.0"\ndependencies = []\n')
 
             # Create source file that imports fastapi
             src_dir = pkg_dir / "src" / "mypackage"
             src_dir.mkdir(parents=True)
             (src_dir / "__init__.py").write_text("from fastapi import FastAPI")
 
-            success, errors = check_package(pkg_dir, root_dir)
+            success, errors = check_package(pkg_dir, root_dir, workspace_packages=set())
             assert success is False
             assert len(errors) > 0
             assert any("fastapi" in error.lower() for error in errors)
@@ -240,19 +235,16 @@ dependencies = []
 
             # Create pyproject.toml with pytest in runtime deps
             pyproject = pkg_dir / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "mypackage"
-version = "0.1.0"
-dependencies = ["pytest>=8.0.0"]
-""")
+            pyproject.write_text(
+                '[project]\nname = "mypackage"\nversion = "0.1.0"\ndependencies = ["pytest>=8.0.0,<9.0.0"]\n'
+            )
 
             # Create empty source
             src_dir = pkg_dir / "src" / "mypackage"
             src_dir.mkdir(parents=True)
             (src_dir / "__init__.py").write_text("")
 
-            success, errors = check_package(pkg_dir, root_dir)
+            success, errors = check_package(pkg_dir, root_dir, workspace_packages=set())
             assert success is False
             assert any("dev dependencies in runtime" in error.lower() for error in errors)
 
@@ -267,20 +259,20 @@ class TestCheckRootWorkspace:
 
             # Create root pyproject.toml
             pyproject = tmp_path / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "myproject"
-version = "0.1.0"
-dependencies = []
-
-[tool.uv.workspace]
-members = ["packages/*", "apps/*"]
-
-[tool.uv.dev-dependencies]
-pytest = ">=8.0.0"
-mypy = ">=1.0.0"
-ruff = ">=0.14.0"
-""")
+            pyproject.write_text(
+                "[project]\n"
+                'name = "myproject"\n'
+                'version = "0.1.0"\n'
+                "dependencies = []\n"
+                "\n"
+                "[tool.uv.workspace]\n"
+                'members = ["packages/*", "apps/*"]\n'
+                "\n"
+                "[tool.uv.dev-dependencies]\n"
+                'pytest = ">=8.0.0"\n'
+                'mypy = ">=1.0.0"\n'
+                'ruff = ">=0.14.0"\n'
+            )
 
             success, errors = check_root_workspace(tmp_path)
             assert success is True
@@ -293,15 +285,15 @@ ruff = ">=0.14.0"
 
             # Create root pyproject.toml with dev deps in wrong place
             pyproject = tmp_path / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "myproject"
-version = "0.1.0"
-dependencies = ["pytest>=8.0.0", "mypy>=1.0.0"]
-
-[tool.uv.workspace]
-members = ["packages/*"]
-""")
+            pyproject.write_text(
+                "[project]\n"
+                'name = "myproject"\n'
+                'version = "0.1.0"\n'
+                'dependencies = ["pytest>=8.0.0", "mypy>=1.0.0"]\n'
+                "\n"
+                "[tool.uv.workspace]\n"
+                'members = ["packages/*"]\n'
+            )
 
             success, errors = check_root_workspace(tmp_path)
             assert success is False
@@ -314,15 +306,15 @@ members = ["packages/*"]
 
             # Create root pyproject.toml with runtime deps
             pyproject = tmp_path / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "myproject"
-version = "0.1.0"
-dependencies = ["fastapi>=0.115.0", "pydantic>=2.0.0"]
-
-[tool.uv.workspace]
-members = ["packages/*"]
-""")
+            pyproject.write_text(
+                "[project]\n"
+                'name = "myproject"\n'
+                'version = "0.1.0"\n'
+                'dependencies = ["fastapi>=0.115.0", "pydantic>=2.0.0"]\n'
+                "\n"
+                "[tool.uv.workspace]\n"
+                'members = ["packages/*"]\n'
+            )
 
             success, errors = check_root_workspace(tmp_path)
             assert success is False
@@ -335,16 +327,58 @@ members = ["packages/*"]
 
             # Create root pyproject.toml without workspace config
             pyproject = tmp_path / "pyproject.toml"
-            pyproject.write_text("""
-[project]
-name = "myproject"
-version = "0.1.0"
-dependencies = []
-""")
+            pyproject.write_text('[project]\nname = "myproject"\nversion = "0.1.0"\ndependencies = []\n')
 
             success, errors = check_root_workspace(tmp_path)
             assert success is False
             assert any("workspace" in error.lower() for error in errors)
+
+
+def _create_package_with_dependencies(base_dir: Path, dependencies: list[str]) -> Path:
+    """Build a temp package with explicit dependency bounds.
+
+    Args:
+        base_dir: Directory where the package will be created.
+        dependencies: Dependencies to declare for the package.
+
+    Returns:
+        Path: Directory of the created package.
+    """
+    pkg_dir = base_dir / "mypackage"
+    pkg_dir.mkdir()
+    deps_block = ",\n".join(f'    "{dep}"' for dep in dependencies)
+    pyproject = pkg_dir / "pyproject.toml"
+    pyproject.write_text(f'[project]\nname = "mypackage"\nversion = "0.1.0"\ndependencies = [\n{deps_block}\n]\n')
+
+    src_dir = pkg_dir / "src" / "mypackage"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").write_text("")
+
+    return pkg_dir
+
+
+def test_missing_upper_bound_is_reported(tmp_path: Path) -> None:
+    """Ensure missing upper bounds trigger validation errors."""
+    pkg_dir = _create_package_with_dependencies(tmp_path, ["requests>=2.0.0"])
+    success, errors = check_package(pkg_dir, tmp_path, workspace_packages=set())
+    assert success is False
+    assert any("missing upper bound" in error.lower() for error in errors)
+
+
+def test_missing_lower_bound_is_reported(tmp_path: Path) -> None:
+    """Ensure missing lower bounds trigger validation errors."""
+    pkg_dir = _create_package_with_dependencies(tmp_path, ["requests<3.0.0"])
+    success, errors = check_package(pkg_dir, tmp_path, workspace_packages=set())
+    assert success is False
+    assert any("missing lower bound" in error.lower() for error in errors)
+
+
+def test_workspace_dependency_skips_version_bounds(tmp_path: Path) -> None:
+    """Workspace dependencies without bounds should bypass bound checks."""
+    pkg_dir = _create_package_with_dependencies(tmp_path, ["udocket-domain"])
+    success, errors = check_package(pkg_dir, tmp_path, workspace_packages={"udocket-domain"})
+    assert success is True
+    assert not errors
 
 
 def test_import_to_package_mapping() -> None:
