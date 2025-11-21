@@ -14,58 +14,58 @@ Successfully standardized the Python packaging structure across the entire uDock
 
 ## What Was Fixed
 
-### 1. **Critical Bug Fix: py-domain** ✅
+### 1. **Critical Bug Fix: udocket-domain** ✅
 
 **Issue**: Hatchling configuration used wrong directory name
-- **Before**: `packages = ["src/py-domain"]` (hyphen)
-- **After**: `packages = ["src/py_domain"]` (underscore)
+- **Before**: `packages = ["src/udocket-domain"]` (hyphen)
+- **After**: `packages = ["src/udocket_domain"]` (underscore)
 - **Impact**: Package was unimportable; .pth file was empty
 
-**File**: [packages/py-domain/pyproject.toml](../packages/py-domain/pyproject.toml)
+**File**: [packages/udocket-domain/pyproject.toml](../packages/udocket-domain/pyproject.toml)
 
 ---
 
-### 2. **Created py-ai-core Package Structure** ✅
+### 2. **Created udocket-ai-core Package Structure** ✅
 
 **Created**:
-- `packages/py-ai-core/src/py_ai_core/` directory structure
-- `packages/py-ai-core/src/py_ai_core/__init__.py` with version and docstrings
-- Updated `packages/py-ai-core/pyproject.toml`:
-  - Changed name from `udocket-py-ai-core` → `py-ai-core`
+- `packages/udocket-ai-core/src/udocket_ai_core/` directory structure
+- `packages/udocket-ai-core/src/udocket_ai_core/__init__.py` with version and docstrings
+- Updated `packages/udocket-ai-core/pyproject.toml`:
+  - Changed name from `udocket-udocket-ai-core` → `udocket-ai-core`
   - Added `[build-system]` section with hatchling
-  - Added `[tool.hatch.build.targets.wheel]` with `packages = ["src/py_ai_core"]`
+  - Added `[tool.hatch.build.targets.wheel]` with `packages = ["src/udocket_ai_core"]`
 
 **Dependencies**: langgraph, langsmith, langfuse (already declared)
 
 **Status**: Package is now importable and ready for future AI workflow implementations
 
 **Files Created**:
-- [packages/py-ai-core/src/py_ai_core/__init__.py](../packages/py-ai-core/src/py_ai_core/__init__.py)
+- [packages/udocket-ai-core/src/udocket_ai_core/__init__.py](../packages/udocket-ai-core/src/udocket_ai_core/__init__.py)
 
 **Files Modified**:
-- [packages/py-ai-core/pyproject.toml](../packages/py-ai-core/pyproject.toml)
+- [packages/udocket-ai-core/pyproject.toml](../packages/udocket-ai-core/pyproject.toml)
 
 ---
 
-### 3. **Created py-worker-core Package Structure** ✅
+### 3. **Created udocket-celery-core Package Structure** ✅
 
 **Created**:
-- `packages/py-worker-core/src/py_worker_core/` directory structure
-- `packages/py-worker-core/src/py_worker_core/__init__.py` with version and docstrings
-- Updated `packages/py-worker-core/pyproject.toml`:
-  - Changed name from `udocket-py-worker-core` → `py-worker-core`
+- `packages/udocket-celery-core/src/udocket_worker_core/` directory structure
+- `packages/udocket-celery-core/src/udocket_worker_core/__init__.py` with version and docstrings
+- Updated `packages/udocket-celery-core/pyproject.toml`:
+  - Changed name from `udocket-udocket-celery-core` → `udocket-celery-core`
   - Added `[build-system]` section with hatchling
-  - Added `[tool.hatch.build.targets.wheel]` with `packages = ["src/py_worker_core"]`
+  - Added `[tool.hatch.build.targets.wheel]` with `packages = ["src/udocket_worker_core"]`
 
 **Dependencies**: celery (already declared)
 
 **Status**: Package is now importable and ready for future Celery helper implementations
 
 **Files Created**:
-- [packages/py-worker-core/src/py_worker_core/__init__.py](../packages/py-worker-core/src/py_worker_core/__init__.py)
+- [packages/udocket-celery-core/src/udocket_worker_core/__init__.py](../packages/udocket-celery-core/src/udocket_worker_core/__init__.py)
 
 **Files Modified**:
-- [packages/py-worker-core/pyproject.toml](../packages/py-worker-core/pyproject.toml)
+- [packages/udocket-celery-core/pyproject.toml](../packages/udocket-celery-core/pyproject.toml)
 
 ---
 
@@ -88,7 +88,7 @@ Successfully standardized the Python packaging structure across the entire uDock
 - Proper Python package structure
 
 **Updated Dependencies**:
-- Added `py-ai-core` to dependencies and workspace sources in [apps/api/pyproject.toml](../apps/api/pyproject.toml)
+- Added `udocket-ai-core` to dependencies and workspace sources in [apps/api/pyproject.toml](../apps/api/pyproject.toml)
 
 ---
 
@@ -105,7 +105,7 @@ Successfully standardized the Python packaging structure across the entire uDock
 5. [apps/worker/app.py](../apps/worker/app.py) - Celery application entry point (with TODOs for implementation)
 
 **Updated Dependencies**:
-- Added `py-worker-core` to dependencies and workspace sources in [apps/worker/pyproject.toml](../apps/worker/pyproject.toml)
+- Added `udocket-celery-core` to dependencies and workspace sources in [apps/worker/pyproject.toml](../apps/worker/pyproject.toml)
 
 ---
 
@@ -113,16 +113,16 @@ Successfully standardized the Python packaging structure across the entire uDock
 
 **Installed in editable mode**:
 ```bash
-uv pip install -e packages/py-domain
-uv pip install -e packages/py-ai-core
-uv pip install -e packages/py-worker-core
+uv pip install -e packages/udocket-domain
+uv pip install -e packages/udocket-ai-core
+uv pip install -e packages/udocket-celery-core
 ```
 
 **Verification Test** (all passed ✅):
 ```python
-from py_domain import Matter, Party, MatterAnalysis, Issue, TimelineEvent
-from py_ai_core import __version__
-from py_worker_core import __version__
+from udocket_domain import Matter, Party, MatterAnalysis, Issue, TimelineEvent
+from udocket_ai_core import __version__
+from udocket_worker_core import __version__
 ```
 
 ---
@@ -133,26 +133,26 @@ from py_worker_core import __version__
 
 ```
 packages/
-├── py-domain/                    ✅ COMPLIANT
+├── udocket-domain/                    ✅ COMPLIANT
 │   ├── pyproject.toml           (Fixed: hatchling config)
 │   └── src/
-│       └── py_domain/
+│       └── udocket_domain/
 │           ├── __init__.py      (Full exports)
 │           ├── base.py
 │           ├── matter.py
 │           ├── transcript.py
 │           └── analysis.py
 │
-├── py-ai-core/                   ✅ COMPLIANT (NEW)
+├── udocket-ai-core/                   ✅ COMPLIANT (NEW)
 │   ├── pyproject.toml           (Added build-system)
 │   └── src/
-│       └── py_ai_core/
+│       └── udocket_ai_core/
 │           └── __init__.py      (Created with version)
 │
-└── py-worker-core/               ✅ COMPLIANT (NEW)
+└── udocket-celery-core/               ✅ COMPLIANT (NEW)
     ├── pyproject.toml           (Added build-system)
     └── src/
-        └── py_worker_core/
+        └── udocket_worker_core/
             └── __init__.py      (Created with version)
 ```
 
@@ -161,7 +161,7 @@ packages/
 ```
 apps/
 ├── api/                          ✅ COMPLIANT
-│   ├── pyproject.toml           (Added py-ai-core dependency)
+│   ├── pyproject.toml           (Added udocket-ai-core dependency)
 │   └── src/
 │       ├── __init__.py          (NEW)
 │       ├── main.py
@@ -197,7 +197,7 @@ apps/
 │           └── __init__.py      (Existing)
 │
 └── worker/                       ✅ COMPLIANT
-    ├── pyproject.toml           (Added py-worker-core dependency)
+    ├── pyproject.toml           (Added udocket-celery-core dependency)
     ├── app.py                   (NEW - Entry point)
     └── celery/
         ├── __init__.py          (NEW)
@@ -234,8 +234,8 @@ apps/
 ## Files Created
 
 ### Package Source Files (3)
-1. `packages/py-ai-core/src/py_ai_core/__init__.py`
-2. `packages/py-worker-core/src/py_worker_core/__init__.py`
+1. `packages/udocket-ai-core/src/udocket_ai_core/__init__.py`
+2. `packages/udocket-celery-core/src/udocket_worker_core/__init__.py`
 
 ### API Application Files (8)
 3. `apps/api/src/__init__.py`
@@ -265,13 +265,13 @@ apps/
 ## Files Modified
 
 ### Package Configurations (3)
-1. [packages/py-domain/pyproject.toml](../packages/py-domain/pyproject.toml) - Fixed hatchling config
-2. [packages/py-ai-core/pyproject.toml](../packages/py-ai-core/pyproject.toml) - Added build-system
-3. [packages/py-worker-core/pyproject.toml](../packages/py-worker-core/pyproject.toml) - Added build-system
+1. [packages/udocket-domain/pyproject.toml](../packages/udocket-domain/pyproject.toml) - Fixed hatchling config
+2. [packages/udocket-ai-core/pyproject.toml](../packages/udocket-ai-core/pyproject.toml) - Added build-system
+3. [packages/udocket-celery-core/pyproject.toml](../packages/udocket-celery-core/pyproject.toml) - Added build-system
 
 ### Application Configurations (2)
-4. [apps/api/pyproject.toml](../apps/api/pyproject.toml) - Added py-ai-core dependency
-5. [apps/worker/pyproject.toml](../apps/worker/pyproject.toml) - Added py-worker-core dependency
+4. [apps/api/pyproject.toml](../apps/api/pyproject.toml) - Added udocket-ai-core dependency
+5. [apps/worker/pyproject.toml](../apps/worker/pyproject.toml) - Added udocket-celery-core dependency
 
 **Total**: 5 files modified
 
@@ -281,9 +281,9 @@ apps/
 
 ### ✅ All Shared Packages
 
-- [x] py-domain: src/ layout, proper hatchling config, installable
-- [x] py-ai-core: src/ layout, proper hatchling config, installable
-- [x] py-worker-core: src/ layout, proper hatchling config, installable
+- [x] udocket-domain: src/ layout, proper hatchling config, installable
+- [x] udocket-ai-core: src/ layout, proper hatchling config, installable
+- [x] udocket-celery-core: src/ layout, proper hatchling config, installable
 - [x] All packages use underscores in directory names
 - [x] All packages have non-empty `__init__.py` with exports
 - [x] All packages have correct `[tool.hatch.build.targets.wheel]` config
@@ -310,22 +310,22 @@ apps/
 
 ### Check Package Installations
 ```bash
-uv pip list | grep -E "(py-domain|py-ai-core|py-worker-core)"
+uv pip list | grep -E "(udocket-domain|udocket-ai-core|udocket-celery-core)"
 ```
 
 Expected output:
 ```
-py-ai-core       0.1.0  /home/user/Code/ud/packages/py-ai-core
-py-domain        0.1.0  /home/user/Code/ud/packages/py-domain
-py-worker-core   0.1.0  /home/user/Code/ud/packages/py-worker-core
+udocket-ai-core       0.1.0  /home/user/Code/ud/packages/udocket-ai-core
+udocket-domain        0.1.0  /home/user/Code/ud/packages/udocket-domain
+udocket-celery-core   0.1.0  /home/user/Code/ud/packages/udocket-celery-core
 ```
 
 ### Test Imports
 ```bash
 source .venv/bin/activate && python3 -c "
-from py_domain import Matter, Party, MatterAnalysis
-from py_ai_core import __version__ as ai_version
-from py_worker_core import __version__ as worker_version
+from udocket_domain import Matter, Party, MatterAnalysis
+from udocket_ai_core import __version__ as ai_version
+from udocket_worker_core import __version__ as worker_version
 print('✓ All imports successful')
 "
 ```
@@ -384,10 +384,10 @@ The entry point [apps/worker/app.py](../apps/worker/app.py) has TODOs for:
 - Task module auto-discovery
 - Queue configuration
 
-### 2. **Add Package Content** (py-ai-core, py-worker-core)
+### 2. **Add Package Content** (udocket-ai-core, udocket-celery-core)
 These packages are now properly structured but have placeholder implementations:
-- **py-ai-core**: Add LangGraph helpers, LangSmith/Langfuse instrumentation
-- **py-worker-core**: Add Celery factories, idempotency utilities
+- **udocket-ai-core**: Add LangGraph helpers, LangSmith/Langfuse instrumentation
+- **udocket-celery-core**: Add Celery factories, idempotency utilities
 
 ### 3. **Enhance __init__.py Exports** (Optional)
 Some workflow slices could export public APIs:
@@ -397,8 +397,8 @@ Some workflow slices could export public APIs:
 
 ### 4. **Add Package Tests** (When implementing features)
 Each package should have:
-- `packages/py-ai-core/tests/` directory
-- `packages/py-worker-core/tests/` directory
+- `packages/udocket-ai-core/tests/` directory
+- `packages/udocket-celery-core/tests/` directory
 - Unit tests for exported functionality
 
 ---

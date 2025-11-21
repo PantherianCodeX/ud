@@ -53,11 +53,11 @@ Examples:
 
 Target can be:
     - Root workspace (default for dev deps)
-    - packages/py-domain
-    - packages/py-ai-core
-    - packages/py-worker-core
+    - packages/udocket_domain
+    - packages/udocket_ai_core
+    - packages/udocket_worker_core
     - apps/api
-    - apps/worker
+    - apps/celery
 EOF
 }
 

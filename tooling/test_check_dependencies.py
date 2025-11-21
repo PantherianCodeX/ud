@@ -73,14 +73,14 @@ class TestImportVisitor:
 
     def test_extract_local_import(self) -> None:
         """Test extraction of local package imports."""
-        code = "from py_domain import Matter\nfrom py_ai_core import analyze"
+        code = "from udocket_domain import Matter\nfrom udocket_ai_core import analyze"
         visitor = ImportVisitor()
         import ast
 
         tree = ast.parse(code)
         visitor.visit(tree)
-        assert "py_domain" in visitor.imports
-        assert "py_ai_core" in visitor.imports
+        assert "udocket_domain" in visitor.imports
+        assert "udocket_ai_core" in visitor.imports
 
 
 class TestFindPythonFiles:
@@ -361,9 +361,9 @@ def test_import_to_package_mapping() -> None:
     assert IMPORT_TO_PACKAGE["pydantic"] == "pydantic"
     assert IMPORT_TO_PACKAGE["pydantic_settings"] == "pydantic-settings"
     assert IMPORT_TO_PACKAGE["jose"] == "python-jose"
-    assert IMPORT_TO_PACKAGE["py_domain"] == "py-domain"
-    assert IMPORT_TO_PACKAGE["py_ai_core"] == "py-ai-core"
-    assert IMPORT_TO_PACKAGE["py_worker_core"] == "py-worker-core"
+    assert IMPORT_TO_PACKAGE["udocket_domain"] == "udocket-domain"
+    assert IMPORT_TO_PACKAGE["udocket_ai_core"] == "udocket-ai-core"
+    assert IMPORT_TO_PACKAGE["udocket_worker_core"] == "udocket-celery-core"
 
 
 if __name__ == "__main__":

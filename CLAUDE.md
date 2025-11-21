@@ -21,12 +21,12 @@ apps/
   mobile/       # (future) React Native app
 
 packages/       # Shared libraries
-  py-domain/        # Canonical domain models (Matter, Party, Issue, Timeline, Action)
-  py-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation
-  py-worker-core/   # Celery factories, idempotency helpers
-  ts-api-types/     # Shared TypeScript API types
-  ts-ui-kit/        # Reusable UI primitives
-  ts-utils/         # Shared TypeScript utilities
+  udocket-domain/        # Canonical domain models (Matter, Party, Issue, Timeline, Action)
+  udocket-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation
+  udocket-celery-core/   # Celery factories, idempotency helpers
+  udocket_api_types/     # Shared TypeScript API types
+  udocket_ui_kit/        # Reusable UI primitives
+  udocket_utils/         # Shared TypeScript utilities
 
 configs/        # Lint, type-check, and security tool configs
 tooling/        # doit tasks, semantic-release, pre-commit
@@ -89,7 +89,7 @@ workflow/           # Feature slices mirroring backend
     api/
     tests/
 shared/
-  ui/               # Shared components (from ts-ui-kit)
+  ui/               # Shared components (from udocket_ui_kit)
   lib/              # Client utilities
   config/
 ```
@@ -517,7 +517,7 @@ Main/release branches additionally run:
 
 ### Adding New Analysis Features
 
-1. Extend domain models in `packages/py-domain/`
+1. Extend domain models in `packages/udocket-domain/`
 2. Add LangGraph nodes in `apps/api/src/ai/graphs/`
 3. Create service logic in `apps/api/src/workflow/analysis/`
 4. Add frontend components in `apps/web/src/workflow/analysis/`
@@ -609,7 +609,7 @@ async def extract_entities_node(state: AnalysisState) -> AnalysisState:
 
 ```typescript
 import { useTranslations } from 'next-intl';
-import { MatterAnalysis } from '@/packages/ts-api-types';
+import { MatterAnalysis } from '@/packages/udocket_api_types';
 
 interface AnalysisViewProps {
   analysis: MatterAnalysis;

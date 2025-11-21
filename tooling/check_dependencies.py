@@ -38,6 +38,12 @@ STDLIB_MODULES = {
     "warnings",
 }
 
+TS_PACKAGES = {
+    "udocket_api_types",
+    "udocket_ui_kit",
+    "udocket_utils",
+}
+
 # Mapping of import names to package names
 IMPORT_TO_PACKAGE = {
     "fastapi": "fastapi",
@@ -66,9 +72,9 @@ IMPORT_TO_PACKAGE = {
     "presidio_analyzer": "presidio-analyzer",
     "presidio_anonymizer": "presidio-anonymizer",
     # Workspace packages
-    "py_domain": "py-domain",
-    "py_ai_core": "py-ai-core",
-    "py_worker_core": "py-worker-core",
+    "udocket_domain": "udocket-domain",
+    "udocket_ai_core": "udocket-ai-core",
+    "udocket_worker_core": "udocket-celery-core",
 }
 
 # Dev-only dependencies (should be in tool.uv.dev-dependencies)
@@ -169,7 +175,7 @@ def get_package_name(dep: str) -> str:
 def get_package_internal_modules(package_dir: Path) -> set[str]:
     """Get the internal module names for a package.
 
-    For example, py-domain has modules: py_domain, base, matter, analysis, etc.
+    For example, udocket-domain has modules: udocket_domain, base, matter, analysis, etc.
     Also detects internal app modules like 'core', 'config', etc.
     """
     internal_modules: set[str] = set()
@@ -213,13 +219,10 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
     errors: list[str] = []
     pyproject_path = package_dir / "pyproject.toml"
 
-    # Skip TypeScript packages (they use package.json instead)
-    # Also skip packages that start with 'ts-' (TypeScript packages)
-    if package_dir.name.startswith("ts-"):
-        package_json = package_dir / "package.json"
-        if package_json.exists() or not pyproject_path.exists():
-            # This is a TypeScript/JavaScript package, skip it
-            return True, []
+    # Skip TypeScript packages (identified by package.json or known names)
+    package_json = package_dir / "package.json"
+    if package_json.exists() or package_dir.name in TS_PACKAGES:
+        return True, []
 
     if not pyproject_path.exists():
         errors.append(f"Missing pyproject.toml in {package_dir}")
@@ -269,7 +272,7 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
             continue  # Internal module imports (like 'base', 'matter', 'core', etc.)
 
         # Check if it's a workspace package
-        if imp in {"py_domain", "py_ai_core", "py_worker_core"}:
+        if imp in {"udocket_domain", "udocket_ai_core", "udocket_worker_core"}:
             pkg_name = IMPORT_TO_PACKAGE.get(imp, imp.replace("_", "-"))
             required_packages.add(pkg_name)
         elif imp in IMPORT_TO_PACKAGE:

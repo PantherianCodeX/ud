@@ -25,8 +25,8 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4,<2.0.0",
 
     # Workspace packages
-    "py-domain",
-    "py-ai-core",
+    "udocket-domain",
+    "udocket-ai-core",
 ]
 
 [tool.uv]
@@ -36,5 +36,5 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }
-py-ai-core = { workspace = true }
+udocket-domain = { workspace = true }
+udocket-ai-core = { workspace = true }

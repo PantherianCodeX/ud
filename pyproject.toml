@@ -11,11 +11,11 @@ dependencies = []
 [tool.uv.workspace]
 members = [
     "apps/api",
-    "apps/worker",
+    "apps/celery",
     "apps/web",
-    "packages/py-domain",
-    "packages/py-ai-core",
-    "packages/py-worker-core",
+    "packages/udocket_domain",
+    "packages/udocket_ai_core",
+    "packages/udocket_worker_core",
 ]
 
 [tool.uv]
@@ -59,20 +59,17 @@ dev-dependencies = [
 
 [tool.pytest.ini_options]
 # Test discovery configuration
-testpaths = [
-    "apps",
-    "packages",
-    "tooling",
-]
+testpaths = ["apps", "packages", "tooling"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-# Python path for imports - allows 'from src.core import ...' in api tests
+# Python path for imports - points directly to src packages
 pythonpath = [
-    "apps/api",
-    "packages/py-domain/src",
-    "packages/py-ai-core/src",
-    "packages/py-worker-core/src",
+    "apps/api/src",
+    "apps/celery/src",
+    "packages/udocket_domain/src",
+    "packages/udocket_ai_core/src",
+    "packages/udocket_worker_core/src",
     "tooling",
 ]
 # Standard exclusions
@@ -167,8 +164,8 @@ strict_concatenate = true
 namespace_packages = true
 explicit_package_bases = true
 # Module search paths
-# apps/api is added so 'from src.core' works (src is a package under apps/api)
-mypy_path = "apps/api:packages/py-domain/src:packages/py-ai-core/src:packages/py-worker-core/src:tooling"
+# apps/api/src is added so 'from udocket_api.core' works
+mypy_path = "apps/api/src:apps/celery/src:packages/udocket_domain/src:packages/udocket_ai_core/src:packages/udocket_worker_core/src:tooling"
 # Extra checks
 extra_checks = true
 # Plugins
@@ -280,7 +277,14 @@ inline-quotes = "double"
 docstring-quotes = "double"
 
 [tool.ruff.lint.isort]
-known-first-party = ["src", "py_domain", "udocket_py_ai_core", "udocket_py_worker_core"]
+known-first-party = [
+    "udocket_api",
+    "udocket_celery",
+    "udocket_domain",
+    "udocket_ai_core",
+    "udocket_worker_core",
+    "tooling",
+]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.ruff.lint.pylint]

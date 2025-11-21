@@ -24,9 +24,9 @@ The Python packaging structure is fully compliant, properly configured, and work
 
 | Package/Module | Result | Details |
 |----------------|--------|---------|
-| packages/py-domain/src | ✅ PASSED | 0 errors, 0 warnings |
-| packages/py-ai-core/src | ✅ PASSED | 0 errors, 0 warnings |
-| packages/py-worker-core/src | ✅ PASSED | 0 errors, 0 warnings |
+| packages/udocket-domain/src | ✅ PASSED | 0 errors, 0 warnings |
+| packages/udocket-ai-core/src | ✅ PASSED | 0 errors, 0 warnings |
+| packages/udocket-celery-core/src | ✅ PASSED | 0 errors, 0 warnings |
 | apps/api/src/core | ✅ PASSED | 0 errors, 0 warnings |
 
 **Verdict**: ✅ **All packages pass strict pyright type checking**
@@ -41,9 +41,9 @@ The Python packaging structure is fully compliant, properly configured, and work
 
 | Package/Module | Files Checked | Result |
 |----------------|---------------|--------|
-| packages/py-domain/src/py_domain | 5 | ✅ Success: no issues found |
-| packages/py-ai-core/src/py_ai_core | 1 | ✅ Success: no issues found |
-| packages/py-worker-core/src/py_worker_core | 1 | ✅ Success: no issues found |
+| packages/udocket-domain/src/udocket_domain | 5 | ✅ Success: no issues found |
+| packages/udocket-ai-core/src/udocket_ai_core | 1 | ✅ Success: no issues found |
+| packages/udocket-celery-core/src/udocket_worker_core | 1 | ✅ Success: no issues found |
 | apps/api/src/core | 5 | ✅ Success: no issues found |
 
 **Total Files Checked**: 12
@@ -60,9 +60,9 @@ The Python packaging structure is fully compliant, properly configured, and work
 #### Workspace Package Imports
 
 ```python
-✅ py_domain: Matter, Party, MatterAnalysis, Issue, TimelineEvent, Action
-✅ py_ai_core: __version__
-✅ py_worker_core: __version__
+✅ udocket_domain: Matter, Party, MatterAnalysis, Issue, TimelineEvent, Action
+✅ udocket_ai_core: __version__
+✅ udocket_worker_core: __version__
 ```
 
 **All workspace packages import successfully** - 3/3 packages working
@@ -94,9 +94,9 @@ The Python packaging structure is fully compliant, properly configured, and work
 **Tool**: uv pip list
 
 ```
-✅ py-domain        0.1.0  /home/user/Code/ud/packages/py-domain
-✅ py-ai-core       0.1.0  /home/user/Code/ud/packages/py-ai-core
-✅ py-worker-core   0.1.0  /home/user/Code/ud/packages/py-worker-core
+✅ udocket-domain        0.1.0  /home/user/Code/ud/packages/udocket-domain
+✅ udocket-ai-core       0.1.0  /home/user/Code/ud/packages/udocket-ai-core
+✅ udocket-celery-core   0.1.0  /home/user/Code/ud/packages/udocket-celery-core
 ```
 
 **All packages installed in editable mode** - 3/3 packages
@@ -110,9 +110,9 @@ The Python packaging structure is fully compliant, properly configured, and work
 #### Package Directory Structure
 
 ```
-✅ py-domain: src/py_domain/__init__.py
-✅ py-ai-core: src/py_ai_core/__init__.py
-✅ py-worker-core: src/py_worker_core/__init__.py
+✅ udocket-domain: src/udocket_domain/__init__.py
+✅ udocket-ai-core: src/udocket_ai_core/__init__.py
+✅ udocket-celery-core: src/udocket_worker_core/__init__.py
 ```
 
 **All packages follow src/ layout** - 3/3 compliant
@@ -120,20 +120,20 @@ The Python packaging structure is fully compliant, properly configured, and work
 #### Build System Configurations
 
 ```
-✅ py-domain: Complete build configuration
+✅ udocket-domain: Complete build configuration
    - [build-system] present
    - hatchling backend configured
-   - packages = ["src/py_domain"] correct
+   - packages = ["src/udocket_domain"] correct
 
-✅ py-ai-core: Complete build configuration
+✅ udocket-ai-core: Complete build configuration
    - [build-system] present
    - hatchling backend configured
-   - packages = ["src/py_ai_core"] correct
+   - packages = ["src/udocket_ai_core"] correct
 
-✅ py-worker-core: Complete build configuration
+✅ udocket-celery-core: Complete build configuration
    - [build-system] present
    - hatchling backend configured
-   - packages = ["src/py_worker_core"] correct
+   - packages = ["src/udocket_worker_core"] correct
 ```
 
 **All packages have proper build configs** - 3/3 compliant
@@ -143,9 +143,9 @@ The Python packaging structure is fully compliant, properly configured, and work
 Critical directories verified (14 locations):
 
 ```
-✅ packages/py-domain/src/py_domain
-✅ packages/py-ai-core/src/py_ai_core
-✅ packages/py-worker-core/src/py_worker_core
+✅ packages/udocket-domain/src/udocket_domain
+✅ packages/udocket-ai-core/src/udocket_ai_core
+✅ packages/udocket-celery-core/src/udocket_worker_core
 ✅ apps/api/src
 ✅ apps/api/src/ai
 ✅ apps/api/src/platform
@@ -170,13 +170,13 @@ Critical directories verified (14 locations):
 
 ```bash
 $ source .venv/bin/activate
-$ pyright packages/py-domain/src
+$ pyright packages/udocket-domain/src
 0 errors, 0 warnings, 0 informations
 
-$ pyright packages/py-ai-core/src
+$ pyright packages/udocket-ai-core/src
 0 errors, 0 warnings, 0 informations
 
-$ pyright packages/py-worker-core/src
+$ pyright packages/udocket-celery-core/src
 0 errors, 0 warnings, 0 informations
 
 $ pyright apps/api/src/core
@@ -187,13 +187,13 @@ $ pyright apps/api/src/core
 
 ```bash
 $ source .venv/bin/activate
-$ mypy --config-file=configs/pyproject.toml packages/py-domain/src/py_domain
+$ mypy --config-file=configs/pyproject.toml packages/udocket-domain/src/udocket_domain
 Success: no issues found in 5 source files
 
-$ mypy --config-file=configs/pyproject.toml packages/py-ai-core/src/py_ai_core
+$ mypy --config-file=configs/pyproject.toml packages/udocket-ai-core/src/udocket_ai_core
 Success: no issues found in 1 source file
 
-$ mypy --config-file=configs/pyproject.toml packages/py-worker-core/src/py_worker_core
+$ mypy --config-file=configs/pyproject.toml packages/udocket-celery-core/src/udocket_worker_core
 Success: no issues found in 1 source file
 
 $ mypy --config-file=configs/pyproject.toml apps/api/src/core
@@ -204,14 +204,14 @@ Success: no issues found in 5 source files
 
 ```bash
 $ source .venv/bin/activate
-$ python3 -c "from py_domain import Matter; print('✓ py_domain works')"
-✓ py_domain works
+$ python3 -c "from udocket_domain import Matter; print('✓ udocket_domain works')"
+✓ udocket_domain works
 
-$ python3 -c "from py_ai_core import __version__; print(f'✓ py_ai_core v{__version__}')"
-✓ py_ai_core v0.1.0
+$ python3 -c "from udocket_ai_core import __version__; print(f'✓ udocket_ai_core v{__version__}')"
+✓ udocket_ai_core v0.1.0
 
-$ python3 -c "from py_worker_core import __version__; print(f'✓ py_worker_core v{__version__}')"
-✓ py_worker_core v0.1.0
+$ python3 -c "from udocket_worker_core import __version__; print(f'✓ udocket_worker_core v{__version__}')"
+✓ udocket_worker_core v0.1.0
 ```
 
 ---
@@ -229,16 +229,16 @@ $ python3 -c "from py_worker_core import __version__; print(f'✓ py_worker_core
     {
       "root": "apps/api",
       "extraPaths": [
-        "packages/py-domain/src",      ✅
-        "packages/py-ai-core/src",     ✅
-        "packages/py-worker-core/src"  ✅
+        "packages/udocket-domain/src",      ✅
+        "packages/udocket-ai-core/src",     ✅
+        "packages/udocket-celery-core/src"  ✅
       ]
     },
     {
       "root": "apps/worker",
       "extraPaths": [
-        "packages/py-domain/src",        ✅
-        "packages/py-worker-core/src"    ✅
+        "packages/udocket-domain/src",        ✅
+        "packages/udocket-celery-core/src"    ✅
       ]
     }
   ]
@@ -252,7 +252,7 @@ $ python3 -c "from py_worker_core import __version__; print(f'✓ py_worker_core
 ```toml
 [tool.mypy]
 strict = true
-mypy_path = ".:apps/api:packages/py-domain/src:packages/py-ai-core/src:packages/py-worker-core/src"
+mypy_path = ".:apps/api:packages/udocket-domain/src:packages/udocket-ai-core/src:packages/udocket-celery-core/src"
 ```
 
 **All packages in mypy_path**: ✅ 3/3
@@ -269,9 +269,9 @@ members = [
   "apps/api",
   "apps/worker",
   "apps/web",
-  "packages/py-domain",       ✅
-  "packages/py-ai-core",      ✅
-  "packages/py-worker-core",  ✅
+  "packages/udocket-domain",       ✅
+  "packages/udocket-ai-core",      ✅
+  "packages/udocket-celery-core",  ✅
 ]
 ```
 
@@ -284,13 +284,13 @@ members = [
 ```toml
 dependencies = [
   ...,
-  "py-domain",      ✅
-  "py-ai-core",     ✅
+  "udocket-domain",      ✅
+  "udocket-ai-core",     ✅
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }      ✅
-py-ai-core = { workspace = true }     ✅
+udocket-domain = { workspace = true }      ✅
+udocket-ai-core = { workspace = true }     ✅
 ```
 
 **Dependencies properly configured**: ✅ 2/2
@@ -300,13 +300,13 @@ py-ai-core = { workspace = true }     ✅
 ```toml
 dependencies = [
   ...,
-  "py-domain",        ✅
-  "py-worker-core",   ✅
+  "udocket-domain",        ✅
+  "udocket-celery-core",   ✅
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }        ✅
-py-worker-core = { workspace = true }   ✅
+udocket-domain = { workspace = true }        ✅
+udocket-celery-core = { workspace = true }   ✅
 ```
 
 **Dependencies properly configured**: ✅ 2/2
@@ -397,8 +397,8 @@ The packaging structure is **complete** and **fully compliant**. No further work
    - Not required for packaging compliance
 
 2. **Add package tests** (when implementing features)
-   - `packages/py-ai-core/tests/`
-   - `packages/py-worker-core/tests/`
+   - `packages/udocket-ai-core/tests/`
+   - `packages/udocket-celery-core/tests/`
    - Not required until packages have actual implementation
 
 ---

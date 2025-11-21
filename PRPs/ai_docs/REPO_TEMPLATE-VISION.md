@@ -35,11 +35,11 @@ Absolute top-level (monorepo-ish) view:
 │   └─ mobile/          # Mobile client
 │
 ├─ packages/
-│   ├─ py-domain/       # shared Python domain models (matters, policy, references…)
-│   ├─ py-ai-core/      # LangGraph wrappers, Portkey, registry helpers
-│   ├─ ts-api-types/    # shared OpenAPI/SDK types for web/mobile
-│   ├─ ts-ui-kit/       # shared React components (buttons, layout)
-│   └─ ts-utils/        # tiny generic helpers (keep this small)
+│   ├─ udocket-domain/       # shared Python domain models (matters, policy, references…)
+│   ├─ udocket-ai-core/      # LangGraph wrappers, Portkey, registry helpers
+│   ├─ udocket_api_types/    # shared OpenAPI/SDK types for web/mobile
+│   ├─ udocket_ui_kit/       # shared React components (buttons, layout)
+│   └─ udocket_utils/        # tiny generic helpers (keep this small)
 │
 ├─ infra/
 ├─ ops/
@@ -257,7 +257,7 @@ apps/worker/
     ...
 ```
 
-Each worker `tasks.py` just wraps the same `service.py` from `apps/api` or shared `packages/py-domain` to avoid duplication.
+Each worker `tasks.py` just wraps the same `service.py` from `apps/api` or shared `packages/udocket-domain` to avoid duplication.
 
 ---
 
@@ -396,7 +396,7 @@ apps/web/
       MatterDetailPage.test.tsx
 ```
 
-For **mobile** (`apps/mobile`), we repeat only what matters to that client (intake, matters, chat, notifications), with the same feature names, reusing `ts-api-types` for typing.
+For **mobile** (`apps/mobile`), we repeat only what matters to that client (intake, matters, chat, notifications), with the same feature names, reusing `udocket_api_types` for typing.
 
 ---
 
@@ -439,9 +439,9 @@ Here’s how we keep it from exploding:
 
 2. **Shared code goes in packages, not “god folders”.**
 
-   - OPA helpers? → `packages/py-domain` or `packages/py-policy-core`, then used by `policy_engine`.
-   - AI provider adapters? → `packages/py-ai-core`.
-   - Generic React components? → `packages/ts-ui-kit`.
+   - OPA helpers? → `packages/udocket-domain` or `packages/py-policy-core`, then used by `policy_engine`.
+   - AI provider adapters? → `packages/udocket-ai-core`.
+   - Generic React components? → `packages/udocket_ui_kit`.
 
    This stops `core/` from turning into a junk drawer.
 
@@ -467,7 +467,7 @@ Here’s how we keep it from exploding:
 
 - “We want to onboard a new LLM provider” → no new slice:
 
-  - Update `ai/registry` data + maybe `py-ai-core` adapters.
+  - Update `ai/registry` data + maybe `udocket-ai-core` adapters.
   - The rest of the system just sees a new provider option.
 
 - “We need to ingest a new court’s forms” → no new slice:

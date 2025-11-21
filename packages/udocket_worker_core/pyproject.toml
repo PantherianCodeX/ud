@@ -1,0 +1,23 @@
+[project]
+name = "udocket-worker-core"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.5.3,<6.0.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    # Dev dependencies inherited from root workspace
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/udocket_worker_core"]
+include = ["src/udocket_worker_core/py.typed"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/udocket_worker_core/py.typed"]

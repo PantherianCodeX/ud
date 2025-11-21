@@ -125,7 +125,14 @@ docstring-quotes = "double"
 
 [lint.isort]
 # Import sorting configuration
-known-first-party = ["src", "py-domain", "udocket_py_ai_core", "udocket_py_worker_core"]
+known-first-party = [
+    "udocket_api",
+    "udocket_celery",
+    "udocket_domain",
+    "udocket_ai_core",
+    "udocket_worker_core",
+    "tooling",
+]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [lint.pylint]

@@ -43,9 +43,9 @@ Implement a complete infrastructure foundation following the vertical-slice mono
 
 - `apps/api` (backend service foundation)
 - `apps/worker` (Celery worker scaffolding)
-- `packages/py-domain` (canonical domain models)
-- `packages/py-ai-core` (AI orchestration helpers)
-- `packages/py-worker-core` (Celery utilities)
+- `packages/udocket-domain` (canonical domain models)
+- `packages/udocket-ai-core` (AI orchestration helpers)
+- `packages/udocket-celery-core` (Celery utilities)
 - `configs/` (all quality tool configurations)
 - `tooling/` (doit tasks, pre-commit, semantic-release)
 - `ops/` (Docker Compose, observability dashboards)
@@ -70,8 +70,8 @@ Implement a complete infrastructure foundation following the vertical-slice mono
 - `apps/api/src/core/__init__.py` - Empty, needs core modules
 - `apps/api/src/workflow/` - Directory structure exists, empty modules
 - `apps/api/src/observability/__init__.py` - Empty, needs observability setup
-- `packages/py-domain/` - Empty, needs canonical models
-- `packages/py-ai-core/` - Empty, needs LangGraph/LangSmith helpers
+- `packages/udocket-domain/` - Empty, needs canonical models
+- `packages/udocket-ai-core/` - Empty, needs LangGraph/LangSmith helpers
 - `configs/` - Only contains .gitkeep, needs all tool configs
 
 **Files Requiring Creation:**
@@ -83,7 +83,7 @@ Implement a complete infrastructure foundation following the vertical-slice mono
 - `apps/api/src/main.py` - FastAPI application entrypoint
 - `apps/api/alembic.ini` - Alembic migration configuration
 - `apps/api/alembic/env.py` - Alembic environment setup
-- `packages/py-domain/models.py` - Base models and shared domain types
+- `packages/udocket-domain/models.py` - Base models and shared domain types
 - `configs/ruff.toml` - Ruff configuration
 - `configs/pyproject.toml` - Mypy/Pyright configuration
 - `configs/pylint.toml` - Pylint configuration
@@ -111,7 +111,7 @@ Implement a complete infrastructure foundation following the vertical-slice mono
 2. `auth/dependencies.py` - FastAPI dependencies for auth
 3. `tenants/models.py` - Tenant isolation models (future-ready)
 
-**Domain Models (`packages/py-domain/`):**
+**Domain Models (`packages/udocket-domain/`):**
 
 1. `__init__.py` - Package exports
 2. `base.py` - Base Pydantic models with common fields
@@ -391,7 +391,7 @@ Create JWT authentication stub with Keycloak roadmap consideration.
 - Implement get_current_user() FastAPI dependency
 - Add auth exception handlers
 - Document Keycloak integration roadmap in comments
-- Create stub user model in py-domain
+- Create stub user model in udocket-domain
 
 ### Phase 6: Domain Models Foundation
 
@@ -399,7 +399,7 @@ Implement canonical domain models in shared packages.
 
 **Tasks:**
 
-- Create base models in `packages/py-domain/base.py`
+- Create base models in `packages/udocket-domain/base.py`
 - Implement Matter, Party, Relationship models
 - Implement MatterAnalysis, Issue, Timeline, Action models
 - Implement Transcript and speaker turn models
@@ -509,9 +509,9 @@ members = [
     "apps/api",
     "apps/worker",
     "apps/web",
-    "packages/py-domain",
-    "packages/py-ai-core",
-    "packages/py-worker-core",
+    "packages/udocket-domain",
+    "packages/udocket-ai-core",
+    "packages/udocket-celery-core",
 ]
 
 [tool.uv]
@@ -547,13 +547,13 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.20",
-    "py-domain",
+    "udocket-domain",
 ]
 ```
 
 - **VALIDATE**: `cd apps/api && uv sync`
 
-### 3. CREATE packages/py-domain/pyproject.toml
+### 3. CREATE packages/udocket-domain/pyproject.toml
 
 - **IMPLEMENT**: Shared domain models package
 - **PATTERN**: Pure Python package with minimal dependencies
@@ -561,7 +561,7 @@ dependencies = [
 
 ```toml
 [project]
-name = "py-domain"
+name = "udocket-domain"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
@@ -569,7 +569,7 @@ dependencies = [
 ]
 ```
 
-- **VALIDATE**: `cd packages/py-domain && uv sync`
+- **VALIDATE**: `cd packages/udocket-domain && uv sync`
 
 ### 4. CREATE apps/api/src/core/config.py
 
@@ -917,7 +917,7 @@ __all__ = [
 
 - **VALIDATE**: `cd apps/api && uv run python -c "from src.core import settings, get_logger; print('OK')"`
 
-### 10. CREATE `packages/py-domain/src/__init__.py`
+### 10. CREATE `packages/udocket-domain/src/__init__.py`
 
 - **IMPLEMENT**: Package structure initialization
 - **PATTERN**: src layout for packages
@@ -930,7 +930,7 @@ __version__ = "0.1.0"
 
 - **VALIDATE**: Manual review
 
-### 11. CREATE packages/py-domain/src/base.py
+### 11. CREATE packages/udocket-domain/src/base.py
 
 - **IMPLEMENT**: Base Pydantic models with common fields
 - **PATTERN**: Pydantic v2 BaseModel with common patterns
@@ -1003,9 +1003,9 @@ class HealthCheck(BaseModel):
     )
 ```
 
-- **VALIDATE**: `cd packages/py-domain && uv run python -c "from src.base import BaseEntity; e = BaseEntity(); print(e.id)"`
+- **VALIDATE**: `cd packages/udocket-domain && uv run python -c "from src.base import BaseEntity; e = BaseEntity(); print(e.id)"`
 
-### 12. CREATE packages/py-domain/src/matter.py
+### 12. CREATE packages/udocket-domain/src/matter.py
 
 - **IMPLEMENT**: Matter domain models
 - **PATTERN**: Pydantic models with field validation
@@ -1097,9 +1097,9 @@ class Matter(BaseEntity):
     }
 ```
 
-- **VALIDATE**: `cd packages/py-domain && uv run python -c "from src.matter import Matter, Party; m = Matter(title='Test', matter_type='test'); print(m.status)"`
+- **VALIDATE**: `cd packages/udocket-domain && uv run python -c "from src.matter import Matter, Party; m = Matter(title='Test', matter_type='test'); print(m.status)"`
 
-### 13. CREATE packages/py-domain/src/analysis.py
+### 13. CREATE packages/udocket-domain/src/analysis.py
 
 - **IMPLEMENT**: Analysis domain models (MatterAnalysis, Issue, Timeline, Action)
 - **PATTERN**: Pydantic models with field validation
@@ -1251,9 +1251,9 @@ class MatterAnalysis(BaseEntity):
     }
 ```
 
-- **VALIDATE**: `cd packages/py-domain && uv run python -c "from src.analysis import Issue, Action; i = Issue(matter_id='550e8400-e29b-41d4-a716-446655440000', title='Test', description='Test', category='test'); print(i.severity)"`
+- **VALIDATE**: `cd packages/udocket-domain && uv run python -c "from src.analysis import Issue, Action; i = Issue(matter_id='550e8400-e29b-41d4-a716-446655440000', title='Test', description='Test', category='test'); print(i.severity)"`
 
-### 14. CREATE packages/py-domain/src/transcript.py
+### 14. CREATE packages/udocket-domain/src/transcript.py
 
 - **IMPLEMENT**: Transcript domain models
 - **PATTERN**: Pydantic models with field validation
@@ -1326,9 +1326,9 @@ class Transcript(BaseEntity):
     }
 ```
 
-- **VALIDATE**: `cd packages/py-domain && uv run python -c "from src.transcript import Transcript; t = Transcript(matter_id='550e8400-e29b-41d4-a716-446655440000'); print(t.language)"`
+- **VALIDATE**: `cd packages/udocket-domain && uv run python -c "from src.transcript import Transcript; t = Transcript(matter_id='550e8400-e29b-41d4-a716-446655440000'); print(t.language)"`
 
-### 15. CREATE `packages/py-domain/src/__init__.py` (exports)
+### 15. CREATE `packages/udocket-domain/src/__init__.py` (exports)
 
 - **IMPLEMENT**: Package exports for easy importing
 - **PATTERN**: Clean public API
@@ -1381,7 +1381,7 @@ __all__ = [
 ]
 ```
 
-- **VALIDATE**: `cd packages/py-domain && uv run python -c "from src import Matter, Party, Issue; print('OK')"`
+- **VALIDATE**: `cd packages/udocket-domain && uv run python -c "from src import Matter, Party, Issue; print('OK')"`
 
 ### 16. CREATE apps/api/src/platform/auth/jwt.py
 
@@ -1609,7 +1609,7 @@ from fastapi.responses import JSONResponse
 import structlog
 
 from src.core import configure_logging, settings, init_db, check_db_health, UDocketException
-from py-domain import HealthCheck
+from udocket-domain import HealthCheck
 
 
 # Configure logging on module import
@@ -3326,7 +3326,7 @@ uv run pre-commit run --all-files
 - [x] Project structure follows ARCHITECTURE.md vertical-slice layout
 - [x] All quality tools configured (Ruff, Pylint, Mypy, Pyright, pytest, Bandit, Safety, Gitleaks)
 - [x] Core modules implemented (config, database, logging, exceptions)
-- [x] Domain models created in py-domain package (Matter, Party, Analysis, Transcript, etc.)
+- [x] Domain models created in udocket-domain package (Matter, Party, Analysis, Transcript, etc.)
 - [x] FastAPI application with health endpoint
 - [x] JWT authentication stub with Keycloak roadmap documented
 - [x] Database layer with async SQLAlchemy and pgvector support
@@ -3426,7 +3426,7 @@ This Phase 1 implementation sets up Phase 2 for success:
 **Ready for LangGraph:**
 
 - `apps/api/src/ai/graphs/` directory exists
-- py-ai-core package ready for LangGraph helpers
+- udocket-ai-core package ready for LangGraph helpers
 - Observability hooks ready for LangSmith/Langfuse
 
 **Ready for Testing:**

@@ -46,7 +46,7 @@ namespace_packages = true
 explicit_package_bases = true
 
 # Module search paths
-mypy_path = ".:apps/api:packages/py-domain/src:packages/py-ai-core/src:packages/py-worker-core/src"
+mypy_path = ".:apps/api/src:apps/celery/src:packages/udocket_domain/src:packages/udocket_ai_core/src:packages/udocket_worker_core/src"
 
 # Miscellaneous
 extra_checks = true

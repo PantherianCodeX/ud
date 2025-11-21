@@ -9,14 +9,14 @@
 
 import asyncio
 from logging.config import fileConfig
-from typing import Any
 
 from alembic import context
 from sqlalchemy import pool
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from src.core.config import settings
-from src.core.database import Base
+from udocket_api.core.config import settings
+from udocket_api.core.database import Base
 
 # Alembic Config object
 config = context.config
@@ -48,7 +48,7 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def do_run_migrations(connection: Any) -> None:  # noqa: ANN401 - Alembic passes Connection dynamically
+def do_run_migrations(connection: Connection) -> None:
     """Run migrations with connection."""
     context.configure(
         connection=connection,

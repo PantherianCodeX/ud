@@ -41,18 +41,18 @@ This document **certifies** that the uDocket Python monorepo packaging structure
 #### Workspace Packages (`packages/`)
 
 ```
-✅ packages/py-domain/
-   ✅ src/py_domain/__init__.py (full exports)
-   ✅ src/py_domain/base.py
-   ✅ src/py_domain/matter.py
-   ✅ src/py_domain/transcript.py
-   ✅ src/py_domain/analysis.py
+✅ packages/udocket-domain/
+   ✅ src/udocket_domain/__init__.py (full exports)
+   ✅ src/udocket_domain/base.py
+   ✅ src/udocket_domain/matter.py
+   ✅ src/udocket_domain/transcript.py
+   ✅ src/udocket_domain/analysis.py
 
-✅ packages/py-ai-core/
-   ✅ src/py_ai_core/__init__.py (version, docs)
+✅ packages/udocket-ai-core/
+   ✅ src/udocket_ai_core/__init__.py (version, docs)
 
-✅ packages/py-worker-core/
-   ✅ src/py_worker_core/__init__.py (version, docs)
+✅ packages/udocket-celery-core/
+   ✅ src/udocket_worker_core/__init__.py (version, docs)
 ```
 
 **Result**: 3/3 packages compliant (100%)
@@ -66,9 +66,9 @@ This document **certifies** that the uDocket Python monorepo packaging structure
 #### Verified Locations
 
 **Workspace Packages** (3/3):
-- ✅ `packages/py-domain/src/py_domain/__init__.py`
-- ✅ `packages/py-ai-core/src/py_ai_core/__init__.py`
-- ✅ `packages/py-worker-core/src/py_worker_core/__init__.py`
+- ✅ `packages/udocket-domain/src/udocket_domain/__init__.py`
+- ✅ `packages/udocket-ai-core/src/udocket_ai_core/__init__.py`
+- ✅ `packages/udocket-celery-core/src/udocket_worker_core/__init__.py`
 
 **API Application** (20/20):
 - ✅ `apps/api/src/__init__.py`
@@ -125,37 +125,37 @@ This document **certifies** that the uDocket Python monorepo packaging structure
 
 #### Package Configurations
 
-**py-domain** (`packages/py-domain/pyproject.toml`):
+**udocket-domain** (`packages/udocket-domain/pyproject.toml`):
 ```toml
 ✅ [project]
-✅ name = "py-domain"
+✅ name = "udocket-domain"
 ✅ [build-system]
 ✅ requires = ["hatchling"]
 ✅ build-backend = "hatchling.build"
 ✅ [tool.hatch.build.targets.wheel]
-✅ packages = ["src/py_domain"]  # FIXED: Was "src/py-domain" (critical bug)
+✅ packages = ["src/udocket_domain"]  # FIXED: Was "src/udocket-domain" (critical bug)
 ```
 
-**py-ai-core** (`packages/py-ai-core/pyproject.toml`):
+**udocket-ai-core** (`packages/udocket-ai-core/pyproject.toml`):
 ```toml
 ✅ [project]
-✅ name = "py-ai-core"  # FIXED: Was "udocket-py-ai-core"
+✅ name = "udocket-ai-core"  # FIXED: Was "udocket-udocket-ai-core"
 ✅ [build-system] - ADDED
 ✅ requires = ["hatchling"] - ADDED
 ✅ build-backend = "hatchling.build" - ADDED
 ✅ [tool.hatch.build.targets.wheel] - ADDED
-✅ packages = ["src/py_ai_core"] - ADDED
+✅ packages = ["src/udocket_ai_core"] - ADDED
 ```
 
-**py-worker-core** (`packages/py-worker-core/pyproject.toml`):
+**udocket-celery-core** (`packages/udocket-celery-core/pyproject.toml`):
 ```toml
 ✅ [project]
-✅ name = "py-worker-core"  # FIXED: Was "udocket-py-worker-core"
+✅ name = "udocket-celery-core"  # FIXED: Was "udocket-udocket-celery-core"
 ✅ [build-system] - ADDED
 ✅ requires = ["hatchling"] - ADDED
 ✅ build-backend = "hatchling.build" - ADDED
 ✅ [tool.hatch.build.targets.wheel] - ADDED
-✅ packages = ["src/py_worker_core"] - ADDED
+✅ packages = ["src/udocket_worker_core"] - ADDED
 ```
 
 **Result**: 3/3 packages properly configured (100%)
@@ -168,16 +168,16 @@ This document **certifies** that the uDocket Python monorepo packaging structure
 
 | Package Name (PyPI) | Import Name (Python) | Status |
 |---------------------|---------------------|--------|
-| `py-domain` | `py_domain` | ✅ Correct |
-| `py-ai-core` | `py_ai_core` | ✅ Correct |
-| `py-worker-core` | `py_worker_core` | ✅ Correct |
+| `udocket-domain` | `udocket_domain` | ✅ Correct |
+| `udocket-ai-core` | `udocket_ai_core` | ✅ Correct |
+| `udocket-celery-core` | `udocket_worker_core` | ✅ Correct |
 
 **Verified**:
 ```python
 # All these imports work correctly:
-from py_domain import Matter
-from py_ai_core import __version__
-from py_worker_core import __version__
+from udocket_domain import Matter
+from udocket_ai_core import __version__
+from udocket_worker_core import __version__
 ```
 
 **Result**: 3/3 packages follow naming convention (100%)
@@ -197,21 +197,21 @@ from py_worker_core import __version__
      {
        "root": "apps/api",
        "extraPaths": [
-         ✅ "packages/py-domain/src",
-         ✅ "packages/py-ai-core/src",
-         ✅ "packages/py-worker-core/src"
+         ✅ "packages/udocket-domain/src",
+         ✅ "packages/udocket-ai-core/src",
+         ✅ "packages/udocket-celery-core/src"
        ]
      },
      {
        "root": "apps/worker",
        "extraPaths": [
-         ✅ "packages/py-domain/src",
-         ✅ "packages/py-worker-core/src"
+         ✅ "packages/udocket-domain/src",
+         ✅ "packages/udocket-celery-core/src"
        ]
      },
-     ✅ { "root": "packages/py-domain" },
-     ✅ { "root": "packages/py-ai-core" },
-     ✅ { "root": "packages/py-worker-core" }
+     ✅ { "root": "packages/udocket-domain" },
+     ✅ { "root": "packages/udocket-ai-core" },
+     ✅ { "root": "packages/udocket-celery-core" }
    ]
 ```
 
@@ -223,7 +223,7 @@ from py_worker_core import __version__
 ✅ strict = true
 ✅ namespace_packages = true
 ✅ explicit_package_bases = true
-✅ mypy_path = ".:apps/api:packages/py-domain/src:packages/py-ai-core/src:packages/py-worker-core/src"
+✅ mypy_path = ".:apps/api:packages/udocket-domain/src:packages/udocket-ai-core/src:packages/udocket-celery-core/src"
 ```
 
 **Coverage**: 3/3 packages in mypy_path (100%)
@@ -240,9 +240,9 @@ from py_worker_core import __version__
 
 **Workspace Package Imports**:
 ```python
-✅ from py_domain import Matter, Party, MatterAnalysis, Issue, TimelineEvent, Action
-✅ from py_ai_core import __version__  # Returns: "0.1.0"
-✅ from py_worker_core import __version__  # Returns: "0.1.0"
+✅ from udocket_domain import Matter, Party, MatterAnalysis, Issue, TimelineEvent, Action
+✅ from udocket_ai_core import __version__  # Returns: "0.1.0"
+✅ from udocket_worker_core import __version__  # Returns: "0.1.0"
 ```
 
 **Application Module Imports**:
@@ -260,22 +260,22 @@ from py_worker_core import __version__
 
 **Package Installation Verification**:
 ```bash
-$ uv pip list | grep -E "(py-domain|py-ai-core|py-worker-core)"
-✅ py-ai-core       0.1.0  /home/user/Code/ud/packages/py-ai-core
-✅ py-domain        0.1.0  /home/user/Code/ud/packages/py-domain
-✅ py-worker-core   0.1.0  /home/user/Code/ud/packages/py-worker-core
+$ uv pip list | grep -E "(udocket-domain|udocket-ai-core|udocket-celery-core)"
+✅ udocket-ai-core       0.1.0  /home/user/Code/ud/packages/udocket-ai-core
+✅ udocket-domain        0.1.0  /home/user/Code/ud/packages/udocket-domain
+✅ udocket-celery-core   0.1.0  /home/user/Code/ud/packages/udocket-celery-core
 ```
 
 **.pth Files Verification**:
 ```bash
-$ cat .venv/lib/python3.12/site-packages/_py_domain.pth
-✅ /home/user/Code/ud/packages/py-domain/src
+$ cat .venv/lib/python3.12/site-packages/_udocket_domain.pth
+✅ /home/user/Code/ud/packages/udocket-domain/src
 
-$ cat .venv/lib/python3.12/site-packages/_py_ai_core.pth
-✅ /home/user/Code/ud/packages/py-ai-core/src
+$ cat .venv/lib/python3.12/site-packages/_udocket_ai_core.pth
+✅ /home/user/Code/ud/packages/udocket-ai-core/src
 
-$ cat .venv/lib/python3.12/site-packages/_py_worker_core.pth
-✅ /home/user/Code/ud/packages/py-worker-core/src
+$ cat .venv/lib/python3.12/site-packages/_udocket_worker_core.pth
+✅ /home/user/Code/ud/packages/udocket-celery-core/src
 ```
 
 **Result**: All imports resolve correctly (100%)
@@ -294,9 +294,9 @@ $ cat .venv/lib/python3.12/site-packages/_py_worker_core.pth
      ✅ "apps/api",
      ✅ "apps/worker",
      ✅ "apps/web",
-     ✅ "packages/py-domain",
-     ✅ "packages/py-ai-core",
-     ✅ "packages/py-worker-core",
+     ✅ "packages/udocket-domain",
+     ✅ "packages/udocket-ai-core",
+     ✅ "packages/udocket-celery-core",
    ]
 ```
 
@@ -306,26 +306,26 @@ $ cat .venv/lib/python3.12/site-packages/_py_worker_core.pth
 ```toml
 ✅ dependencies = [
      ...,
-     ✅ "py-domain",
-     ✅ "py-ai-core",  # ADDED
+     ✅ "udocket-domain",
+     ✅ "udocket-ai-core",  # ADDED
    ]
 
 ✅ [tool.uv.sources]
-✅ py-domain = { workspace = true }
-✅ py-ai-core = { workspace = true }  # ADDED
+✅ udocket-domain = { workspace = true }
+✅ udocket-ai-core = { workspace = true }  # ADDED
 ```
 
 **apps/worker** (`apps/worker/pyproject.toml`):
 ```toml
 ✅ dependencies = [
      ...,
-     ✅ "py-domain",
-     ✅ "py-worker-core",  # ADDED
+     ✅ "udocket-domain",
+     ✅ "udocket-celery-core",  # ADDED
    ]
 
 ✅ [tool.uv.sources]
-✅ py-domain = { workspace = true }
-✅ py-worker-core = { workspace = true }  # ADDED
+✅ udocket-domain = { workspace = true }
+✅ udocket-celery-core = { workspace = true }  # ADDED
 ```
 
 **Result**: All workspace dependencies correctly configured (100%)
@@ -335,8 +335,8 @@ $ cat .venv/lib/python3.12/site-packages/_py_worker_core.pth
 ## Files Created (Total: 18)
 
 ### Package Infrastructure (3)
-1. ✅ `packages/py-ai-core/src/py_ai_core/__init__.py`
-2. ✅ `packages/py-worker-core/src/py_worker_core/__init__.py`
+1. ✅ `packages/udocket-ai-core/src/udocket_ai_core/__init__.py`
+2. ✅ `packages/udocket-celery-core/src/udocket_worker_core/__init__.py`
 
 ### API Application (8)
 3. ✅ `apps/api/src/__init__.py`
@@ -366,37 +366,37 @@ $ cat .venv/lib/python3.12/site-packages/_py_worker_core.pth
 ## Files Modified (Total: 5)
 
 ### Package Configurations (3)
-1. ✅ `packages/py-domain/pyproject.toml` - **Fixed hatchling config bug**
-2. ✅ `packages/py-ai-core/pyproject.toml` - Added build-system, renamed package
-3. ✅ `packages/py-worker-core/pyproject.toml` - Added build-system, renamed package
+1. ✅ `packages/udocket-domain/pyproject.toml` - **Fixed hatchling config bug**
+2. ✅ `packages/udocket-ai-core/pyproject.toml` - Added build-system, renamed package
+3. ✅ `packages/udocket-celery-core/pyproject.toml` - Added build-system, renamed package
 
 ### Application Configurations (2)
-4. ✅ `apps/api/pyproject.toml` - Added py-ai-core dependency
-5. ✅ `apps/worker/pyproject.toml` - Added py-worker-core dependency
+4. ✅ `apps/api/pyproject.toml` - Added udocket-ai-core dependency
+5. ✅ `apps/worker/pyproject.toml` - Added udocket-celery-core dependency
 
 ---
 
 ## Critical Bugs Fixed
 
-### Bug #1: py-domain Hatchling Configuration
-**File**: `packages/py-domain/pyproject.toml`
+### Bug #1: udocket-domain Hatchling Configuration
+**File**: `packages/udocket-domain/pyproject.toml`
 **Line**: 14
-**Before**: `packages = ["src/py-domain"]`
-**After**: `packages = ["src/py_domain"]`
+**Before**: `packages = ["src/udocket-domain"]`
+**After**: `packages = ["src/udocket_domain"]`
 **Impact**: Package was completely unimportable; .pth file was empty
 **Severity**: CRITICAL (blocking all imports)
 **Status**: ✅ FIXED
 
-### Bug #2: py-ai-core Missing Build System
-**File**: `packages/py-ai-core/pyproject.toml`
+### Bug #2: udocket-ai-core Missing Build System
+**File**: `packages/udocket-ai-core/pyproject.toml`
 **Before**: No [build-system] section
 **After**: Full hatchling configuration added
 **Impact**: Package could not be built or installed
 **Severity**: CRITICAL (blocking package use)
 **Status**: ✅ FIXED
 
-### Bug #3: py-worker-core Missing Build System
-**File**: `packages/py-worker-core/pyproject.toml`
+### Bug #3: udocket-celery-core Missing Build System
+**File**: `packages/udocket-celery-core/pyproject.toml`
 **Before**: No [build-system] section
 **After**: Full hatchling configuration added
 **Impact**: Package could not be built or installed
@@ -422,9 +422,9 @@ python3 /tmp/verify_structure.py
 ### Test 2: Import Pattern Testing ✅
 ```bash
 python3 -c "
-from py_domain import Matter, Party, MatterAnalysis
-from py_ai_core import __version__
-from py_worker_core import __version__
+from udocket_domain import Matter, Party, MatterAnalysis
+from udocket_ai_core import __version__
+from udocket_worker_core import __version__
 print('All imports successful')
 "
 ```
@@ -438,7 +438,7 @@ python3 /tmp/verify_type_checkers.py
 
 ### Test 4: Package Installation ✅
 ```bash
-uv pip list | grep -E "(py-domain|py-ai-core|py-worker-core)"
+uv pip list | grep -E "(udocket-domain|udocket-ai-core|udocket-celery-core)"
 ```
 **Result**: ✅ All 3 packages installed correctly
 

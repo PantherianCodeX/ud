@@ -90,30 +90,31 @@
       "root": "apps/api",
       "pythonVersion": "3.12",
       "extraPaths": [
-        "packages/py-domain/src",
-        "packages/py-ai-core/src",
-        "packages/py-worker-core/src"
+        "apps/api/src",
+        "packages/udocket_domain/src",
+        "packages/udocket_ai_core/src",
+        "packages/udocket_worker_core/src"
       ]
     },
     {
-      "root": "apps/worker",
+      "root": "apps/celery",
       "pythonVersion": "3.12",
       "extraPaths": [
-        "apps/worker/src",
-        "packages/py-domain/src",
-        "packages/py-worker-core/src"
+        "apps/celery/src",
+        "packages/udocket_domain/src",
+        "packages/udocket_worker_core/src"
       ]
     },
     {
-      "root": "packages/py-domain",
+      "root": "packages/udocket_domain",
       "pythonVersion": "3.12"
     },
     {
-      "root": "packages/py-ai-core",
+      "root": "packages/udocket_ai_core",
       "pythonVersion": "3.12"
     },
     {
-      "root": "packages/py-worker-core",
+      "root": "packages/udocket_worker_core",
       "pythonVersion": "3.12"
     }
   ]

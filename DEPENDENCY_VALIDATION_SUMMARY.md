@@ -147,9 +147,9 @@ DEPENDENCY_VALIDATION_SUMMARY.md         # This file
 ### Modified Files
 ```
 pyproject.toml                           # Root workspace - removed runtime deps
-packages/py-domain/pyproject.toml        # Added dev-deps section, version constraints
-packages/py-ai-core/pyproject.toml       # Added dev-deps section, version constraints
-packages/py-worker-core/pyproject.toml   # Added dev-deps section, version constraints
+packages/udocket-domain/pyproject.toml        # Added dev-deps section, version constraints
+packages/udocket-ai-core/pyproject.toml       # Added dev-deps section, version constraints
+packages/udocket-celery-core/pyproject.toml   # Added dev-deps section, version constraints
 apps/api/pyproject.toml                  # Organized deps, added comments
 apps/worker/pyproject.toml               # Organized deps, added comments
 ```
@@ -189,7 +189,7 @@ uv run pytest tooling/test_check_dependencies.py --cov=tooling --cov-report=term
 ./tooling/deps.sh add fastapi apps/api
 
 # Add to specific package
-./tooling/deps.sh add pydantic packages/py-domain
+./tooling/deps.sh add pydantic packages/udocket-domain
 ```
 
 ### Sync Dependencies

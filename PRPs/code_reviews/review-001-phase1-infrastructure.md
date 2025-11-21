@@ -20,7 +20,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 | FastAPI Application | ✅ | `apps/api/src/main.py` with health endpoint |
 | JWT Authentication Stub | ✅ | `apps/api/src/platform/auth/jwt.py` |
 | Auth Dependencies | ✅ | `apps/api/src/platform/auth/dependencies.py` |
-| Domain Models | ✅ | `packages/py-domain/` with Matter, Party, Issue, Timeline, Action, Transcript |
+| Domain Models | ✅ | `packages/udocket-domain/` with Matter, Party, Issue, Timeline, Action, Transcript |
 | Alembic Migrations | ✅ | Initial schema with pgvector extension |
 | Quality Tool Configs | ✅ | `configs/` with ruff, pylint, mypy, pytest, bandit |
 | Pre-commit Hooks | ✅ | `.pre-commit-config.yaml` |
@@ -65,9 +65,9 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 ### 🟡 Important (Should Fix)
 
 1. **HealthCheck Model Duplication** - `apps/api/src/main.py:26-43`
-   - HealthCheck is defined inline instead of using `py_domain.base.HealthCheck`
+   - HealthCheck is defined inline instead of using `udocket_domain.base.HealthCheck`
    - Comment indicates this is temporary for Phase 1
-   **Fix**: Import from py-domain once workspace packages are properly resolved
+   **Fix**: Import from udocket-domain once workspace packages are properly resolved
 
 2. **Missing doit Task Automation** - `tooling/dodo.py`
    - PRP Phase 12 specifies doit tasks but file not created
@@ -140,7 +140,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 
 5. **Vertical Slice Architecture**
    - Clean separation of workflow domains
-   - Proper package structure with py-domain, py-ai-core, py-worker-core
+   - Proper package structure with udocket-domain, udocket-ai-core, udocket-celery-core
    - Tests co-located with code
 
 6. **Documentation Quality**
@@ -165,7 +165,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 3. Tests for auth dependencies
 4. Tests for config loading
 5. Tests for logging configuration
-6. Tests for domain models (py-domain)
+6. Tests for domain models (udocket-domain)
 
 ### Test Files Present
 
@@ -202,7 +202,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 ### Short-term Actions (Next Sprint)
 
 1. Add Prometheus/Grafana stub configs
-2. Import HealthCheck from py-domain instead of duplicating
+2. Import HealthCheck from udocket-domain instead of duplicating
 3. Add README files for tooling/ and ops/
 4. Write unit tests for core modules
 

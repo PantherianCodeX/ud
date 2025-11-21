@@ -45,7 +45,7 @@ Each package declares its own dependencies:
 
 ```toml
 [project]
-name = "py-domain"
+name = "udocket-domain"
 dependencies = [
     "pydantic>=2.12.4,<3.0.0",
 ]
@@ -74,13 +74,13 @@ dependencies = [
     "asyncpg>=0.30.0,<0.31.0",
 
     # Workspace packages
-    "py-domain",
-    "py-ai-core",
+    "udocket-domain",
+    "udocket-ai-core",
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }
-py-ai-core = { workspace = true }
+udocket-domain = { workspace = true }
+udocket-ai-core = { workspace = true }
 ```
 
 ## Dependency Categories
@@ -92,7 +92,7 @@ Use for:
 - Database drivers (asyncpg, SQLAlchemy)
 - Core libraries (Pydantic, structlog)
 - AI/ML libraries (LangGraph, LangSmith)
-- Workspace packages (`py-domain`, `py-ai-core`, etc.)
+- Workspace packages (`udocket-domain`, `udocket-ai-core`, etc.)
 
 ### Dev Dependencies (`[tool.uv.dev-dependencies]`)
 
@@ -214,11 +214,11 @@ When one workspace package depends on another:
 ```toml
 [project]
 dependencies = [
-    "py-domain",  # Workspace package
+    "udocket-domain",  # Workspace package
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }
+udocket-domain = { workspace = true }
 ```
 
 ## Version Constraints

@@ -39,12 +39,12 @@ This architecture captures the multi-service uDocket SaaS: legal intake intervie
 │   └─ mobile/          # (future) Expo/React Native client
 │
 ├─ packages/             # Shared libraries
-│   ├─ py-domain/        # Canonical Matter, Party, Issue, Timeline, Action, MatterAnalysis models
-│   ├─ py-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation, provider registry
-│   ├─ py-worker-core/   # Celery factories, idempotency helpers, audit hooks
-│   ├─ ts-api-types/     # Shared OpenAPI/SDK types for Next.js + future mobile
-│   ├─ ts-ui-kit/        # Reusable UI primitives (layout, typography, modals)
-│   └─ ts-utils/         # Tiny helpers (fetch wrappers, date math)
+│   ├─ udocket-domain/        # Canonical Matter, Party, Issue, Timeline, Action, MatterAnalysis models
+│   ├─ udocket-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation, provider registry
+│   ├─ udocket-celery-core/   # Celery factories, idempotency helpers, audit hooks
+│   ├─ udocket_api_types/     # Shared OpenAPI/SDK types for Next.js + future mobile
+│   ├─ udocket_ui_kit/        # Reusable UI primitives (layout, typography, modals)
+│   └─ udocket_utils/         # Tiny helpers (fetch wrappers, date math)
 │
 ├─ infra/                # Helm charts, Kubernetes manifests, Terraform stubs
 ├─ ops/                  # Docker Compose stacks, Prometheus/Grafana + OTEL dashboards, collectors
@@ -91,7 +91,7 @@ apps/api/
     integration/
 ```
 
-Mobile apps repeat only the slices they need while reusing shared typings (`ts-api-types`) and UI primitives (`ts-ui-kit`).
+Mobile apps repeat only the slices they need while reusing shared typings (`udocket_api_types`) and UI primitives (`udocket_ui_kit`).
 
 ### Worker & background tree
 
@@ -127,7 +127,7 @@ apps/web/
       chat/
       notifications/
     shared/
-      ui/                     # ts-ui-kit primitives
+      ui/                     # udocket_ui_kit primitives
       lib/                    # shared helpers
       config/
     workflow/

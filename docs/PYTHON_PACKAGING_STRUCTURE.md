@@ -54,11 +54,11 @@ We use `uv` workspaces for monorepo management. All packages are installed in ed
 
 ```text
 packages/
-├── py-domain/                      # Package distribution name (PyPI-friendly)
+├── udocket-domain/                      # Package distribution name (PyPI-friendly)
 │   ├── pyproject.toml             # Package metadata and build config
 │   ├── README.md                  # Package documentation
 │   ├── src/                       # Source root (REQUIRED)
-│   │   └── py_domain/             # Actual Python package (import name)
+│   │   └── udocket_domain/             # Actual Python package (import name)
 │   │       ├── __init__.py        # Package exports (REQUIRED, must not be empty)
 │   │       ├── base.py            # Module files
 │   │       ├── matter.py
@@ -70,8 +70,8 @@ packages/
 ```
 
 **Key Points:**
-- **Distribution name** (in pyproject.toml): Can use hyphens (`py-domain`)
-- **Import name** (directory in src/): Must use underscores (`py_domain`)
+- **Distribution name** (in pyproject.toml): Can use hyphens (`udocket-domain`)
+- **Import name** (directory in src/): Must use underscores (`udocket_domain`)
 - **src/ directory**: REQUIRED for all shared packages
 - **__init__.py**: MUST export public API (not empty placeholder)
 - **tests/**: Lives at package root, not inside src/
@@ -129,13 +129,13 @@ apps/
 
 | Type | Format | Example | Used In |
 |------|--------|---------|---------|
-| **Distribution Name** | kebab-case | `py-domain` | pyproject.toml `[project] name` |
-| **Import Name** | snake_case | `py_domain` | Directory name, Python imports |
-| **PyPI Prefix** | `udocket-` | `udocket-py-ai-core` | Public packages only |
+| **Distribution Name** | kebab-case | `udocket-domain` | pyproject.toml `[project] name` |
+| **Import Name** | snake_case | `udocket_domain` | Directory name, Python imports |
+| **PyPI Prefix** | `udocket-` | `udocket-udocket-ai-core` | Public packages only |
 
 **Rules:**
-1. Distribution names (PyPI) should use hyphens: `py-domain`, `py-ai-core`
-2. Import names (Python) MUST use underscores: `py_domain`, `py_ai_core`
+1. Distribution names (PyPI) should use hyphens: `udocket-domain`, `udocket-ai-core`
+2. Import names (Python) MUST use underscores: `udocket_domain`, `udocket_ai_core`
 3. Keep names short but descriptive
 4. Use `udocket-` prefix only for packages intended for PyPI publication
 
@@ -144,12 +144,12 @@ apps/
 ```toml
 # pyproject.toml
 [project]
-name = "py-domain"              # Distribution name (hyphens OK)
+name = "udocket-domain"              # Distribution name (hyphens OK)
 ```
 
 ```python
 # Python imports
-from py_domain import Matter    # Import name (underscores required)
+from udocket_domain import Matter    # Import name (underscores required)
 ```
 
 ---
@@ -160,7 +160,7 @@ from py_domain import Matter    # Import name (underscores required)
 
 ```toml
 [project]
-name = "py-domain"                    # Distribution name
+name = "udocket-domain"                    # Distribution name
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
@@ -172,13 +172,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/py_domain"]          # ⚠️ CRITICAL: Use underscore, not hyphen
+packages = ["src/udocket_domain"]          # ⚠️ CRITICAL: Use underscore, not hyphen
                                        # Must match actual directory name
 ```
 
 **Critical Configuration:**
-- `packages = ["src/py_domain"]` - **MUST use underscores** to match directory name
-- Common error: `packages = ["src/py-domain"]` ❌ (hyphens don't match directory)
+- `packages = ["src/udocket_domain"]` - **MUST use underscores** to match directory name
+- Common error: `packages = ["src/udocket-domain"]` ❌ (hyphens don't match directory)
 
 ### Application pyproject.toml
 
@@ -189,11 +189,11 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
-    "py-domain",                      # Reference by distribution name
+    "udocket-domain",                      # Reference by distribution name
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }      # Enable workspace resolution
+udocket-domain = { workspace = true }      # Enable workspace resolution
 ```
 
 ### Root Workspace pyproject.toml
@@ -203,9 +203,9 @@ py-domain = { workspace = true }      # Enable workspace resolution
 members = [
     "apps/api",
     "apps/worker",
-    "packages/py-domain",
-    "packages/py-ai-core",
-    "packages/py-worker-core",
+    "packages/udocket-domain",
+    "packages/udocket-ai-core",
+    "packages/udocket-celery-core",
 ]
 ```
 
@@ -226,13 +226,13 @@ members = [
       "root": "apps/api",
       "pythonVersion": "3.12",
       "extraPaths": [
-        "packages/py-domain/src",
-        "packages/py-ai-core/src",
-        "packages/py-worker-core/src"
+        "packages/udocket-domain/src",
+        "packages/udocket-ai-core/src",
+        "packages/udocket-celery-core/src"
       ]
     },
     {
-      "root": "packages/py-domain",
+      "root": "packages/udocket-domain",
       "pythonVersion": "3.12"
     }
   ]
@@ -256,7 +256,7 @@ namespace_packages = true
 explicit_package_bases = true
 
 # Module search paths
-mypy_path = ".:apps/api:packages/py-domain/src:packages/py-ai-core/src:packages/py-worker-core/src"
+mypy_path = ".:apps/api:packages/udocket-domain/src:packages/udocket-ai-core/src:packages/udocket-celery-core/src"
 
 # Plugins
 plugins = ["pydantic.mypy"]
@@ -271,24 +271,24 @@ plugins = ["pydantic.mypy"]
 
 ## Common Issues and Solutions
 
-### Issue 1: "ModuleNotFoundError: No module named 'py_domain'"
+### Issue 1: "ModuleNotFoundError: No module named 'udocket_domain'"
 
 **Cause:** Package not installed in editable mode, or hatchling config error
 
 **Solution:**
 ```bash
 # Check hatchling configuration
-# In packages/py-domain/pyproject.toml, verify:
+# In packages/udocket-domain/pyproject.toml, verify:
 [tool.hatch.build.targets.wheel]
-packages = ["src/py_domain"]  # Must match directory name exactly
+packages = ["src/udocket_domain"]  # Must match directory name exactly
 
 # Reinstall package
-uv pip uninstall py-domain
-uv pip install -e packages/py-domain
+uv pip uninstall udocket-domain
+uv pip install -e packages/udocket-domain
 
 # Verify .pth file is populated
-cat .venv/lib/python3.12/site-packages/_py_domain.pth
-# Should contain: /path/to/packages/py-domain/src
+cat .venv/lib/python3.12/site-packages/_udocket_domain.pth
+# Should contain: /path/to/packages/udocket-domain/src
 ```
 
 ### Issue 2: Mypy/Pyright Can't Resolve Imports
@@ -309,11 +309,11 @@ cat .venv/lib/python3.12/site-packages/_py_domain.pth
 ```toml
 # WRONG - uses hyphens (doesn't match directory)
 [tool.hatch.build.targets.wheel]
-packages = ["src/py-domain"]
+packages = ["src/udocket-domain"]
 
 # CORRECT - uses underscores (matches directory)
 [tool.hatch.build.targets.wheel]
-packages = ["src/py_domain"]
+packages = ["src/udocket_domain"]
 ```
 
 ### Issue 4: Tests Can't Import from src/
@@ -324,7 +324,7 @@ packages = ["src/py_domain"]
 Ensure `pytest.ini` or `pyproject.toml` has:
 ```toml
 [tool.pytest.ini_options]
-pythonpath = [".", "apps/api/src", "packages/py-domain/src"]
+pythonpath = [".", "apps/api/src", "packages/udocket-domain/src"]
 ```
 
 ### Issue 5: Imports Work Locally But Fail in CI
@@ -452,7 +452,7 @@ apps/myapp/
      "executionEnvironments": [
        {
          "root": "apps/myapp",
-         "extraPaths": ["packages/py-domain/src", ...]
+         "extraPaths": ["packages/udocket-domain/src", ...]
        }
      ]
    }
@@ -512,20 +512,20 @@ python -c "import py_newpkg; print('Success')"
 uv sync
 
 # Install single package in editable mode
-uv pip install -e packages/py-domain
+uv pip install -e packages/udocket-domain
 
 # Check what's installed
 uv pip list | grep -E "(py-|udocket-)"
 
 # Verify package imports
-python -c "from py_domain import Matter; print(Matter)"
+python -c "from udocket_domain import Matter; print(Matter)"
 
 # Run type checks
 mypy apps/api/src
 pyright apps/api
 
 # Run tests
-pytest packages/py-domain/tests
+pytest packages/udocket-domain/tests
 pytest apps/api/tests
 ```
 
@@ -563,12 +563,12 @@ Use this checklist when creating or migrating packages:
 
 ## Reference: Complete Example
 
-### Shared Package (py-domain)
+### Shared Package (udocket-domain)
 
-**File: `packages/py-domain/pyproject.toml`**
+**File: `packages/udocket-domain/pyproject.toml`**
 ```toml
 [project]
-name = "py-domain"
+name = "udocket-domain"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = ["pydantic>=2.12.4"]
@@ -578,10 +578,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/py_domain"]
+packages = ["src/udocket_domain"]
 ```
 
-**File: `packages/py-domain/src/py_domain/__init__.py`**
+**File: `packages/udocket-domain/src/udocket_domain/__init__.py`**
 ```python
 """uDocket domain models."""
 from .matter import Matter, Party, Relationship
@@ -599,7 +599,7 @@ __all__ = [
 
 **Usage:**
 ```python
-from py_domain import Matter, Party
+from udocket_domain import Matter, Party
 ```
 
 ### Application (API)
@@ -612,18 +612,18 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115.0",
-    "py-domain",
+    "udocket-domain",
 ]
 
 [tool.uv.sources]
-py-domain = { workspace = true }
+udocket-domain = { workspace = true }
 ```
 
 **File: `apps/api/src/main.py`**
 ```python
 from fastapi import FastAPI
 from src.core import settings, configure_logging
-from py_domain import HealthCheck
+from udocket_domain import HealthCheck
 
 app = FastAPI()
 
@@ -707,8 +707,8 @@ Import not working?
 
 **Golden Rules:**
 1. ✅ Always use src/ layout for packages
-2. ✅ Distribution names can use hyphens (`py-domain`)
-3. ✅ Import names must use underscores (`py_domain`)
+2. ✅ Distribution names can use hyphens (`udocket-domain`)
+3. ✅ Import names must use underscores (`udocket_domain`)
 4. ✅ Hatchling config must match directory name exactly
 5. ✅ Every package needs a non-empty `__init__.py`
 6. ✅ Type checkers need paths to `src/` directories
