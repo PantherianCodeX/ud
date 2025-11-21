@@ -89,7 +89,7 @@ jobs:
 
       - name: Run ${{ matrix.check_name }}
         run: ${{ matrix.run }}
-        continue-on-error: ${{ matrix.allow_failure == 'true' && env.IS_PROTECTED_BRANCH != 'true' }}
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }}
 
       - name: Upload coverage reports
         if: matrix.upload_coverage == 'true'
