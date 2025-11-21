@@ -1,6 +1,7 @@
 # Copyright (c) 2025 uDocket. All Rights Reserved.
 """Tests for the quality audit script."""
 
+import json
 import tempfile
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from quality_audit import (
     find_python_files,
     generate_markdown_manifest,
     load_baseline,
+    parse_bandit_config_ignores,
     parse_mypy_config_ignores,
     parse_pylint_config_ignores,
     parse_pyright_config_ignores,
@@ -73,6 +75,28 @@ class TestFindPythonFiles:
             files = find_python_files(tmp_path)
             assert len(files) == 2
 
+    def test_includes_test_files_by_default(self) -> None:
+        """Test that test_*.py files are included by default."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            test_file = tmp_path / "test_example.py"
+            test_file.touch()
+
+            files = find_python_files(tmp_path)
+            assert any(file.name == "test_example.py" for file in files)
+
+    def test_can_exclude_test_files_when_requested(self) -> None:
+        """Test that callers can opt-out of scanning test files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+
+            (tmp_path / "module.py").touch()
+            (tmp_path / "test_example.py").touch()
+
+            files = find_python_files(tmp_path, exclude_test_files=True)
+            assert all(file.name != "test_example.py" for file in files)
+
     def test_exclude_venv(self) -> None:
         """Test that .venv directory is excluded."""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -119,7 +143,7 @@ class TestExtractJustification:
     def test_justification_in_previous_line(self) -> None:
         """Test justification in previous line comment."""
         prev_line = "# JUSTIFIED: This is necessary for compatibility"
-        line = "x = 1  # type: ignore"
+        line = "x = 1  # type: ignore  # JUSTIFIED: test data"
         has_just, _just = extract_justification(line, prev_line)
         assert has_just is True
 
@@ -175,6 +199,19 @@ class TestScanFileForIgnores:
             assert len(entries) == 1
             assert entries[0].ignore_type == "noqa"
             assert "E501" in entries[0].ignore_codes
+
+    def test_scan_nosec(self) -> None:
+        """Test scanning for bandit nosec comments."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            test_file = tmp_path / "test.py"
+            test_file.write_text("uvicorn.run(host='0.0.0.0')  # nosec B104 - required for networking\n")
+
+            entries = scan_file_for_ignores(test_file, tmp_path)
+            assert len(entries) == 1
+            assert entries[0].ignore_type == "nosec"
+            assert entries[0].ignore_codes == ["B104"]
+            assert entries[0].has_justification is True
 
     def test_scan_pylint_disable(self) -> None:
         """Test scanning for pylint: disable comments."""
@@ -266,7 +303,7 @@ ignore = [
     def test_parse_nonexistent_config(self) -> None:
         """Test parsing nonexistent config returns empty list."""
         entries = parse_ruff_config_ignores(Path("/nonexistent/ruff.toml"))
-        assert entries == []
+        assert not entries
 
     def test_parse_ignore_without_justification_reports_missing(self) -> None:
         """Test that ignores without justification are flagged."""
@@ -494,7 +531,7 @@ disable = [
     def test_nonexistent_config(self) -> None:
         """Test handling of nonexistent config file."""
         entries = parse_pylint_config_ignores(Path("/nonexistent/pylint.toml"))
-        assert entries == []
+        assert not entries
 
     def test_empty_disable_list(self) -> None:
         """Test parsing empty disable list."""
@@ -519,15 +556,20 @@ class TestParsePyrightConfigIgnores:
             tmp_path = Path(tmpdir)
             config_file = tmp_path / "pyrightconfig.json"
             config_file.write_text("""{
-  "_justifications": {
-    "reportMissingTypeStubs": "Third-party libs without stubs",
-    "reportUnusedCallResult": "Optional chaining pattern"
-  },
   "typeCheckingMode": "strict",
   "reportMissingTypeStubs": false,
   "reportUnusedCallResult": false,
   "reportUnusedImport": true
 }""")
+            justification_file = tmp_path / "pyrightconfig.justifications.json"
+            justification_file.write_text(
+                json.dumps(
+                    {
+                        "reportMissingTypeStubs": "Third-party libs without stubs",
+                        "reportUnusedCallResult": "Optional chaining pattern",
+                    }
+                )
+            )
 
             entries = parse_pyright_config_ignores(config_file)
             assert len(entries) == 2
@@ -558,7 +600,7 @@ class TestParsePyrightConfigIgnores:
     def test_nonexistent_config(self) -> None:
         """Test handling of nonexistent config file."""
         entries = parse_pyright_config_ignores(Path("/nonexistent/pyrightconfig.json"))
-        assert entries == []
+        assert not entries
 
     def test_ignore_true_settings(self) -> None:
         """Test that report* = true settings are not tracked as ignores."""
@@ -573,6 +615,42 @@ class TestParsePyrightConfigIgnores:
 
             entries = parse_pyright_config_ignores(config_file)
             assert len(entries) == 0
+
+
+class TestParseBanditConfigIgnores:
+    """Test parsing of bandit config entries."""
+
+    def test_parse_bandit_lists(self) -> None:
+        """Test parsing exclude_dirs and skips with justifications."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                """
+[tool.bandit]
+exclude_dirs = [
+    "tests",  # JUSTIFIED: Skip tests
+    "build",  # JUSTIFIED: Generated artifacts
+]
+skips = [
+    "B101",  # JUSTIFIED: Pytest asserts
+]
+"""
+            )
+
+            entries = parse_bandit_config_ignores(config_file)
+            assert len(entries) == 3
+            exclude_entries = [e for e in entries if e.section.endswith("exclude_dirs")]
+            skip_entries = [e for e in entries if e.section.endswith("skips")]
+            assert len(exclude_entries) == 2
+            assert len(skip_entries) == 1
+            assert exclude_entries[0].applies_to == "tests"
+            assert skip_entries[0].codes == ["B101"]
+
+    def test_parse_missing_bandit_config(self) -> None:
+        """Test parsing when bandit config is absent."""
+        entries = parse_bandit_config_ignores(Path("/nonexistent/pyproject.toml"))
+        assert not entries
 
 
 class TestCheckConfigStrictness:
@@ -737,7 +815,7 @@ class TestBaselinePersistence:
     def test_load_nonexistent_baseline(self) -> None:
         """Test loading nonexistent baseline returns empty dict."""
         loaded = load_baseline(Path("/nonexistent/.baseline.json"))
-        assert loaded == {}
+        assert not loaded
 
 
 class TestGenerateMarkdownManifest:
@@ -765,7 +843,7 @@ class TestGenerateMarkdownManifest:
                 ],
                 config_ignores=[],
                 config_errors=[],
-                baseline_drift=[],
+                    baseline_drift=(),
                 summary={
                     "total_code_ignores": 1,
                     "errors": 1,
@@ -801,7 +879,7 @@ class TestGenerateMarkdownManifest:
                     )
                 ],
                 config_errors=[],
-                baseline_drift=[],
+                    baseline_drift=(),
                 summary={
                     "total_code_ignores": 0,
                     "errors": 0,
@@ -814,8 +892,9 @@ class TestGenerateMarkdownManifest:
             generate_markdown_manifest(report, output_path)
 
             content = output_path.read_text()
-            assert "Config Ignores (Justified)" in content
-            assert "ruff.toml" in content
+            assert "## Config Ignores by File" in content
+            assert "### ruff.toml" in content
+            assert "| lint.ignore | E501, W503 | global | Long lines allowed |" in content
 
 
 class TestIntegration:
@@ -950,7 +1029,7 @@ class TestBaselineEnforcement:
         # If it fails, you must either:
         # 1. Revert unauthorized config changes
         # 2. Get approval and run: uv run python tooling/quality_audit.py --update-baseline
-        assert drift == [], (
+        assert not drift, (
             f"BASELINE DRIFT DETECTED - Config files modified without approval:\n"
             f"{chr(10).join(f'  - {d}' for d in drift)}\n\n"
             f"To fix: Either revert changes or get approval and update baseline with:\n"
@@ -969,7 +1048,7 @@ class TestBaselineEnforcement:
 
         errors = check_config_strictness(root)
 
-        assert errors == [], f"CONFIG STRICTNESS VIOLATIONS:\n{chr(10).join(f'  - {e}' for e in errors)}"
+        assert not errors, f"CONFIG STRICTNESS VIOLATIONS:\n{chr(10).join(f'  - {e}' for e in errors)}"
 
     def test_actual_codebase_no_unjustified_ignores(self) -> None:
         """CRITICAL: Verify no inline ignores without justification.
@@ -986,7 +1065,7 @@ class TestBaselineEnforcement:
 
         unjustified = [e for e in all_entries if e.severity == "error"]
 
-        assert unjustified == [], (
+        assert not unjustified, (
             f"UNJUSTIFIED IGNORES DETECTED:\n"
             f"{chr(10).join(f'  - {e.file_path}:{e.line_number}: {e.content[:60]}' for e in unjustified)}"
         )
@@ -1038,10 +1117,12 @@ disable = []
 
             # Create all config files with ignores
             (tmp_path / "pyrightconfig.json").write_text("""{
-  "_justifications": {"reportMissingTypeStubs": "Test justification"},
   "typeCheckingMode": "strict",
   "reportMissingTypeStubs": false
 }""")
+            (tmp_path / "pyrightconfig.justifications.json").write_text(
+                json.dumps({"reportMissingTypeStubs": "Test justification"})
+            )
 
             configs_dir = tmp_path / "configs"
             configs_dir.mkdir()
@@ -1098,8 +1179,8 @@ disable = [
             mypy_entries = parse_mypy_config_ignores(configs_dir / "pyproject.toml")
             pylint_entries = parse_pylint_config_ignores(configs_dir / "pylint.toml")
 
-            assert mypy_entries == []
-            assert pylint_entries == []
+            assert not mypy_entries
+            assert not pylint_entries
 
 
 if __name__ == "__main__":

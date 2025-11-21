@@ -2,7 +2,7 @@ name: Quality Checks
 
 on:
   push:
-    branches: [main, develop, 'feat/**']
+    branches: [main, develop, "feat/**"]
   pull_request:
     branches: [main, develop]
 
@@ -57,7 +57,6 @@ jobs:
 
       - name: Pylint
         run: uv run pylint apps/ packages/ tooling/
-        continue-on-error: true  # Pylint is informative but not blocking
 
   typecheck:
     name: Python Type Checking
@@ -81,11 +80,11 @@ jobs:
 
       - name: Mypy type check
         run: uv run mypy apps/ packages/ tooling/
-        continue-on-error: true  # Type checking is strict but may have false positives
+        continue-on-error: true # Type checking is strict but may have false positives
 
       - name: Pyright type check
         run: uv run pyright apps/ packages/ tooling/
-        continue-on-error: true  # Type checking is strict but may have false positives
+        continue-on-error: true # Type checking is strict but may have false positives
 
   test:
     name: Python Tests
@@ -137,7 +136,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for Gitleaks to scan full history
+          fetch-depth: 0 # Needed for Gitleaks to scan full history
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -153,7 +152,7 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Bandit security scan
-        run: uv run bandit -r apps/ packages/ tooling/ -f json -o bandit-report.json
+        run: uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json
         continue-on-error: true
 
       - name: Safety dependency check
@@ -187,4 +186,4 @@ jobs:
 
       - name: Run pre-commit hooks
         run: uv run pre-commit run --all-files
-        continue-on-error: true  # Some hooks may fail on CI but are informative
+        continue-on-error: true # Some hooks may fail on CI but are informative

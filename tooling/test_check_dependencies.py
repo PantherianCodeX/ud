@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright (c) 2025 uDocket. All Rights Reserved.
 """Tests for the dependency validation script."""
-
+import ast
 import tempfile
 from pathlib import Path
 
@@ -43,8 +43,6 @@ class TestImportVisitor:
         """Test extraction of simple import."""
         code = "import os\nimport sys"
         visitor = ImportVisitor()
-        import ast
-
         tree = ast.parse(code)
         visitor.visit(tree)
         assert "os" in visitor.imports
@@ -54,8 +52,6 @@ class TestImportVisitor:
         """Test extraction of from...import."""
         code = "from pathlib import Path\nfrom typing import Any"
         visitor = ImportVisitor()
-        import ast
-
         tree = ast.parse(code)
         visitor.visit(tree)
         assert "pathlib" in visitor.imports
@@ -65,8 +61,6 @@ class TestImportVisitor:
         """Test extraction of nested module imports."""
         code = "from fastapi.middleware.cors import CORSMiddleware"
         visitor = ImportVisitor()
-        import ast
-
         tree = ast.parse(code)
         visitor.visit(tree)
         assert "fastapi" in visitor.imports
@@ -75,8 +69,6 @@ class TestImportVisitor:
         """Test extraction of local package imports."""
         code = "from udocket_domain import Matter\nfrom udocket_ai_core import analyze"
         visitor = ImportVisitor()
-        import ast
-
         tree = ast.parse(code)
         visitor.visit(tree)
         assert "udocket_domain" in visitor.imports

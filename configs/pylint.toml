@@ -43,10 +43,8 @@ enable = "all"
 disable = [
     "line-too-long",  # JUSTIFIED: Ruff handles line length enforcement
     "bad-indentation",  # JUSTIFIED: Ruff handles indentation
-    "bad-continuation",  # JUSTIFIED: Ruff handles continuation style
     "too-few-public-methods",  # JUSTIFIED: Pydantic models are data classes with few methods
     "no-self-argument",  # JUSTIFIED: Pydantic validators use cls as first argument
-    "no-self-use",  # JUSTIFIED: Pydantic validators may not use self
     "redefined-outer-name",  # JUSTIFIED: pytest fixtures intentionally shadow outer names
     "duplicate-code",  # JUSTIFIED: High false positive rate, better suited for periodic scans
     "missing-module-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
@@ -172,20 +170,6 @@ ignore-docstrings = true
 ignore-imports = true
 ignore-signatures = true
 
-[tool.pylint.spelling]
-# Spelling checker (if aspell installed)
-spelling-dict = "en_US"
-
-# Ignore spelling for these
-spelling-ignore-words = [
-    "udocket",
-    "pgvector",
-    "alembic",
-    "pydantic",
-    "fastapi",
-    "async",
-    "await",
-]
 
 [tool.pylint.typecheck]
 # List of decorators that produce context managers

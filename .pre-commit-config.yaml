@@ -33,10 +33,12 @@ repos:
       - id: ruff
         args: [--config=configs/ruff.toml, --fix]
         types_or: [python, pyi]
+        exclude: &exclude_prp ^(\.claude|PRPs)/
       # Run formatter
       - id: ruff-format
         args: [--config=configs/ruff.toml]
         types_or: [python, pyi]
+        exclude: *exclude_prp
 
   # Pylint - Secondary static analysis
   - repo: local
@@ -49,7 +51,7 @@ repos:
         args:
           - --rcfile=configs/pylint.toml
           - --score=no
-        exclude: '^(\.venv|venv|\.git|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|build|dist)/'
+        exclude: '^(\.venv|venv|\.git|__pycache__|\.pytest_cache|\.mypy_cache|\.ruff_cache|build|dist|\.claude|PRPs)/'
 
   # Mypy - Type checking
   - repo: local
@@ -60,7 +62,7 @@ repos:
         language: system
         types: [python]
         args: [--config-file=configs/pyproject.toml]
-        exclude: '^(\.venv|venv|\.git|__pycache__|tests?/)/'
+        exclude: '^(\.venv|venv|\.git|__pycache__|tests?/|\.claude|PRPs)/'
         require_serial: true
 
   # Pyright - Additional type checking
@@ -71,7 +73,7 @@ repos:
         entry: uv run pyright
         language: system
         types: [python]
-        exclude: '^(\.venv|venv|\.git|__pycache__|tests?/)/'
+        exclude: '^(\.venv|venv|\.git|__pycache__|tests?/|\.claude|PRPs)/'
         require_serial: true
         pass_filenames: false
 
@@ -87,28 +89,29 @@ repos:
           - -c
           - configs/.bandit
           - -r
-        exclude: '^(\.venv|venv|tests?/)/'
+        exclude: '^(\.venv|venv|tests?/|\.claude|PRPs)/'
 
   # Secret detection
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.21.2
     hooks:
       - id: gitleaks
+        exclude: *exclude_prp
 
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: '^(\.venv|venv|\.git)/'
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
       - id: end-of-file-fixer
-        exclude: '^(\.venv|venv|\.git)/'
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
       - id: check-yaml
-        exclude: '^(\.venv|venv|\.git)/'
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
       - id: check-toml
-        exclude: '^(\.venv|venv|\.git)/'
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
       - id: check-json
-        exclude: '^(\.venv|venv|\.git)/'
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
       - id: check-added-large-files
         args: [--maxkb=1000]
       - id: check-merge-conflict
@@ -116,25 +119,26 @@ repos:
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: detect-private-key
+        exclude: *exclude_prp
 
   # Python-specific checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: check-ast
-        exclude: '^(\.venv|venv)/'
+        exclude: '^(\.venv|venv|\.claude|PRPs)/'
       - id: debug-statements
-        exclude: '^(\.venv|venv)/'
+        exclude: '^(\.venv|venv|\.claude|PRPs)/'
       - id: check-docstring-first
-        exclude: '^(\.venv|venv)/'
+        exclude: '^(\.venv|venv|\.claude|PRPs)/'
 
   # Prettier for TypeScript, JavaScript, JSON, YAML, Markdown
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
-        types_or: [typescript, tsx, javascript, jsx, json, yaml, markdown]
-        exclude: '^(\.venv|venv|node_modules|\.git|package-lock\.json|pnpm-lock\.yaml)/'
+        types_or: [ts, tsx, javascript, jsx, json, yaml, markdown]
+        exclude: '^(\.venv|venv|node_modules|\.git|package-lock\.json|pnpm-lock\.yaml|\.claude|PRPs)/'
 
 # Global settings
 default_language_version:

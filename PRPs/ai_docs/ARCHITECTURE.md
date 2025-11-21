@@ -39,9 +39,9 @@ This architecture captures the multi-service uDocket SaaS: legal intake intervie
 │   └─ mobile/          # (future) Expo/React Native client
 │
 ├─ packages/             # Shared libraries
-│   ├─ udocket-domain/        # Canonical Matter, Party, Issue, Timeline, Action, MatterAnalysis models
-│   ├─ udocket-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation, provider registry
-│   ├─ udocket-celery-core/   # Celery factories, idempotency helpers, audit hooks
+│   ├─ udocket_domain/        # Canonical Matter, Party, Issue, Timeline, Action, MatterAnalysis models
+│   ├─ udocket_ai_core/       # LangGraph helpers, LangSmith/Langfuse instrumentation, provider registry
+│   ├─ udocket_worker_core/   # Celery factories, idempotency helpers, audit hooks
 │   ├─ udocket_api_types/     # Shared OpenAPI/SDK types for Next.js + future mobile
 │   ├─ udocket_ui_kit/        # Reusable UI primitives (layout, typography, modals)
 │   └─ udocket_utils/         # Tiny helpers (fetch wrappers, date math)

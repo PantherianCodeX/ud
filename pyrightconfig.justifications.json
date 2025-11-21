@@ -1,0 +1,6 @@
+{
+  "reportMissingTypeStubs": "Third-party libraries without stubs should not block development",
+  "reportImplicitStringConcatenation": "Conflicts with ruff formatter concatenation style",
+  "reportUnusedCallResult": "Many functions return values for optional chaining",
+  "reportMissingSuperCall": "Not all classes require super().__init__ calls"
+}

@@ -12,12 +12,16 @@ This script ensures:
 2. All inline ignores have accompanying justification comments
 """
 
+import ast
 import json
 import re
 import sys
 from pathlib import Path
 
+StringNode = ast.Constant | ast.JoinedStr
+
 # Patterns for finding inline ignores
+
 IGNORE_PATTERNS = [
     r"#\s*type:\s*ignore",
     r"#\s*noqa",
@@ -25,7 +29,9 @@ IGNORE_PATTERNS = [
     r"#\s*pyright:\s*ignore",
 ]
 
+
 # Patterns that indicate justification (case-insensitive)
+
 JUSTIFICATION_INDICATORS = [
     r"\b(because|since|due to|reason|justified|required|necessary|needed)\b",
     r"-\s*\w",  # Dash followed by explanation (e.g., "
@@ -38,12 +44,14 @@ def check_pyright_config(config_path: Path) -> list[str]:
 
     if not config_path.exists():
         errors.append(f"Pyright config not found: {config_path}")
+
         return errors
 
     with config_path.open(encoding="utf-8") as f:
         config = json.load(f)
 
     # Check strict mode
+
     if config.get("typeCheckingMode") != "strict":
         errors.append(f"{config_path}: typeCheckingMode must be 'strict', found '{config.get('typeCheckingMode')}'")
 
@@ -56,15 +64,18 @@ def check_mypy_config(config_path: Path) -> list[str]:
 
     if not config_path.exists():
         errors.append(f"Mypy config not found: {config_path}")
+
         return errors
 
     content = config_path.read_text(encoding="utf-8")
 
     # Check strict mode is enabled
+
     if not re.search(r"^\s*strict\s*=\s*true", content, re.MULTILINE | re.IGNORECASE):
         errors.append(f"{config_path}: 'strict = true' must be set")
 
     # Check critical disallow settings (should be true at global level)
+
     critical_settings = [
         "disallow_untyped_defs",
         "disallow_any_generics",
@@ -72,7 +83,9 @@ def check_mypy_config(config_path: Path) -> list[str]:
 
     for setting in critical_settings:
         # Look for global setting (not in overrides)
+
         pattern = rf"^\s*{setting}\s*=\s*true"
+
         if not re.search(pattern, content, re.MULTILINE):
             errors.append(f"{config_path}: '{setting} = true' must be set globally")
 
@@ -85,11 +98,13 @@ def check_ruff_config(config_path: Path) -> list[str]:
 
     if not config_path.exists():
         errors.append(f"Ruff config not found: {config_path}")
+
         return errors
 
     content = config_path.read_text(encoding="utf-8")
 
     # Check that ALL is in select
+
     if '"ALL"' not in content:
         errors.append(f"{config_path}: select must include 'ALL'")
 
@@ -118,43 +133,71 @@ def find_python_files(root: Path) -> list[Path]:
     return python_files
 
 
+def _has_justification_on_line(line: str) -> bool:
+    """Check if a line contains a justification indicator."""
+    return any(re.search(indicator, line, re.IGNORECASE) for indicator in JUSTIFICATION_INDICATORS)
+
+
+def _check_justification(line: str, line_num: int, lines: list[str]) -> bool:
+    """Check if a line or its previous line has a justification."""
+    has_justification = False
+    if _has_justification_on_line(line):
+        has_justification = True
+    if (
+        not has_justification
+        and line_num > 1
+        and (prev_line := lines[line_num - 2]).strip().startswith("#")
+        and _has_justification_on_line(prev_line)
+    ):
+        has_justification = True
+    return has_justification
+
+
 def check_inline_ignores(file_path: Path) -> list[str]:
     """Check that inline ignores have justifications."""
     errors: list[str] = []
 
     try:
         content = file_path.read_text(encoding="utf-8")
-    except (OSError, UnicodeDecodeError) as e:
-        errors.append(f"{file_path}: Could not read file: {e}")
+
+        tree = ast.parse(content)
+
+    except (OSError, UnicodeDecodeError, SyntaxError) as e:
+        errors.append(f"{file_path}: Could not read or parse file: {e}")
+
         return errors
+
+    # Get line numbers of all string literals
+
+    string_literal_lines: set[int] = set()
+
+    for node in ast.walk(tree):
+        string_node: StringNode | None = None
+        if (isinstance(node, ast.Constant) and isinstance(node.value, str)) or isinstance(node, ast.JoinedStr):
+            string_node = node
+        if string_node is None:
+            continue
+
+        start_line = string_node.lineno
+        end_line = getattr(string_node, "end_lineno", string_node.lineno) or string_node.lineno
+        if end_line > start_line:
+            string_literal_lines.update(range(start_line, end_line + 1))
 
     lines = content.split("\n")
 
     for line_num, line in enumerate(lines, 1):
+        # If the line is part of a string literal, skip it.
+
+        # This is a heuristic to avoid flagging ignores in test data.
+
+        if line_num in string_literal_lines:
+            continue
+
         # Check if line contains an ignore pattern
+
         has_ignore = any(re.search(pattern, line, re.IGNORECASE) for pattern in IGNORE_PATTERNS)
-
-        if has_ignore:
-            # Check if there's a justification on this line or the previous line
-            has_justification = False
-
-            # Check current line for justification
-            for indicator in JUSTIFICATION_INDICATORS:
-                if re.search(indicator, line, re.IGNORECASE):
-                    has_justification = True
-                    break
-
-            # Check previous line for justification comment
-            if not has_justification and line_num > 1:
-                prev_line = lines[line_num - 2]
-                if prev_line.strip().startswith("#"):
-                    for indicator in JUSTIFICATION_INDICATORS:
-                        if re.search(indicator, prev_line, re.IGNORECASE):
-                            has_justification = True
-                            break
-
-            if not has_justification:
-                errors.append(f"{file_path}:{line_num}: Inline ignore without justification: {line.strip()[:80]}")
+        if has_ignore and not _check_justification(line, line_num, lines):
+            errors.append(f"{file_path}:{line_num}: Inline ignore without justification: {line.strip()[:80]}")
 
     return errors
 

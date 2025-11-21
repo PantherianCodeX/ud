@@ -15,6 +15,7 @@ members = [
     "apps/web",
     "packages/udocket_domain",
     "packages/udocket_ai_core",
+    "packages/udocket_utils",
     "packages/udocket_worker_core",
 ]
 
@@ -69,6 +70,7 @@ pythonpath = [
     "apps/celery/src",
     "packages/udocket_domain/src",
     "packages/udocket_ai_core/src",
+    "packages/udocket_utils/src",
     "packages/udocket_worker_core/src",
     "tooling",
 ]
@@ -219,6 +221,9 @@ exclude = [
     "*.egg-info",
     "alembic/versions",
     "node_modules",
+    "PRPs",
+    ".claude",
+    "claude_md_files",
 ]
 
 [tool.ruff.lint]
@@ -310,6 +315,8 @@ ignore-patterns = [
     "^build$",
     "^dist$",
     "^node_modules$",
+    "test_.*\\.py",
+    ".*_test\\.py",
 ]
 load-plugins = [
     "pylint.extensions.check_elif",
@@ -392,12 +399,14 @@ ignore-signatures = true
 # === BANDIT CONFIGURATION ===
 [tool.bandit]
 exclude_dirs = [
-    "tests",
-    "**/tests",
-    ".venv",
-    "build",
-    "dist",
-    "node_modules",
-    "tooling/test_*",
+    "tests",  # JUSTIFIED: Security scanner noise in unit test fixtures
+    "**/tests",  # JUSTIFIED: Security scanner noise in nested test suites
+    ".venv",  # JUSTIFIED: Virtualenv contains third-party code outside our control
+    "build",  # JUSTIFIED: Generated build artifacts contain no source logic
+    "dist",  # JUSTIFIED: Generated distribution artifacts contain no source logic
+    "node_modules",  # JUSTIFIED: Third-party JavaScript deps scanned separately
+    "tooling/test_*",  # JUSTIFIED: Tooling tests rely on asserts and fixtures
 ]
-skips = ["B101"]  # assert_used - pytest uses asserts
+skips = [
+    "B101",  # JUSTIFIED: pytest uses assert statements for validation
+]

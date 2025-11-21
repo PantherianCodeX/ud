@@ -17,7 +17,7 @@ from .exceptions import (
     UDocketError,
     ValidationError,
 )
-from .logging import configure_logging, get_logger
+from .log_config import configure_logging, get_logger
 
 __all__ = [
     "AuthenticationError",

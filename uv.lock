@@ -8,6 +8,7 @@ members = [
     "udocket-api",
     "udocket-celery",
     "udocket-domain",
+    "udocket-utils",
     "udocket-web",
     "udocket-worker-core",
 ]
@@ -2523,6 +2524,21 @@ requires-dist = [{ name = "pydantic", specifier = ">=2.12.4,<3.0.0" }]
 
 [package.metadata.requires-dev]
 dev = []
+
+[[package]]
+name = "udocket-utils"
+version = "0.1.0"
+source = { editable = "packages/udocket_utils" }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest" }]
 
 [[package]]
 name = "udocket-web"

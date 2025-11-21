@@ -1,14 +1,13 @@
 {
-  "_justifications": {
-    "reportMissingTypeStubs": "Third-party libraries without stubs should not block development",
-    "reportImplicitStringConcatenation": "Conflicts with ruff formatter concatenation style",
-    "reportUnusedCallResult": "Many functions return values for optional chaining",
-    "reportMissingSuperCall": "Not all classes require super().__init__ calls"
-  },
-  "include": [
-    "apps",
-    "packages",
-    "tooling"
+  "include": ["apps", "packages", "tooling"],
+  "extraPaths": [
+    "apps/api/src",
+    "apps/celery/src",
+    "apps/web/src",
+    "packages/udocket_domain/src",
+    "packages/udocket_ai_core/src",
+    "packages/udocket_utils/src",
+    "packages/udocket_worker_core/src"
   ],
   "exclude": [
     "**/__pycache__",

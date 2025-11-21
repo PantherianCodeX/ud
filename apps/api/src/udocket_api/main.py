@@ -150,7 +150,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "udocket_api.main:app",
-        host="0.0.0.0",  # noqa: S104 - Required for container networking
+        host="0.0.0.0",  # noqa: S104 - Required for container networking  # nosec B104 - Required for container networking
         port=8000,
         reload=settings.debug,
         log_config=None,  # Use structlog instead
