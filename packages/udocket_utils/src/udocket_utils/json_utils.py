@@ -27,7 +27,14 @@ ResultT = TypeVar("ResultT")
 
 
 def is_json_scalar(value: object) -> TypeGuard[JSONPrimitive]:
-    """Return ``True`` when *value* is a valid JSON scalar."""
+    """Return ``True`` when *value* is a valid JSON scalar.
+
+    Args:
+        value: Arbitrary Python object to evaluate.
+
+    Returns:
+        TypeGuard[JSONPrimitive]: ``True`` when ``value`` is a JSON scalar, ``False`` otherwise.
+    """
     return isinstance(value, (str, int, float, bool)) or value is None
 
 
@@ -172,6 +179,14 @@ def coerce_object_dict(
     base = cast("dict[str, object]", normalize_mapping_optional(value))
 
     def identity(text: str) -> str:
+        """Return ``text`` unchanged (default key transformer).
+
+        Args:
+            text: Key to normalize.
+
+        Returns:
+            str: The same key that was provided.
+        """
         return text
 
     transform: Callable[[str], str] = key_transform or identity

@@ -17,19 +17,36 @@ from typing import TYPE_CHECKING, Any
 from .models import ConfigIgnoreEntry
 from .utils import ensure_json_object
 
+TYPE_CHECKING_MODE_KEY = "typeCheckingMode"
+STRICT_MODE = "strict"
+
 if TYPE_CHECKING:
     from pathlib import Path
 
 
 def compute_file_hash(file_path: Path) -> str:
-    """Compute SHA256 hash of a file, returning empty string when missing."""
+    """Compute SHA256 hash of a file, returning empty string when missing.
+
+    Args:
+        file_path: File whose contents should be hashed.
+
+    Returns:
+        str: Hex digest for existing files or an empty string when missing.
+    """
     if not file_path.exists():
         return ""
     return sha256(file_path.read_bytes()).hexdigest()
 
 
 def check_pyright_config(config_path: Path) -> list[str]:
-    """Validate that Pyright config exists and remains in strict mode."""
+    """Validate that Pyright config exists and remains in strict mode.
+
+    Args:
+        config_path: Path to ``pyrightconfig.json``.
+
+    Returns:
+        list[str]: Validation errors discovered for the config.
+    """
     errors: list[str] = []
     if not config_path.exists():
         errors.append(f"Pyright config not found: {config_path}")
@@ -39,13 +56,20 @@ def check_pyright_config(config_path: Path) -> list[str]:
     except json.JSONDecodeError as exc:
         errors.append(f"{config_path}: Invalid JSON: {exc}")
         return errors
-    if config.get("typeCheckingMode") != "strict":
-        errors.append(f"{config_path}: typeCheckingMode must be 'strict', found '{config.get('typeCheckingMode')}'")
+    if (type_mode := config.get(TYPE_CHECKING_MODE_KEY)) != STRICT_MODE:
+        errors.append(f"{config_path}: typeCheckingMode must be strict, found {type_mode}")
     return errors
 
 
 def check_mypy_config(config_path: Path) -> list[str]:
-    """Validate that Mypy config exists and enforces critical strict settings."""
+    """Validate that Mypy config exists and enforces critical strict settings.
+
+    Args:
+        config_path: Path to the ``pyproject.toml`` file containing mypy settings.
+
+    Returns:
+        list[str]: Validation errors describing missing strict options.
+    """
     errors: list[str] = []
     if not config_path.exists():
         errors.append(f"Mypy config not found: {config_path}")
@@ -53,14 +77,21 @@ def check_mypy_config(config_path: Path) -> list[str]:
     content = config_path.read_text(encoding="utf-8")
     if not re.search(r"^\s*strict\s*=\s*true", content, re.MULTILINE | re.IGNORECASE):
         errors.append(f"{config_path}: 'strict = true' must be set")
-    for setting in ["disallow_untyped_defs", "disallow_any_generics"]:
+    for setting in ("disallow_untyped_defs", "disallow_any_generics"):
         if not re.search(rf"^\s*{setting}\s*=\s*true", content, re.MULTILINE):
             errors.append(f"{config_path}: '{setting} = true' must be set globally")
     return errors
 
 
 def check_ruff_config(config_path: Path) -> list[str]:
-    """Validate that Ruff config selects every rule (strict enforcement)."""
+    """Validate that Ruff config selects every rule (strict enforcement).
+
+    Args:
+        config_path: Path to the Ruff configuration file.
+
+    Returns:
+        list[str]: Validation errors related to rule selection.
+    """
     errors: list[str] = []
     if not config_path.exists():
         errors.append(f"Ruff config not found: {config_path}")
@@ -72,7 +103,14 @@ def check_ruff_config(config_path: Path) -> list[str]:
 
 
 def parse_ruff_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
-    """Parse lint/per-file ignore entries from ``config_path``."""
+    """Parse lint/per-file ignore entries from ``config_path``.
+
+    Args:
+        config_path: Path to the Ruff configuration file.
+
+    Returns:
+        list[ConfigIgnoreEntry]: Parsed ignore metadata with justifications.
+    """
     entries: list[ConfigIgnoreEntry] = []
     if not config_path.exists():
         return entries
@@ -126,7 +164,16 @@ def _parse_mypy_override_section(
     section_content: str,
     section_justification: str,
 ) -> list[ConfigIgnoreEntry]:
-    """Parse a single mypy override block for ignored directives."""
+    """Parse a single mypy override block for ignored directives.
+
+    Args:
+        config_path: Path to the configuration file being parsed.
+        section_content: Raw text for the override section.
+        section_justification: Justification comment pulled from the config.
+
+    Returns:
+        list[ConfigIgnoreEntry]: Parsed override entries from the section.
+    """
     section_lines = section_content.split("\n")
     entries: list[ConfigIgnoreEntry] = []
 
@@ -140,12 +187,12 @@ def _parse_mypy_override_section(
 
     applies_to = ", ".join(modules)
 
-    ignore_directives = [
+    ignore_directives = (
         ("ignore_missing_imports", r"ignore_missing_imports\s*=\s*true"),
         ("ignore_errors", r"ignore_errors\s*=\s*true"),
         ("disallow_untyped_defs", r"disallow_untyped_defs\s*=\s*false"),
         ("disallow_untyped_decorators", r"disallow_untyped_decorators\s*=\s*false"),
-    ]
+    )
 
     for directive_name, pattern in ignore_directives:
         for line in section_lines:
@@ -172,7 +219,14 @@ def _parse_mypy_override_section(
 
 
 def parse_mypy_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
-    """Extract ignore overrides from mypy configuration."""
+    """Extract ignore overrides from mypy configuration.
+
+    Args:
+        config_path: Path to the ``pyproject.toml`` file containing mypy config.
+
+    Returns:
+        list[ConfigIgnoreEntry]: Recorded overrides with their justifications.
+    """
     entries: list[ConfigIgnoreEntry] = []
     if not config_path.exists():
         return entries
@@ -195,7 +249,14 @@ def parse_mypy_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
 
 
 def parse_pylint_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
-    """Gather disabled pylint rules along with justifications."""
+    """Gather disabled pylint rules along with justifications.
+
+    Args:
+        config_path: Path to the ``pylint`` TOML configuration.
+
+    Returns:
+        list[ConfigIgnoreEntry]: Entries covering disabled rules and scopes.
+    """
     entries: list[ConfigIgnoreEntry] = []
     if not config_path.exists():
         return entries
@@ -229,7 +290,14 @@ def parse_pylint_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
 
 
 def _load_pyright_justifications(config_path: Path) -> dict[str, str]:
-    """Load custom justifications for pyright report ignores."""
+    """Load custom justifications for pyright report ignores.
+
+    Args:
+        config_path: Path to ``pyrightconfig.json`` whose sidecar file is read.
+
+    Returns:
+        dict[str, str]: Mapping of report setting to justification text.
+    """
     justification_path = config_path.with_suffix(".justifications.json")
     if not justification_path.exists():
         return {}
@@ -247,7 +315,14 @@ def _load_pyright_justifications(config_path: Path) -> dict[str, str]:
 
 
 def parse_pyright_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
-    """Extract pyright report* ignores and attach stored justifications."""
+    """Extract pyright report* ignores and attach stored justifications.
+
+    Args:
+        config_path: Path to ``pyrightconfig.json``.
+
+    Returns:
+        list[ConfigIgnoreEntry]: Pyright ignore entries plus justifications.
+    """
     entries: list[ConfigIgnoreEntry] = []
     if not config_path.exists():
         return entries
@@ -275,7 +350,14 @@ def parse_pyright_config_ignores(config_path: Path) -> list[ConfigIgnoreEntry]:
 
 
 def parse_bandit_config_ignores(pyproject_path: Path) -> list[ConfigIgnoreEntry]:
-    """Parse allowed Bandit ignores from the workspace pyproject."""
+    """Parse allowed Bandit ignores from the workspace pyproject.
+
+    Args:
+        pyproject_path: Root ``pyproject.toml`` that stores Bandit config.
+
+    Returns:
+        list[ConfigIgnoreEntry]: Bandit ignore configuration entries.
+    """
     entries: list[ConfigIgnoreEntry] = []
     if not pyproject_path.exists():
         return entries
@@ -337,7 +419,14 @@ def _check_ruff_strictness(root: Path) -> list[str]:
 
 
 def check_config_strictness(root: Path) -> list[str]:
-    """Enforce strictness policies on Pyright, Mypy, and Ruff configs."""
+    """Enforce strictness policies on Pyright, Mypy, and Ruff configs.
+
+    Args:
+        root: Repository root containing the configuration files.
+
+    Returns:
+        list[str]: Aggregated strictness violations.
+    """
     errors: list[str] = []
     errors.extend(_check_pyright_strictness(root))
     errors.extend(_check_mypy_strictness(root))
@@ -346,7 +435,14 @@ def check_config_strictness(root: Path) -> list[str]:
 
 
 def load_baseline(baseline_path: Path) -> dict[str, str]:
-    """Read the saved baseline hashes of configuration files."""
+    """Read the saved baseline hashes of configuration files.
+
+    Args:
+        baseline_path: Path to the JSON file storing baseline hashes.
+
+    Returns:
+        dict[str, str]: Mapping of relative file path to recorded hash.
+    """
     if not baseline_path.exists():
         return {}
     try:
@@ -356,13 +452,25 @@ def load_baseline(baseline_path: Path) -> dict[str, str]:
 
 
 def save_baseline(baseline_path: Path, hashes: dict[str, str]) -> None:
-    """Persist baseline hashes so drift can be detected later."""
+    """Persist baseline hashes so drift can be detected later.
+
+    Args:
+        baseline_path: Where to write the serialized baseline data.
+        hashes: Mapping of relative file paths to their hash digests.
+    """
     baseline_path.parent.mkdir(parents=True, exist_ok=True)
     baseline_path.write_text(json.dumps(hashes, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def discover_config_files(root: Path) -> list[Path]:
-    """Discover every quality-related configuration file to track."""
+    """Discover every quality-related configuration file to track.
+
+    Args:
+        root: Repository root to scan for configuration files.
+
+    Returns:
+        list[Path]: Sorted list of configuration file paths.
+    """
     config_files: list[Path] = []
 
     pyright_config = root / "pyrightconfig.json"
@@ -376,14 +484,30 @@ def discover_config_files(root: Path) -> list[Path]:
     root_pyproject = root / "pyproject.toml"
     if root_pyproject.exists():
         content = root_pyproject.read_text(encoding="utf-8")
-        if any(section in content for section in ["[tool.mypy]", "[tool.ruff]", "[tool.pylint]", "[tool.pyright]"]):
+        if any(
+            section in content
+            for section in (
+                "[tool.mypy]",
+                "[tool.ruff]",
+                "[tool.pylint]",
+                "[tool.pyright]",
+            )
+        ):
             config_files.append(root_pyproject)
 
     return sorted(config_files)
 
 
 def check_baseline_drift(root: Path, baseline_path: Path) -> tuple[tuple[str, ...], dict[str, str]]:
-    """Detect if tracked configuration files differ from the saved baseline."""
+    """Detect if tracked configuration files differ from the saved baseline.
+
+    Args:
+        root: Repository root that owns the configuration files.
+        baseline_path: Path to the saved baseline JSON file.
+
+    Returns:
+        tuple[tuple[str, ...], dict[str, str]]: Drift messages and updated hashes.
+    """
     drift: list[str] = []
     current_hashes: dict[str, str] = {}
 

@@ -21,6 +21,9 @@ class IntakeService:
     def submit(self, request: intake_schemas.IntakeRequest) -> intake_schemas.IntakeRecord:
         """Create a new intake record.
 
+        Args:
+            request: Validated intake submission from the API layer.
+
         Returns:
             IntakeRecord: Newly created record.
         """
@@ -34,6 +37,10 @@ class IntakeService:
 
     def update_status(self, record_id: uuid.UUID, *, status: str) -> intake_schemas.IntakeRecord:
         """Update the workflow status for a record.
+
+        Args:
+            record_id: Identifier for the intake record.
+            status: New workflow status value.
 
         Returns:
             IntakeRecord: Updated record.
@@ -54,14 +61,18 @@ class IntakeService:
         return updated
 
     def list_records(self) -> list[intake_schemas.IntakeRecord]:
-        """Return all records sorted by creation time."""
+        """Return all records sorted by creation time.
+
+        Returns:
+            list[IntakeRecord]: Sorted intake records.
+        """
         return sorted(self._records.values(), key=lambda record: record.created_at)
 
     def get_status(self) -> intake_schemas.IntakeStatus:
         """Compute aggregate statistics.
 
         Returns:
-            IntakeStatus: Aggregate counts.
+            IntakeStatus: Aggregate counts for total, pending, and completed records.
         """
         pending = sum(1 for record in self._records.values() if record.status != "complete")
         completed = sum(1 for record in self._records.values() if record.status == "complete")
@@ -77,6 +88,9 @@ class IntakeService:
 
     def seed(self, records: abc.Iterable[intake_schemas.IntakeRecord]) -> None:
         """Load records (useful for fixtures).
+
+        Args:
+            records: Iterable of IntakeRecord objects to seed the store with.
 
         Raises:
             TypeError: If the argument is not iterable.

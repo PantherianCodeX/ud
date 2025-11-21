@@ -15,7 +15,8 @@ See ROADMAP.md Phase 2 for Keycloak integration details.
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from jose import JWTError, jwt
+import jwt
+from jwt import InvalidTokenError
 from pydantic import BaseModel, Field
 
 from udocket_api.core.config import settings
@@ -95,7 +96,7 @@ def decode_access_token(token: str) -> TokenData:
             exp=datetime.fromtimestamp(exp, tz=UTC) if exp else None,
         )
 
-    except JWTError as e:
+    except InvalidTokenError as e:
         msg = f"Token validation failed: {e!s}"
         raise AuthenticationError(msg) from e
     except ValueError as e:

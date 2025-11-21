@@ -21,8 +21,7 @@ if TYPE_CHECKING:
 def _append_code_ignores_to_manifest(lines: list[str], code_ignores: list[IgnoreEntry]) -> None:
     lines.extend(["## Code Ignores", ""])
 
-    errors = [entry for entry in code_ignores if entry.severity == "error"]
-    if errors:
+    if errors := [entry for entry in code_ignores if entry.severity == "error"]:
         lines.extend([
             "### ❌ Missing Justification (Must Fix)",
             "",
@@ -33,8 +32,7 @@ def _append_code_ignores_to_manifest(lines: list[str], code_ignores: list[Ignore
             lines.append(f"| {entry.file_path} | {entry.line_number} | {entry.ignore_type} | `{entry.content[:60]}` |")
         lines.append("")
 
-    warnings = [entry for entry in code_ignores if entry.severity == "warning"]
-    if warnings:
+    if warnings := [entry for entry in code_ignores if entry.severity == "warning"]:
         lines.extend([
             "### ⚠️ Blanket Ignores (Should Specify Codes)",
             "",
@@ -45,8 +43,7 @@ def _append_code_ignores_to_manifest(lines: list[str], code_ignores: list[Ignore
             lines.append(f"| {entry.file_path} | {entry.line_number} | {entry.ignore_type} | `{entry.content[:60]}` |")
         lines.append("")
 
-    info = [entry for entry in code_ignores if entry.severity == "info"]
-    if info:
+    if info := [entry for entry in code_ignores if entry.severity == "info"]:
         lines.extend([
             "### ✅ Properly Justified",
             "",
@@ -94,8 +91,7 @@ def _append_config_ignores_to_manifest(lines: list[str], config_ignores: list[Co
         ])
         for entry in sorted(grouped[file_path], key=lambda e: (e.section, ", ".join(e.codes), e.applies_to)):
             code = ", ".join(entry.codes) if entry.codes else "unknown"
-            justification = entry.justification or "No justification"
-            if justification == "No justification":
+            if (justification := entry.justification or "No justification") == "No justification":
                 justification = "No justification ⚠️"
             lines.append(f"| {entry.section} | {code} | {entry.applies_to} | {justification} |")
         lines.append("")
@@ -116,7 +112,18 @@ def _append_config_errors_to_manifest(lines: list[str], config_errors: list[str]
 
 
 def generate_markdown_manifest(report: AuditReport, output_path: Path) -> None:
-    """Create the markdown manifest summarizing ignore metadata."""
+    """Create the markdown manifest summarizing ignore metadata.
+
+    Args:
+        report: Aggregated audit data.
+        output_path: Destination file for the manifest.
+    """
+    summary = report.summary
+    total_code_ignores = summary.get("total_code_ignores", 0)
+    missing_justification = summary.get("errors", 0)
+    blanket_ignores = summary.get("warnings", 0)
+    properly_justified = summary.get("info", 0)
+    config_ignores = summary.get("config_ignores", 0)
     lines = [
         "# Quality Ignores Manifest",
         "",
@@ -124,11 +131,11 @@ def generate_markdown_manifest(report: AuditReport, output_path: Path) -> None:
         "",
         "## Summary",
         "",
-        f"- Total code ignores: {report.summary.get('total_code_ignores', 0)}",
-        f"- Ignores without justification: {report.summary.get('errors', 0)}",
-        f"- Blanket ignores (warning): {report.summary.get('warnings', 0)}",
-        f"- Properly justified ignores: {report.summary.get('info', 0)}",
-        f"- Config ignores: {report.summary.get('config_ignores', 0)}",
+        f"- Total code ignores: {total_code_ignores}",
+        f"- Ignores without justification: {missing_justification}",
+        f"- Blanket ignores (warning): {blanket_ignores}",
+        f"- Properly justified ignores: {properly_justified}",
+        f"- Config ignores: {config_ignores}",
         "",
     ]
 
@@ -145,17 +152,27 @@ def generate_markdown_manifest(report: AuditReport, output_path: Path) -> None:
 
 
 def print_terminal_report(report: AuditReport) -> None:
-    """Render a human-readable quality audit summary to the terminal."""
+    """Render a human-readable quality audit summary to the terminal.
+
+    Args:
+        report: Aggregated audit data.
+    """
+    summary = report.summary
+    total_code_ignores = summary.get("total_code_ignores", 0)
+    missing_justification = summary.get("errors", 0)
+    blanket_ignores = summary.get("warnings", 0)
+    properly_justified = summary.get("info", 0)
+    config_ignores = summary.get("config_ignores", 0)
     print("\n" + "=" * 60)
     print("QUALITY AUDIT REPORT")
     print("=" * 60)
     print(f"\nTimestamp: {report.timestamp}")
     print("\nSummary:")
-    print(f"  Total code ignores: {report.summary.get('total_code_ignores', 0)}")
-    print(f"  Missing justification: {report.summary.get('errors', 0)}")
-    print(f"  Blanket ignores: {report.summary.get('warnings', 0)}")
-    print(f"  Properly justified: {report.summary.get('info', 0)}")
-    print(f"  Config ignores: {report.summary.get('config_ignores', 0)}")
+    print(f"  Total code ignores: {total_code_ignores}")
+    print(f"  Missing justification: {missing_justification}")
+    print(f"  Blanket ignores: {blanket_ignores}")
+    print(f"  Properly justified: {properly_justified}")
+    print(f"  Config ignores: {config_ignores}")
 
     if report.config_errors:
         print("\n❌ Configuration Errors:")
@@ -167,15 +184,13 @@ def print_terminal_report(report: AuditReport) -> None:
         for drift in report.baseline_drift:
             print(f"  - {drift}")
 
-    errors = [entry for entry in report.code_ignores if entry.severity == "error"]
-    if errors:
+    if errors := [entry for entry in report.code_ignores if entry.severity == "error"]:
         print("\n❌ Ignores Missing Justification:")
         for entry in errors:
             print(f"  {entry.file_path}:{entry.line_number} - {entry.ignore_type}")
             print(f"    {entry.content[:80]}")
 
-    warnings = [entry for entry in report.code_ignores if entry.severity == "warning"]
-    if warnings:
+    if warnings := [entry for entry in report.code_ignores if entry.severity == "warning"]:
         print(f"\n⚠️ Blanket Ignores (first 10 of {len(warnings)}):")
         for entry in warnings[:10]:
             print(f"  {entry.file_path}:{entry.line_number} - {entry.ignore_type}")

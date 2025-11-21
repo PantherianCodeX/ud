@@ -7,7 +7,6 @@ dependencies = []
 
 [tool.uv]
 dev-dependencies = [
-    "pytest",
 ]
 
 [build-system]

@@ -46,7 +46,17 @@ def run_audit(
     update_baseline: bool = False,
     dry_run: bool = False,
 ) -> int:
-    """Run the comprehensive quality audit and return an exit code."""
+    """Run the comprehensive quality audit and return an exit code.
+
+    Args:
+        root: Repository root used to locate configs and source files.
+        generate_manifest: When ``True``, write the markdown manifest.
+        update_baseline: When ``True``, persist new config hashes after scanning.
+        dry_run: Skip all filesystem writes while still printing results.
+
+    Returns:
+        int: Zero on success, non-zero when errors or drift are detected.
+    """
     report = AuditReport(timestamp=datetime.now(tz=UTC).isoformat())
     print("Running quality audit...")
 
@@ -107,7 +117,14 @@ def run_audit(
 
 
 def run_config_check(*, root: Path) -> int:
-    """Run the lightweight config + inline ignore validation."""
+    """Run the lightweight config + inline ignore validation.
+
+    Args:
+        root: Repository root used to locate configuration files and sources.
+
+    Returns:
+        int: Zero when checks pass, otherwise non-zero.
+    """
     errors: list[str] = []
     errors.extend(check_pyright_config(root / "pyrightconfig.json"))
     errors.extend(check_mypy_config(root / "configs" / "pyproject.toml"))
@@ -144,7 +161,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """Parse CLI flags and execute the requested quality audit workflow."""
+    """Parse CLI flags and execute the requested quality audit workflow.
+
+    Returns:
+        int: Exit status propagated from the invoked workflow.
+    """
     parser = _build_parser()
     args = parser.parse_args()
     root = args.root or Path(__file__).resolve().parents[2]

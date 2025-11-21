@@ -27,7 +27,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 | CI/CD Pipeline | ✅ | `.github/workflows/quality.yml` |
 | Docker Compose | ✅ | `ops/docker-compose.yml` with Postgres, RabbitMQ, Redis |
 | Dependency Validation | ✅ | `tooling/check_dependencies.py` with tests |
-| Quality Audit System | ✅ | `python tooling/run_quality_audit.py` with baseline enforcement |
+| Quality Audit System | ✅ | `python -m tooling.run_quality_audit` with baseline enforcement |
 
 ### 🔶 Partially Complete
 

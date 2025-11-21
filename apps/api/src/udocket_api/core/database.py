@@ -10,6 +10,7 @@
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -81,7 +82,6 @@ async def check_db_health() -> bool:
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-    except Exception:  # noqa: BLE001 - Health check should catch all connection errors
+    except SQLAlchemyError:
         return False
-    else:
-        return True
+    return True

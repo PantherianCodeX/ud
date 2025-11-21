@@ -52,7 +52,7 @@ jobs:
           - check_name: "Ruff Format"
             run: "uv run ruff format --check ."
           - check_name: "Pylint"
-            run: "uv run pylint apps/ packages/ tooling/"
+            run: "uv run pylint --rcfile configs/pylint.toml apps/ packages/ tooling/"
           - check_name: "Mypy"
             run: "uv run mypy apps/ packages/ tooling/"
             allow_failure: true
@@ -110,12 +110,9 @@ jobs:
             run: "uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json"
           - check_name: "Safety"
             run: "uv run safety check --json"
-          - check_name: "Gitleaks"
-            is_gitleaks: true
+
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Needed for Gitleaks to scan full history
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4

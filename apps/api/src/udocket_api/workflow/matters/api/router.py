@@ -18,7 +18,11 @@ _service = MattersService()
 
 
 def get_matters_service() -> MattersService:
-    """Return the shared service instance."""
+    """Return the shared service instance.
+
+    Returns:
+        MattersService: Singleton service for routing handlers.
+    """
     return _service
 
 
@@ -29,6 +33,10 @@ def create_matter(
 ) -> Matter:
     """Create a matter.
 
+    Args:
+        payload: Validated request body describing the matter to create.
+        service: Dependency-injected matter service instance.
+
     Returns:
         Matter: Newly created matter entity.
     """
@@ -38,6 +46,9 @@ def create_matter(
 @router.get("", response_model=list[Matter])
 def list_matters(service: Annotated[MattersService, Depends(get_matters_service)]) -> list[Matter]:
     """List all matters.
+
+    Args:
+        service: Dependency-injected matter service instance.
 
     Returns:
         list[Matter]: Sorted matter list.
@@ -51,6 +62,10 @@ def get_matter(
     service: Annotated[MattersService, Depends(get_matters_service)],
 ) -> Matter:
     """Return a single matter by ID.
+
+    Args:
+        matter_id: Identifier for the requested matter.
+        service: Dependency-injected matter service instance.
 
     Returns:
         Matter: Requested matter.

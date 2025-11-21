@@ -70,7 +70,7 @@ disallow_untyped_decorators = false  # JUSTIFIED: pytest.mark decorators don't h
 # Per-module options for third-party libraries without stubs
 [[tool.mypy.overrides]]
 module = [
-    "jose.*",
+    "jwt.*",
     "passlib.*",
     "structlog.*",
     "alembic.*",

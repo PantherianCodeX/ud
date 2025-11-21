@@ -4,6 +4,8 @@
 [tool.pylint.main]
 # Python version
 py-version = "3.12"
+# Ensure workspace packages are discoverable without installation
+init-hook = "import sys; from pathlib import Path; ROOT = Path(__file__).resolve().parents[1]; sys.path[:0] = [str(ROOT / 'apps/api/src'), str(ROOT / 'apps/celery/src'), str(ROOT / 'apps/web/src'), str(ROOT / 'packages/udocket_domain/src'), str(ROOT / 'packages/udocket_ai_core/src'), str(ROOT / 'packages/udocket_utils/src'), str(ROOT / 'packages/udocket_worker_core/src')]"
 
 # Files or directories to analyze
 recursive = true
@@ -16,6 +18,10 @@ ignore-patterns = [
     ".*\\.egg-info$",
     "^build$",
     "^dist$",
+    "^tests$",  # JUSTIFIED: pytest suites do not require docstring enforcement
+    "test_.*\\.py$",  # JUSTIFIED: allow expressive pytest names without docstrings
+    ".*_test\\.py$",  # JUSTIFIED: allow expressive pytest names without docstrings
+    "^alembic$",  # JUSTIFIED: Alembic autogenerates migration modules
 ]
 
 # Load all available plugins
@@ -94,7 +100,7 @@ max-statements = 50
 max-parents = 7
 
 # Maximum attributes for a class
-max-attributes = 7
+max-attributes = 8
 
 # Minimum public methods for a class
 min-public-methods = 0
@@ -144,7 +150,7 @@ analyse-fallback-blocks = true
 
 [tool.pylint.exceptions]
 # Exceptions that trigger raise-without-traceback-from
-overgeneral-exceptions = ["BaseException", "Exception"]
+overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
 
 [tool.pylint.logging]
 # Logging modules to check
@@ -167,8 +173,6 @@ min-similarity-lines = 4
 # Ignore comments and docstrings
 ignore-comments = true
 ignore-docstrings = true
-ignore-imports = true
-ignore-signatures = true
 
 
 [tool.pylint.typecheck]

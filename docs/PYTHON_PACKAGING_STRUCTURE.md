@@ -70,11 +70,12 @@ packages/
 ```
 
 **Key Points:**
+
 - **Distribution name** (in pyproject.toml): Can use hyphens (`udocket-domain`)
 - **Import name** (directory in src/): Must use underscores (`udocket_domain`)
-- **src/ directory**: REQUIRED for all shared packages
-- **__init__.py**: MUST export public API (not empty placeholder)
-- **tests/**: Lives at package root, not inside src/
+- **`src/` directory**: REQUIRED for all shared packages
+- **`__init__.py`**: MUST export public API (not empty placeholder)
+- **`tests/`**: Lives at package root, not inside src/
 
 ### Standard Structure for Applications (`apps/`)
 
@@ -116,9 +117,10 @@ apps/
 ```
 
 **Key Points:**
+
 - Applications use src/ layout for consistency
 - Import pattern: `from src.core import settings`
-- PYTHONPATH includes `apps/api/` during development
+- Workspace configuration + editable installs expose the modules
 - Each module directory MUST have `__init__.py`
 
 ---
@@ -134,6 +136,7 @@ apps/
 | **PyPI Prefix** | `udocket-` | `udocket-udocket-ai-core` | Public packages only |
 
 **Rules:**
+
 1. Distribution names (PyPI) should use hyphens: `udocket-domain`, `udocket-ai-core`
 2. Import names (Python) MUST use underscores: `udocket_domain`, `udocket_ai_core`
 3. Keep names short but descriptive
@@ -177,6 +180,7 @@ packages = ["src/udocket_domain"]          # ⚠️ CRITICAL: Use underscore, no
 ```
 
 **Critical Configuration:**
+
 - `packages = ["src/udocket_domain"]` - **MUST use underscores** to match directory name
 - Common error: `packages = ["src/udocket-domain"]` ❌ (hyphens don't match directory)
 
@@ -240,6 +244,7 @@ members = [
 ```
 
 **Key Configuration:**
+
 - `extraPaths`: Points to `src/` directories of workspace packages
 - Separate execution environment per app/package root
 - Enables strict type checking across workspace
@@ -263,6 +268,7 @@ plugins = ["pydantic.mypy"]
 ```
 
 **Key Configuration:**
+
 - `mypy_path`: Colon-separated list of search paths
 - Must include each package's `src/` directory
 - `namespace_packages = true` for workspace support
@@ -276,6 +282,7 @@ plugins = ["pydantic.mypy"]
 **Cause:** Package not installed in editable mode, or hatchling config error
 
 **Solution:**
+
 ```bash
 # Check hatchling configuration
 # In packages/udocket-domain/pyproject.toml, verify:
@@ -296,6 +303,7 @@ cat .venv/lib/python3.12/site-packages/_udocket_domain.pth
 **Cause:** Type checker doesn't know about package src/ directories
 
 **Solution:**
+
 1. Check `pyrightconfig.json` has correct `extraPaths`
 2. Check `configs/pyproject.toml` has correct `mypy_path`
 3. Ensure paths point to `src/` directories, not package root
@@ -306,6 +314,7 @@ cat .venv/lib/python3.12/site-packages/_udocket_domain.pth
 **Cause:** Hatchling config specifies wrong package path
 
 **Solution:**
+
 ```toml
 # WRONG - uses hyphens (doesn't match directory)
 [tool.hatch.build.targets.wheel]
@@ -322,6 +331,7 @@ packages = ["src/udocket_domain"]
 
 **Solution:**
 Ensure `pytest.ini` or `pyproject.toml` has:
+
 ```toml
 [tool.pytest.ini_options]
 pythonpath = [".", "apps/api/src", "packages/udocket-domain/src"]
@@ -333,6 +343,7 @@ pythonpath = [".", "apps/api/src", "packages/udocket-domain/src"]
 
 **Solution:**
 This is exactly why we use src/ layout! It forces proper installation.
+
 1. Ensure `uv sync` runs in CI before tests
 2. Check that workspace packages are properly installed
 3. Never add src/ directories to PYTHONPATH manually (breaks the safety)
@@ -344,6 +355,7 @@ This is exactly why we use src/ layout! It forces proper installation.
 ### Converting Existing Package to Src Layout
 
 **Before:**
+
 ```text
 packages/my-package/
 ├── pyproject.toml
@@ -354,6 +366,7 @@ packages/my-package/
 ```
 
 **After:**
+
 ```text
 packages/my-package/
 ├── pyproject.toml
@@ -367,17 +380,20 @@ packages/my-package/
 **Steps:**
 
 1. **Create src/ directory:**
+
    ```bash
    cd packages/my-package
    mkdir src
    ```
 
 2. **Move package directory into src/:**
+
    ```bash
    mv my_package src/
    ```
 
 3. **Update pyproject.toml:**
+
    ```toml
    [tool.hatch.build.targets.wheel]
    packages = ["src/my_package"]  # Add this
@@ -388,6 +404,7 @@ packages/my-package/
    - Add `packages/my-package/src` to `configs/pyproject.toml` mypy_path
 
 5. **Reinstall package:**
+
    ```bash
    cd /home/user/Code/ud
    uv pip uninstall my-package
@@ -395,6 +412,7 @@ packages/my-package/
    ```
 
 6. **Verify:**
+
    ```bash
    python -c "from my_package import MyClass; print('Success')"
    ```
@@ -402,6 +420,7 @@ packages/my-package/
 ### Converting Application to Src Layout
 
 **Before:**
+
 ```text
 apps/myapp/
 ├── pyproject.toml
@@ -412,6 +431,7 @@ apps/myapp/
 ```
 
 **After:**
+
 ```text
 apps/myapp/
 ├── pyproject.toml
@@ -425,6 +445,7 @@ apps/myapp/
 **Steps:**
 
 1. **Create src/ directory and move code:**
+
    ```bash
    cd apps/myapp
    mkdir src
@@ -432,12 +453,14 @@ apps/myapp/
    rmdir myapp
    ```
 
-2. **Create src/__init__.py:**
+2. **Create `src/__init__.py`:**
+
    ```bash
    touch src/__init__.py
    ```
 
 3. **Update imports to use `from src.` prefix:**
+
    ```python
    # Before
    from myapp.core import settings
@@ -447,6 +470,7 @@ apps/myapp/
    ```
 
 4. **Update pyrightconfig.json:**
+
    ```json
    {
      "executionEnvironments": [
@@ -459,6 +483,7 @@ apps/myapp/
    ```
 
 5. **Test the application:**
+
    ```bash
    cd apps/myapp
    python -m src.main  # Or however you run it
@@ -566,6 +591,7 @@ Use this checklist when creating or migrating packages:
 ### Shared Package (udocket-domain)
 
 **File: `packages/udocket-domain/pyproject.toml`**
+
 ```toml
 [project]
 name = "udocket-domain"
@@ -582,6 +608,7 @@ packages = ["src/udocket_domain"]
 ```
 
 **File: `packages/udocket-domain/src/udocket_domain/__init__.py`**
+
 ```python
 """uDocket domain models."""
 from .matter import Matter, Party, Relationship
@@ -598,6 +625,7 @@ __all__ = [
 ```
 
 **Usage:**
+
 ```python
 from udocket_domain import Matter, Party
 ```
@@ -605,6 +633,7 @@ from udocket_domain import Matter, Party
 ### Application (API)
 
 **File: `apps/api/pyproject.toml`**
+
 ```toml
 [project]
 name = "udocket-api"
@@ -620,6 +649,7 @@ udocket-domain = { workspace = true }
 ```
 
 **File: `apps/api/src/main.py`**
+
 ```python
 from fastapi import FastAPI
 from src.core import settings, configure_logging
@@ -647,6 +677,7 @@ async def health():
 ### Q: Can I have both my_package and my-package?
 
 **A:** Yes, but they mean different things:
+
 - `my-package` is the distribution name (PyPI, pyproject.toml)
 - `my_package` is the import name (Python code)
 - They're often different because Python identifiers can't have hyphens
@@ -662,6 +693,7 @@ async def health():
 ### Q: How do I know if my package is installed correctly?
 
 **A:** Check these:
+
 ```bash
 # 1. Check .pth file exists and has content
 cat .venv/lib/python3.12/site-packages/_my_package.pth
@@ -676,7 +708,7 @@ python -c "import my_package; print(my_package.__file__)"
 
 ## Troubleshooting Decision Tree
 
-```
+```text
 Import not working?
 ├─ Check: Is package installed?
 │  └─ Run: uv pip list | grep package-name
@@ -706,6 +738,7 @@ Import not working?
 ## Summary
 
 **Golden Rules:**
+
 1. ✅ Always use src/ layout for packages
 2. ✅ Distribution names can use hyphens (`udocket-domain`)
 3. ✅ Import names must use underscores (`udocket_domain`)
@@ -716,6 +749,7 @@ Import not working?
 8. ✅ Verify .pth file is populated after install
 
 **This structure ensures:**
+
 - ✅ Proper type checking (mypy + pyright strict)
 - ✅ Reliable imports across workspace
 - ✅ Early detection of packaging issues

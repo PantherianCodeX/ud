@@ -407,7 +407,7 @@ Run security scans manually or let CI handle them:
 uv run bandit -r apps/ packages/ -f json -o bandit-report.json
 
 # Safety - Check Python dependencies for known vulnerabilities
-uv run safety check --json
+uv run safety scan --json
 
 # Gitleaks - Scan for secrets in git history
 uv run gitleaks detect --source . --verbose

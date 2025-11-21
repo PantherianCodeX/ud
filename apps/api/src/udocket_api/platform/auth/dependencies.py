@@ -53,10 +53,11 @@ def get_current_user(
 
         # In Phase 1, we reconstruct a stub user from token data
         # In Phase 2+, this will query Keycloak or a user service
+        email_value = str(token_data.email)
         return UserStub(
             id=token_data.user_id,
-            email=token_data.email,
-            full_name=token_data.email.split("@")[0],  # Stub
+            email=email_value,
+            full_name=email_value.split("@", maxsplit=1)[0],  # Stub
             roles=token_data.roles,
             is_active=True,
         )
@@ -82,6 +83,17 @@ def require_role(
     """
 
     def role_checker(user: Annotated[UserStub, Depends(get_current_user)]) -> UserStub:
+        """Validate that ``user`` possesses ``required_role``.
+
+        Args:
+            user: Authenticated user resolved by ``get_current_user``.
+
+        Returns:
+            UserStub: The same ``user`` instance when authorized.
+
+        Raises:
+            HTTPException: If ``user`` is missing the required role.
+        """
         if required_role not in user.roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

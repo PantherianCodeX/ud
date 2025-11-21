@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# pylint: disable=R6102  # JUSTIFIED: Global lists mutated when building dependency tables
 # Copyright (c) 2025 uDocket. All Rights Reserved.
 #
 # PROPRIETARY AND CONFIDENTIAL
@@ -63,8 +62,7 @@ IMPORT_TO_PACKAGE = {
     "alembic": "alembic",
     "asyncpg": "asyncpg",
     "structlog": "structlog",
-    "jose": "python-jose",
-    "jwt": "python-jose",  # jwt module comes from python-jose
+    "jwt": "pyjwt",
     "passlib": "passlib",
     "celery": "celery",
     "langgraph": "langgraph",
@@ -106,32 +104,34 @@ DEV_DEPENDENCIES = {
 
 
 class ImportVisitor(ast.NodeVisitor):
-    """AST visitor to collect all imports from Python files."""
+    """Collect unique top-level imports from parsed Python modules."""
 
     def __init__(self) -> None:
         self.imports: set[str] = set()
 
     @override
-    def visit_Import(self, node: ast.Import) -> None:
-        """Visit import statements."""
-        for alias in node.names:
-            # Get top-level module
-            module = alias.name.split(".")[0]
-            self.imports.add(module)
+    def visit_Import(self, node: ast.Import) -> None:  # pylint: disable=invalid-name  # required: AST visitor interface enforces mixed case handlers
+        """Record top-level module names imported via ``import`` statements."""
+        self.imports.update(alias.name.split(".")[0] for alias in node.names)
         self.generic_visit(node)
 
     @override
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
-        """Visit from...import statements."""
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # pylint: disable=invalid-name  # required: AST visitor interface enforces mixed case handlers
+        """Record the originating module for ``from ... import`` statements."""
         if node.module:
-            # Get top-level module
-            module = node.module.split(".")[0]
-            self.imports.add(module)
+            self.imports.add(node.module.split(".")[0])
         self.generic_visit(node)
 
 
 def find_python_files(directory: Path) -> list[Path]:
-    """Find all Python files in a directory, excluding tests."""
+    """Return Python files for ``directory`` while excluding tests.
+
+    Args:
+        directory: Package or app directory to inspect.
+
+    Returns:
+        list[Path]: Python source files relative to the provided ``directory``.
+    """
     python_files: list[Path] = []
 
     # Look for src/ directory first (for packages)
@@ -151,30 +151,51 @@ def find_python_files(directory: Path) -> list[Path]:
 
 
 def extract_imports(file_path: Path) -> set[str]:
-    """Extract all imports from a Python file."""
-    try:
-        with Path(file_path).open(encoding="utf-8") as f:
-            tree = ast.parse(f.read(), filename=str(file_path))
+    """Extract all import targets from ``file_path``.
 
-        visitor = ImportVisitor()
-        visitor.visit(tree)
-        return visitor.imports
+    Args:
+        file_path: Python module to parse.
+
+    Returns:
+        set[str]: Unique top-level module names imported by ``file_path``.
+    """
+    try:
+        with Path(file_path).open(encoding="utf-8") as file_handle:
+            tree = ast.parse(file_handle.read(), filename=str(file_path))
     except (SyntaxError, UnicodeDecodeError):
         return set()
 
+    visitor = ImportVisitor()
+    visitor.visit(tree)
+    return visitor.imports
+
 
 def load_pyproject(path: Path) -> dict[str, Any]:
-    """Load and parse a pyproject.toml file."""
+    """Load and parse a ``pyproject.toml`` file.
+
+    Args:
+        path: Path to the TOML configuration file.
+
+    Returns:
+        dict[str, Any]: Parsed pyproject configuration.
+    """
     with Path(path).open("rb") as f:
         return tomllib.load(f)
 
 
 def get_package_name(dep: str) -> str:
-    """Extract package name from dependency specification."""
+    """Extract the canonical package name from a dependency specification.
+
+    Args:
+        dep: Dependency string including optional extras or version specifiers.
+
+    Returns:
+        str: Normalized package name.
+    """
     # Handle extras like "uvicorn[standard]>=0.32.0"
     dep = dep.split("[", maxsplit=1)[0]
     # Handle version specifiers
-    for sep in [">=", "<=", "==", "!=", "<", ">", "~=", "^"]:
+    for sep in (">=", "<=", "==", "!=", "<", ">", "~=", "^"):
         dep = dep.split(sep)[0]
     return dep.strip()
 
@@ -214,7 +235,14 @@ def _collect_flat_modules(package_dir: Path) -> set[str]:
 
 
 def get_package_internal_modules(package_dir: Path) -> set[str]:
-    """Get the internal module names for a package."""
+    """Return the set of internal Python modules for ``package_dir``.
+
+    Args:
+        package_dir: Package root whose modules should be enumerated.
+
+    Returns:
+        set[str]: Module names defined within the package.
+    """
     src_dir = package_dir / "src"
     if src_dir.exists():
         return _collect_src_modules(src_dir)
@@ -253,6 +281,7 @@ def _get_declared_dependencies(config: dict[str, Any]) -> tuple[set[str], set[st
 @dataclass(slots=True)
 class PackageContext:
     """Container of per-package metadata used during dependency validation."""
+
     package_dir: Path
     root_dir: Path
     pyproject_path: Path
@@ -340,8 +369,9 @@ def _check_missing_dependencies(
     """Check for missing dependencies and return a list of errors."""
     errors: list[str] = []
     if missing := required_packages - all_declared:
+        missing_display = ", ".join(sorted(missing))
         errors.append(
-            f"{package_name}: Missing dependencies: {', '.join(sorted(missing))}\n"
+            f"{package_name}: Missing dependencies: {missing_display}\n"
             f"  Add these to [project.dependencies] or [tool.uv.dev-dependencies] in {pyproject_path.relative_to(root_dir)}"
         )
     return errors
@@ -353,8 +383,9 @@ def _check_dev_dependencies_in_runtime(
     """Check for dev dependencies present in the runtime section and return a list of errors."""
     errors: list[str] = []
     if dev_in_runtime := runtime_deps & DEV_DEPENDENCIES:
+        runtime_display = ", ".join(sorted(dev_in_runtime))
         errors.append(
-            f"{package_name}: Dev dependencies in runtime section: {', '.join(sorted(dev_in_runtime))}\n"
+            f"{package_name}: Dev dependencies in runtime section: {runtime_display}\n"
             f"  Move these to [tool.uv.dev-dependencies] in {pyproject_path.relative_to(root_dir)}"
         )
     return errors
@@ -373,14 +404,21 @@ def _check_dev_dependencies_missing_from_dev(
         actually_missing := dev_missing_from_dev - runtime_deps
     ):
         # Only warn if they're used but not declared anywhere
-        errors.append(
-            f"{package_name}: Dev dependencies should be in [tool.uv.dev-dependencies]: {', '.join(sorted(actually_missing))}"
-        )
+        missing_display = ", ".join(sorted(actually_missing))
+        errors.append(f"{package_name}: Dev dependencies should be in [tool.uv.dev-dependencies]: {missing_display}")
     return errors
 
 
 def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
-    """Check a single package/app for dependency issues."""
+    """Check a single package/app for dependency issues.
+
+    Args:
+        package_dir: Directory containing the package or application.
+        root_dir: Repository root used for relative error reporting.
+
+    Returns:
+        tuple[bool, list[str]]: Success flag and any error messages.
+    """
     context, prep_errors, should_skip = _prepare_package_context(package_dir, root_dir)
     if should_skip:
         return True, []
@@ -419,11 +457,18 @@ def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
         )
     )
 
-    return len(errors) == 0, errors
+    return not errors, errors
 
 
 def check_root_workspace(root_dir: Path) -> tuple[bool, list[str]]:
-    """Check the root workspace pyproject.toml."""
+    """Validate the root workspace ``pyproject.toml`` file.
+
+    Args:
+        root_dir: Repository root used to locate ``pyproject.toml``.
+
+    Returns:
+        tuple[bool, list[str]]: Success flag and validation errors.
+    """
     errors: list[str] = []
     pyproject_path = root_dir / "pyproject.toml"
 
@@ -452,18 +497,20 @@ def check_root_workspace(root_dir: Path) -> tuple[bool, list[str]]:
             runtime_in_project.add(pkg)
 
     if dev_in_project:
+        dev_display = ", ".join(sorted(dev_in_project))
         errors.append(
-            f"Root workspace: Dev dependencies in [project.dependencies]: {', '.join(sorted(dev_in_project))}\n"
+            f"Root workspace: Dev dependencies in [project.dependencies]: {dev_display}\n"
             f"  Move these to [tool.uv.dev-dependencies]"
         )
 
     if runtime_in_project:
+        runtime_display = ", ".join(sorted(runtime_in_project))
         errors.append(
-            f"Root workspace: Runtime dependencies should be in individual packages, not root: {', '.join(sorted(runtime_in_project))}\n"
+            f"Root workspace: Runtime dependencies should be in individual packages, not root: {runtime_display}\n"
             f"  Root should only have dev dependencies"
         )
 
-    return len(errors) == 0, errors
+    return not errors, errors
 
 
 def _check_packages(root_dir: Path, all_errors: list[str]) -> None:
@@ -491,7 +538,11 @@ def _check_apps(root_dir: Path, all_errors: list[str]) -> None:
 
 
 def main() -> int:
-    """Main entry point."""
+    """Entry point for the dependency configuration checker.
+
+    Returns:
+        int: Process exit code (0 on success, non-zero on failures).
+    """
     root_dir = Path(__file__).parent.parent
 
     all_errors: list[str] = []
@@ -509,9 +560,13 @@ def main() -> int:
 
     # Print summary
     if all_errors:
-        for _error in all_errors:
-            pass
+        print("Dependency configuration issues detected:\n")
+        for error in all_errors:
+            print(f"- {error}")
+        print(f"\nTotal issues found: {len(all_errors)}")
         return 1
+
+    print("Dependency configuration check completed successfully (no issues found).")
     return 0
 
 

@@ -24,8 +24,6 @@ def add_app_context(
     """Add application context to all log entries.
 
     Args:
-        _logger: Logger instance (unused, required by protocol).
-        _method_name: Method name (unused, required by protocol).
         event_dict: Event dictionary to enrich.
 
     Returns:
@@ -71,7 +69,7 @@ def configure_logging() -> None:
     logging.basicConfig(
         format="%(message)s",
         stream=sys.stdout,
-        level=getattr(logging, settings.log_level.upper()),
+        level=getattr(logging, str(settings.log_level).upper()),
     )
 
 

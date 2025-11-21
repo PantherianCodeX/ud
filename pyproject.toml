@@ -20,12 +20,10 @@ members = [
 ]
 
 [tool.uv]
-# Development dependencies for the entire workspace
-# These are available to all packages but not installed in production
-dev-dependencies = [
-    # Package management
-    "uv>=0.5.21,<0.6.0",
+default-groups = ["dev", "workspace"]
 
+[dependency-groups]
+dev = [
     # Testing
     "pytest>=8.4.2,<9.0.0",
     "pytest-cov>=7.0.0,<8.0.0",
@@ -57,6 +55,23 @@ dev-dependencies = [
     # Build and automation
     "doit>=0.36.0,<0.37.0",
 ]
+workspace = [
+    "udocket-api",
+    "udocket-celery",
+    "udocket-domain",
+    "udocket-ai-core",
+    "udocket-utils",
+    "udocket-worker-core",
+]
+
+[tool.uv.sources]
+udocket-api = { workspace = true }
+udocket-celery = { workspace = true }
+udocket-domain = { workspace = true }
+udocket-ai-core = { workspace = true }
+udocket-utils = { workspace = true }
+udocket-worker-core = { workspace = true }
+
 
 [tool.pytest.ini_options]
 # Test discovery configuration
@@ -64,7 +79,7 @@ testpaths = ["apps", "packages", "tooling", "tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-# Python path for imports - points directly to src packages
+# Python path for tests
 pythonpath = [
     ".",
     "apps/api/src",
@@ -73,7 +88,6 @@ pythonpath = [
     "packages/udocket_ai_core/src",
     "packages/udocket_utils/src",
     "packages/udocket_worker_core/src",
-    "tooling",
 ]
 # Standard exclusions
 norecursedirs = [
@@ -193,7 +207,7 @@ disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 module = [
-    "jose.*",
+    "jwt.*",
     "passlib.*",
     "structlog.*",
     "alembic.*",

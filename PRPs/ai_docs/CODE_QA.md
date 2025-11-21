@@ -90,7 +90,7 @@ uDocket enforces **maximum strictness** across all quality tools. The goal is to
 ### Mypy Third-Party Ignores
 
 The following third-party libraries have `ignore_missing_imports = true`:
-- `jose`, `passlib`, `structlog`, `alembic`, `celery`, `rabbitmq`, `fastapi`, `uvicorn`
+- `jwt`, `passlib`, `structlog`, `alembic`, `celery`, `rabbitmq`, `fastapi`, `uvicorn`
 
 **Justification**: These libraries lack complete type stubs. We accept the tradeoff of reduced type safety for these imports.
 

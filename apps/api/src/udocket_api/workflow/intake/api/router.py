@@ -33,6 +33,10 @@ def submit_intake(
 ) -> intake_schemas.IntakeRecord:
     """Create a new intake submission.
 
+    Args:
+        payload: Validated intake request body.
+        service: Dependency-injected intake service instance.
+
     Returns:
         IntakeRecord: Newly created record.
     """
@@ -44,6 +48,9 @@ def list_intake_records(
     service: Annotated[IntakeService, Depends(get_intake_service)],
 ) -> list[intake_schemas.IntakeRecord]:
     """List all intake submissions in creation order.
+
+    Args:
+        service: Dependency-injected intake service instance.
 
     Returns:
         list[IntakeRecord]: Records sorted by creation timestamp.
@@ -60,6 +67,11 @@ def update_intake_status(
 ) -> intake_schemas.IntakeRecord:
     """Update the state of a submission.
 
+    Args:
+        record_id: Identifier for the intake submission to update.
+        status: Target workflow status.
+        service: Dependency-injected intake service instance.
+
     Returns:
         IntakeRecord: Updated record.
 
@@ -74,5 +86,12 @@ def update_intake_status(
 
 @router.get("/status", response_model=intake_schemas.IntakeStatus)
 def get_intake_status(service: Annotated[IntakeService, Depends(get_intake_service)]) -> intake_schemas.IntakeStatus:
-    """Return aggregate status metrics."""
+    """Return aggregate status metrics.
+
+    Args:
+        service: Dependency-injected intake service instance.
+
+    Returns:
+        IntakeStatus: Aggregate totals for pending/completed/overall submissions.
+    """
     return service.get_status()

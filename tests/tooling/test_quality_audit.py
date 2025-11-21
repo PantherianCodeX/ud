@@ -9,10 +9,12 @@
 
 import json
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
+import tooling.quality_audit.cli as qa_cli
 from tooling.quality_audit import (
     AuditReport,
     ConfigIgnoreEntry,
@@ -34,12 +36,58 @@ from tooling.quality_audit import (
     parse_pylint_config_ignores,
     parse_pyright_config_ignores,
     parse_ruff_config_ignores,
+    print_terminal_report,
     save_baseline,
     scan_file_for_ignores,
 )
+from tooling.quality_audit.cli import run_audit, run_config_check
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASELINE_PATH = PROJECT_ROOT / ".udocket_cache" / "quality_audit" / "quality_baseline.json"
+
+
+def _empty_path_list(_: Path) -> list[Path]:
+    return []
+
+
+def _empty_code_ignore_entries(*_args: object, **_kwargs: object) -> list[IgnoreEntry]:
+    return []
+
+
+def _empty_config_ignore_entries(*_args: object, **_kwargs: object) -> list[ConfigIgnoreEntry]:
+    return []
+
+
+def _empty_config_errors(_: Path) -> list[str]:
+    return []
+
+
+def _baseline_stub(
+    drift: tuple[str, ...],
+) -> Callable[[Path, Path], tuple[tuple[str, ...], dict[str, str]]]:
+    def _inner(_root: Path, _baseline_path: Path) -> tuple[tuple[str, ...], dict[str, str]]:
+        return drift, {}
+
+    return _inner
+
+
+def _empty_checker_result(_: Path) -> list[str]:
+    return []
+
+
+def _noop_report(_: AuditReport) -> None:
+    return None
+
+
+def _empty_inline_issues(_path: Path) -> list[str]:
+    return []
+
+
+def _constant_error(message: str) -> Callable[[Path], list[str]]:
+    def _inner(_path: Path) -> list[str]:
+        return [message]
+
+    return _inner
 
 
 class TestComputeFileHash:
@@ -354,7 +402,7 @@ strict = true
 # JUSTIFIED: Third-party libraries without stubs
 [[tool.mypy.overrides]]
 module = [
-    "jose.*",
+    "jwt.*",
     "passlib.*",
 ]
 ignore_missing_imports = true
@@ -364,7 +412,7 @@ ignore_missing_imports = true
             assert len(entries) >= 1
             imports_entry = next((e for e in entries if "ignore_missing_imports" in e.codes), None)
             assert imports_entry is not None
-            assert "jose.*" in imports_entry.applies_to
+            assert "jwt.*" in imports_entry.applies_to
             assert "passlib.*" in imports_entry.applies_to
             assert "Third-party" in imports_entry.justification
 
@@ -431,7 +479,7 @@ disallow_untyped_defs = false  # JUSTIFIED: pytest fixtures
 
 # JUSTIFIED: Third-party stubs missing
 [[tool.mypy.overrides]]
-module = ["jose.*", "passlib.*"]
+module = ["jwt.*", "passlib.*"]
 ignore_missing_imports = true
 
 # JUSTIFIED: Migration files are auto-generated
@@ -459,7 +507,7 @@ ignore_errors = true
 strict = true
 
 [[tool.mypy.overrides]]
-module = ["jose.*"]
+module = ["jwt.*"]
 ignore_missing_imports = true
 """)
 
@@ -908,6 +956,211 @@ class TestGenerateMarkdownManifest:
             assert "### ruff.toml" in content
             assert "| lint.ignore | E501, W503 | global | Long lines allowed |" in content
 
+    def test_generate_manifest_with_full_sections(self) -> None:
+        """Test that the manifest includes all sections."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            output_path = tmp_path / "manifest.md"
+
+            warning_entry = IgnoreEntry(
+                file_path="module.py",
+                line_number=10,
+                ignore_type="noqa",
+                ignore_codes=[],
+                content="x = 1  # noqa  # reason: readability",
+                has_justification=True,
+                justification="reason: readability",
+                severity="warning",
+            )
+            info_entry = IgnoreEntry(
+                file_path="module.py",
+                line_number=20,
+                ignore_type="type_ignore",
+                ignore_codes=["E501"],
+                content="x = 1  # type: ignore[E501]  # reason: legacy api",
+                has_justification=True,
+                justification="reason: legacy api",
+                severity="info",
+            )
+
+            external_config = tmp_path / "outside" / "ruff.toml"
+            external_config.parent.mkdir(exist_ok=True)
+            report = AuditReport(
+                timestamp="2025-01-02T00:00:00Z",
+                code_ignores=[warning_entry, info_entry],
+                config_ignores=[
+                    ConfigIgnoreEntry(
+                        file_path=str(external_config),
+                        section="lint.ignore",
+                        codes=[],
+                        justification="External skip allowed",
+                        applies_to="global",
+                    )
+                ],
+                config_errors=["lint.ignore missing strict settings"],
+                baseline_drift=("pyproject.toml drifted from baseline",),
+                summary={
+                    "total_code_ignores": 2,
+                    "errors": 0,
+                    "warnings": 1,
+                    "info": 1,
+                    "config_ignores": 1,
+                },
+            )
+
+            generate_markdown_manifest(report, output_path)
+
+            content = output_path.read_text()
+            assert "⚠️ Blanket Ignores" in content
+            assert "Properly Justified" in content
+            assert str(external_config) in content
+            assert "## ⚠️ Baseline Drift Detected" in content
+            assert "## ❌ Configuration Errors" in content
+
+
+class TestPrintTerminalReport:
+    """Test terminal reporting of audit summaries."""
+
+    def test_print_terminal_report_outputs_expected_sections(self, capsys: pytest.CaptureFixture[str]) -> None:
+        report = AuditReport(
+            timestamp="2025-01-03T00:00:00Z",
+            code_ignores=[
+                IgnoreEntry(
+                    file_path="module.py",
+                    line_number=5,
+                    ignore_type="noqa",
+                    ignore_codes=[],
+                    content="x = 1  # noqa",
+                    has_justification=False,
+                    justification="",
+                    severity="error",
+                ),
+                IgnoreEntry(
+                    file_path="module.py",
+                    line_number=10,
+                    ignore_type="type_ignore",
+                    ignore_codes=["E501"],
+                    content="x = 1  # type: ignore[E501]  # reason: long line",
+                    has_justification=True,
+                    justification="reason: long line",
+                    severity="warning",
+                ),
+            ],
+            config_ignores=[],
+            config_errors=["pytest.ini missing strict markers"],
+            baseline_drift=("pyproject drifted from baseline",),
+            summary={
+                "total_code_ignores": 2,
+                "errors": 1,
+                "warnings": 1,
+                "info": 0,
+                "config_ignores": 0,
+            },
+        )
+
+        print_terminal_report(report)
+        captured = capsys.readouterr()
+        assert "Baseline Drift" in captured.out
+        assert "Configuration Errors" in captured.out
+        assert "Ignores Missing Justification" in captured.out
+        assert "Blanket Ignores" in captured.out
+
+
+class TestCliRunner:
+    """Validate the CLI runner helpers."""
+
+    def _patch_cli_dependencies(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        manifest_calls: list[Path],
+        baseline_reads: list[Path],
+        drift: tuple[str, ...] = (),
+    ) -> None:
+        """Helper to stub CLI dependencies for deterministic coverage."""
+        monkeypatch.setattr(qa_cli, "find_python_files", _empty_path_list)
+        monkeypatch.setattr(qa_cli, "scan_file_for_ignores", _empty_code_ignore_entries)
+        for parser in (
+            "parse_ruff_config_ignores",
+            "parse_mypy_config_ignores",
+            "parse_pylint_config_ignores",
+            "parse_pyright_config_ignores",
+            "parse_bandit_config_ignores",
+        ):
+            monkeypatch.setattr(qa_cli, parser, _empty_config_ignore_entries)
+        monkeypatch.setattr(qa_cli, "check_config_strictness", _empty_config_errors)
+        monkeypatch.setattr(qa_cli, "check_baseline_drift", _baseline_stub(drift))
+        monkeypatch.setattr(qa_cli, "print_terminal_report", _noop_report)
+
+        def _save_baseline(path: Path, _data: dict[str, str]) -> None:
+            baseline_reads.append(path)
+
+        monkeypatch.setattr(qa_cli, "save_baseline", _save_baseline)
+
+        def _manifest_stub(_report: AuditReport, path: Path) -> None:
+            manifest_calls.append(path)
+
+        monkeypatch.setattr(qa_cli, "generate_markdown_manifest", _manifest_stub)
+
+    def test_run_audit_generates_manifest_and_baseline(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        root = tmp_path / "repo"
+        root.mkdir()
+        manifest_calls: list[Path] = []
+        baseline_tracks: list[Path] = []
+        self._patch_cli_dependencies(monkeypatch, manifest_calls, baseline_tracks)
+
+        result = run_audit(root=root, generate_manifest=True, update_baseline=True)
+
+        assert result == 0
+        assert manifest_calls, "Manifest should be generated when requested"
+        assert baseline_tracks, "Baseline should be saved when update_baseline=True"
+        assert baseline_tracks[0].name == "quality_baseline.json"
+        assert manifest_calls[0].name == "IGNORES_MANIFEST.md"
+
+    def test_run_audit_detects_baseline_drift(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        root = tmp_path / "repo"
+        root.mkdir()
+        manifest_calls: list[Path] = []
+        baseline_tracks: list[Path] = []
+        self._patch_cli_dependencies(monkeypatch, manifest_calls, baseline_tracks, drift=("drifted",))
+
+        result = run_audit(root=root)
+
+        assert result == 1
+        assert manifest_calls == [], "Manifest should not be created when audit fails before manifest stage"
+        assert not baseline_tracks, "Baseline should not be saved when update_baseline=False"
+
+    def test_run_config_check_reports_errors(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        root = tmp_path / "repo"
+        root.mkdir()
+        monkeypatch.setattr(qa_cli, "check_pyright_config", _constant_error("pyright error"))
+        monkeypatch.setattr(qa_cli, "check_mypy_config", _constant_error("mypy error"))
+        monkeypatch.setattr(qa_cli, "check_ruff_config", _constant_error("ruff error"))
+        monkeypatch.setattr(qa_cli, "find_python_files", _empty_path_list)
+        monkeypatch.setattr(qa_cli, "check_inline_ignores", _empty_inline_issues)
+
+        result = run_config_check(root=root)
+
+        captured = capsys.readouterr()
+        assert result == 1
+        assert "Quality configuration errors found" in captured.out
+
+    def test_run_config_check_passes(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        root = tmp_path / "repo"
+        root.mkdir()
+        for checker in ("check_pyright_config", "check_mypy_config", "check_ruff_config"):
+            monkeypatch.setattr(qa_cli, checker, _empty_checker_result)
+        monkeypatch.setattr(qa_cli, "find_python_files", _empty_path_list)
+        monkeypatch.setattr(qa_cli, "check_inline_ignores", _empty_inline_issues)
+
+        result = run_config_check(root=root)
+
+        assert result == 0
+
 
 class TestCheckPyrightConfig:
     """Test pyright configuration validation."""
@@ -1055,10 +1308,7 @@ class TestCheckInlineIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text(
-                "# JUSTIFIED: This is necessary for compatibility\n"
-                "x = 1  # type: ignore\n"
-            )
+            test_file.write_text("# JUSTIFIED: This is necessary for compatibility\nx = 1  # type: ignore\n")
 
             errors = check_inline_ignores(test_file)
             assert errors == []
@@ -1195,12 +1445,12 @@ class TestBaselineEnforcement:
         # This test MUST pass for CI to succeed
         # If it fails, you must either:
         # 1. Revert unauthorized config changes
-        # 2. Get approval and run: uv run python tooling/run_quality_audit.py --update-baseline
+        # 2. Get approval and run: uv run python -m tooling.run_quality_audit --update-baseline
         assert not drift, (
             f"BASELINE DRIFT DETECTED - Config files modified without approval:\n"
             f"{chr(10).join(f'  - {d}' for d in drift)}\n\n"
             f"To fix: Either revert changes or get approval and update baseline with:\n"
-            f"  uv run python tooling/run_quality_audit.py --update-baseline"
+            f"  uv run python -m tooling.run_quality_audit --update-baseline"
         )
 
     def test_actual_codebase_configs_pass_strictness(self) -> None:

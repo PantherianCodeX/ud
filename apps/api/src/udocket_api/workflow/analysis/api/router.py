@@ -33,6 +33,10 @@ def run_analysis(
 ) -> MatterAnalysis:
     """Trigger an analysis run for a matter.
 
+    Args:
+        payload: Validated analysis request body.
+        service: Dependency-injected analysis service instance.
+
     Returns:
         MatterAnalysis: Newly generated analysis artifact.
     """
@@ -45,6 +49,10 @@ def get_analysis(
     service: Annotated[AnalysisService, Depends(get_analysis_service)],
 ) -> MatterAnalysis:
     """Fetch the cached analysis for a matter.
+
+    Args:
+        matter_id: Identifier for the matter requested.
+        service: Dependency-injected analysis service instance.
 
     Returns:
         MatterAnalysis: Cached analysis.

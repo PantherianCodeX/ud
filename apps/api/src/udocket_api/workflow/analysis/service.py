@@ -22,11 +22,14 @@ class AnalysisService:
     def run_analysis(self, payload: AnalysisRequest) -> MatterAnalysis:
         """Generate a deterministic analysis summary.
 
+        Args:
+            payload: Validated analysis request received from the API layer.
+
         Returns:
-            MatterAnalysis: Generated analysis artifact.
+            MatterAnalysis: Generated analysis artifact stored in memory.
 
         Raises:
-            TypeError: If the payload is not a valid AnalysisRequest.
+            TypeError: If the payload is not a valid ``AnalysisRequest``.
         """
         if not isinstance(cast("object", payload), AnalysisRequest):
             msg = "payload must be an AnalysisRequest"
@@ -44,9 +47,15 @@ class AnalysisService:
     def get_analysis(self, matter_id: UUID) -> MatterAnalysis:
         """Return a cached analysis.
 
+        Args:
+            matter_id: Identifier for the matter whose analysis is requested.
+
+        Returns:
+            MatterAnalysis: Cached analysis associated with ``matter_id``.
+
         Raises:
             KeyError: If the analysis is missing.
-            TypeError: If the identifier is not a UUID.
+            TypeError: If the identifier is not a ``UUID``.
         """
         if not isinstance(cast("object", matter_id), UUID):
             msg = "matter_id must be a UUID"
@@ -60,6 +69,9 @@ class AnalysisService:
     @staticmethod
     def _build_embedding(summary: str) -> list[float]:
         """Compute a stable pseudo-embedding for demonstration.
+
+        Args:
+            summary: Summary text extracted from the matter transcript.
 
         Returns:
             list[float]: Averaged ASCII segments representing the summary.

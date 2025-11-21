@@ -19,6 +19,7 @@ from fastapi.responses import JSONResponse
 # Once workspace packages are properly installed, use: from udocket_domain import HealthCheck
 # Temporary inline model for Phase 1
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.exc import SQLAlchemyError
 
 from udocket_api.core import UDocketError, check_db_health, configure_logging, init_db, settings
 from udocket_api.workflow import register_workflows
@@ -53,9 +54,6 @@ logger = structlog.get_logger(__name__)
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     """Application lifespan context manager.
 
-    Args:
-        _app: FastAPI application instance (unused but required by lifespan protocol).
-
     Yields:
         None: Yields after startup, returns after shutdown.
     """
@@ -65,8 +63,8 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None]:
     try:
         await init_db()
         logger.info("database_initialized")
-    except Exception as e:
-        logger.exception("database_initialization_failed", error=str(e))
+    except SQLAlchemyError as exc:
+        logger.exception("database_initialization_failed", error=str(exc))
 
     yield
 

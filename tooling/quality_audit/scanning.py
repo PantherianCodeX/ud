@@ -12,7 +12,6 @@ from __future__ import annotations
 import io
 import re
 import tokenize
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .models import IgnoreEntry, LineContext
@@ -49,7 +48,15 @@ EXCLUDED_DIRS = {
 
 
 def find_python_files(root: Path, exclude_test_files: bool = False) -> list[Path]:
-    """Return python files from ``root`` respecting exclusion rules."""
+    """Return python files from ``root`` respecting exclusion rules.
+
+    Args:
+        root: Directory to walk when collecting Python sources.
+        exclude_test_files: When ``True``, skip any matches beginning with ``test_``.
+
+    Returns:
+        list[Path]: Python files discovered under ``root``.
+    """
 
     def _should_include(path: Path) -> bool:
         if any(part in EXCLUDED_DIRS for part in path.parts):
@@ -63,7 +70,15 @@ def find_python_files(root: Path, exclude_test_files: bool = False) -> list[Path
 
 
 def extract_justification(line: str, prev_line: str | None) -> tuple[bool, str]:
-    """Return whether justification exists and the extracted text."""
+    """Return whether justification exists and the extracted text.
+
+    Args:
+        line: Line containing the ignore directive.
+        prev_line: Previous line to search when justification may be on a comment above.
+
+    Returns:
+        tuple[bool, str]: Flag indicating presence plus the normalized justification text.
+    """
 
     def _match(text: str) -> str | None:
         for pattern in JUSTIFICATION_PATTERNS:
@@ -108,17 +123,33 @@ def _create_ignore_entry(
 
 
 def _comment_tokens(content: str) -> Iterator[tuple[str, int]]:
+    """Yield ``(token, line_number)`` tuples for each comment discovered.
+
+    Args:
+        content: Source file contents to tokenize.
+
+    Yields:
+        tuple[str, int]: Comment token and its 1-based line number.
+    """
     reader = io.StringIO(content).readline
     try:
         for token in tokenize.generate_tokens(reader):
             if token.type == tokenize.COMMENT:
                 yield token.string, token.start[0]
     except tokenize.TokenError:
-        return
+        yield from ()
 
 
 def scan_file_for_ignores(file_path: Path, root: Path) -> list[IgnoreEntry]:
-    """Scan ``file_path`` and return ignore entries relative to ``root``."""
+    """Scan ``file_path`` and return ignore entries relative to ``root``.
+
+    Args:
+        file_path: Absolute path to the file that should be scanned.
+        root: Root directory used to compute relative paths in reports.
+
+    Returns:
+        list[IgnoreEntry]: All ignore directives discovered in the file.
+    """
     entries: list[IgnoreEntry] = []
     try:
         content = file_path.read_text(encoding="utf-8")
@@ -142,7 +173,14 @@ def scan_file_for_ignores(file_path: Path, root: Path) -> list[IgnoreEntry]:
 
 
 def check_inline_ignores(file_path: Path) -> list[str]:
-    """Return human-readable errors for inline ignores lacking justification."""
+    """Return human-readable errors for inline ignores lacking justification.
+
+    Args:
+        file_path: Source file containing inline ignore directives.
+
+    Returns:
+        list[str]: Error messages for each missing justification.
+    """
     root = file_path.parent if file_path.parent.exists() else file_path
     entries = scan_file_for_ignores(file_path, root)
     errors: list[str] = []

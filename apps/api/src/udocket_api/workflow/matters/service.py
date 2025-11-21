@@ -21,6 +21,9 @@ class MattersService:
     def create(self, payload: matters_schemas.MatterCreateRequest) -> Matter:
         """Create and return a new matter.
 
+        Args:
+            payload: Validated request payload from the API layer.
+
         Returns:
             Matter: Newly created entity.
 
@@ -40,11 +43,21 @@ class MattersService:
         return matter
 
     def list(self) -> list[Matter]:
-        """Return all matters sorted by creation time."""
+        """Return all matters sorted by creation time.
+
+        Returns:
+            list[Matter]: Chronologically ordered matter list.
+        """
         return sorted(self._matters.values(), key=lambda matter: matter.created_at)
 
     def get(self, matter_id: uuid.UUID) -> Matter:
         """Return a single matter.
+
+        Args:
+            matter_id: Identifier for the matter record.
+
+        Returns:
+            Matter: Stored matter instance.
 
         Raises:
             KeyError: If the matter is missing.

@@ -35,7 +35,7 @@ class TestGetPackageName:
     def test_package_with_extras(self) -> None:
         """Test package with extras."""
         assert get_package_name("uvicorn[standard]>=0.32.0") == "uvicorn"
-        assert get_package_name("python-jose[cryptography]") == "python-jose"
+        assert get_package_name("pyjwt[crypto]") == "pyjwt"
 
 
 class TestImportVisitor:
@@ -346,7 +346,7 @@ def test_import_to_package_mapping() -> None:
     assert IMPORT_TO_PACKAGE["fastapi"] == "fastapi"
     assert IMPORT_TO_PACKAGE["pydantic"] == "pydantic"
     assert IMPORT_TO_PACKAGE["pydantic_settings"] == "pydantic-settings"
-    assert IMPORT_TO_PACKAGE["jose"] == "python-jose"
+    assert IMPORT_TO_PACKAGE["jwt"] == "pyjwt"
     assert IMPORT_TO_PACKAGE["udocket_domain"] == "udocket-domain"
     assert IMPORT_TO_PACKAGE["udocket_ai_core"] == "udocket-ai-core"
     assert IMPORT_TO_PACKAGE["udocket_worker_core"] == "udocket-celery-core"

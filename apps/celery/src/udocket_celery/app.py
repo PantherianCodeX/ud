@@ -23,8 +23,8 @@ Usage:
 
 from __future__ import annotations
 
-# TODO: Implement Celery app instantiation in Phase 2
-# The Celery app will be configured here with broker settings,
-# task autodiscovery, and queue routing.
+# Phase 2 placeholder: the Celery app will be configured here with broker
+# settings, task autodiscovery, and queue routing once background workers
+# move beyond the current stub implementation.
 
 __all__: list[str] = []  # Will export 'app' once implemented
