@@ -3,5 +3,5 @@
   "configs/pyproject.toml": "b8d25c75908a2e21df641288a3d7633b795736dd611414c4255bf9089e5dea62",
   "configs/ruff.toml": "639a655f09a4bb4329fdea218d1eeb895d3a8598d243cb1cffcc419ef17c5c9f",
   "pyproject.toml": "b94b5b8d67b9eee36bc7e6ca04682cbe3135b74145962300ba0aaefe3407489c",
-  "pyrightconfig.json": "8d24da39cd14a2791e05bf2fa1470843e6cc5c8e8081b9c28dafc92ff51585b3"
+  "pyrightconfig.json": "44ead80f1cc3e797ec951016d191975448d17f84473483681f0ec28f0835101e"
 }
