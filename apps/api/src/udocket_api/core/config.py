@@ -7,8 +7,18 @@
 # in accordance with the terms of the license agreement you entered into with uDocket.
 """Configuration management with Pydantic settings."""
 
+import os
+
 from pydantic import Field, PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_DEFAULT_ENVIRONMENT_VARS = {
+    "DATABASE_URL": "postgresql+asyncpg://udocket:udocket@localhost:5432/udocket",
+    "JWT_SECRET_KEY": "local-development-secret",
+}
+
+for key, value in _DEFAULT_ENVIRONMENT_VARS.items():
+    os.environ.setdefault(key, value)
 
 
 class Settings(BaseSettings):
