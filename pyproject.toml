@@ -91,6 +91,8 @@ addopts = [
     "--strict-markers",
     "--strict-config",
     "-ra",  # Show extra test summary for all except passed
+    "-n",  # Enable pytest-xdist parallel execution by default
+    "auto",  # Automatically determine optimal number of workers
 ]
 # Custom markers
 markers = [

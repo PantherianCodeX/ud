@@ -201,7 +201,7 @@ docker-compose up -d --build
 ### Running Tests
 
 ```bash
-# Python tests (all)
+# Python tests (all - parallel by default via pytest-xdist)
 uv run pytest
 
 # Python tests with coverage
@@ -210,7 +210,7 @@ uv run pytest --cov=apps --cov=packages --cov-report=term-missing
 # Python tests (specific module)
 uv run pytest apps/api/src/workflow/analysis/tests/
 
-# Python tests in parallel
+# Python tests in parallel (explicit)
 uv run pytest -n auto
 
 # TypeScript tests (from web app)
@@ -489,6 +489,8 @@ Every PR must pass:
 5. Frontend unit tests (Jest/Vitest)
 6. E2E tests (Playwright subset)
 7. Security scans (Bandit, Safety, Gitleaks)
+
+Quality checks are orchestrated as parallel GitHub Actions matrix jobs so linting, type checking, tests, and security scans report independently even when one track fails.
 
 Main/release branches additionally run:
 - Full Playwright suite

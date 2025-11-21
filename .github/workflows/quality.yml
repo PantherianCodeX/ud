@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main, develop]
 
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.21"
+
 jobs:
   dependency-check:
     name: Dependency Configuration Check
@@ -16,12 +20,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
-          version: "0.5.21"
+          version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
@@ -29,87 +33,53 @@ jobs:
       - name: Check dependency configuration
         run: uv run python tooling/check_dependencies.py
 
-  lint-python:
-    name: Python Linting
+  python-quality:
+    name: Python ${{ matrix.check }}
     runs-on: ubuntu-latest
-    needs: dependency-check
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ["Linting", "Type Checking", "Tests"]
     steps:
       - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
-          version: "0.5.21"
+          version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
       - name: Ruff check
+        if: matrix.check == 'Linting'
         run: uv run ruff check .
 
       - name: Ruff format check
+        if: matrix.check == 'Linting'
         run: uv run ruff format --check .
 
       - name: Pylint
+        if: matrix.check == 'Linting'
         run: uv run pylint apps/ packages/ tooling/
 
-  typecheck:
-    name: Python Type Checking
-    runs-on: ubuntu-latest
-    needs: dependency-check
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.5.21"
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: uv sync --all-extras --dev
-
       - name: Mypy type check
+        if: matrix.check == 'Type Checking'
         run: uv run mypy apps/ packages/ tooling/
         continue-on-error: true # Type checking is strict but may have false positives
 
       - name: Pyright type check
+        if: matrix.check == 'Type Checking'
         run: uv run pyright apps/ packages/ tooling/
         continue-on-error: true # Type checking is strict but may have false positives
 
-  test:
-    name: Python Tests
-    runs-on: ubuntu-latest
-    needs: dependency-check
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: "0.5.21"
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: uv sync --all-extras --dev
-
       - name: Run tests with coverage
+        if: matrix.check == 'Tests'
         run: |
           uv run pytest \
             --cov=apps \
@@ -121,8 +91,8 @@ jobs:
             -v
 
       - name: Upload coverage reports
+        if: matrix.check == 'Tests'
         uses: codecov/codecov-action@v4
-        if: matrix.python-version == '3.12'
         with:
           file: ./coverage.xml
           flags: unittests
@@ -132,7 +102,6 @@ jobs:
   security:
     name: Security Scanning
     runs-on: ubuntu-latest
-    needs: dependency-check
     steps:
       - uses: actions/checkout@v4
         with:
@@ -141,12 +110,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
-          version: "0.5.21"
+          version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
@@ -174,12 +143,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
-          version: "0.5.21"
+          version: ${{ env.UV_VERSION }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
