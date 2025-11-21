@@ -110,7 +110,9 @@ jobs:
           - check_name: "Bandit"
             run: "uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json"
           - check_name: "Safety"
-            run: "uv run safety scan --json --policy-file .safety-policy.yml"
+            uses: pyupio/safety-action@v1
+            with:
+              api-key: ${{ github.secret_source.SAFETY_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
