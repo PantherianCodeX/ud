@@ -16,6 +16,7 @@ on:
 env:
   PYTHON_VERSION: "3.12"
   UV_VERSION: "0.5.21"
+  IS_PROTECTED_BRANCH: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'develop')) }}
 
 jobs:
   dependency-check:
@@ -55,10 +56,10 @@ jobs:
             run: "uv run pylint --rcfile configs/pylint.toml apps/ packages/ tooling/"
           - check_name: "Mypy"
             run: "uv run mypy apps/ packages/ tooling/"
-            allow_failure: true
           - check_name: "Pyright"
             run: "uv run pyright apps/ packages/ tooling/"
-            allow_failure: true
+          - check_name: "Quality Audit Config"
+            run: "uv run python -m tooling.run_quality_audit --config-only"
           - check_name: "Tests"
             run: |-
               uv run pytest \
@@ -88,7 +89,7 @@ jobs:
 
       - name: Run ${{ matrix.check_name }}
         run: ${{ matrix.run }}
-        continue-on-error: ${{ matrix.allow_failure == 'true' }}
+        continue-on-error: ${{ matrix.allow_failure == 'true' && env.IS_PROTECTED_BRANCH != 'true' }}
 
       - name: Upload coverage reports
         if: matrix.upload_coverage == 'true'
@@ -97,7 +98,7 @@ jobs:
           file: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
-        continue-on-error: true
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }}
 
   security:
     name: Security ${{ matrix.check_name }}
@@ -129,7 +130,7 @@ jobs:
 
       - name: Run ${{ matrix.check_name }}
         run: ${{ matrix.run }}
-        continue-on-error: true
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }}
 
   pre-commit:
     name: Pre-commit Hooks
@@ -152,4 +153,4 @@ jobs:
 
       - name: Run pre-commit hooks
         run: uv run pre-commit run --all-files
-        continue-on-error: true # Some hooks may fail on CI but are informative
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }} # Some hooks may fail on CI but are informative
