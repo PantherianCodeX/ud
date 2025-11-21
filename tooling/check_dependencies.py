@@ -137,9 +137,7 @@ def find_python_files(directory: Path) -> list[Path]:
     return [
         f
         for f in python_files
-        if "__pycache__" not in f.parts
-        and "tests" not in f.parts
-        and f.name != "test_check_dependencies.py"
+        if "__pycache__" not in f.parts and "tests" not in f.parts and f.name != "test_check_dependencies.py"
     ]
 
 
@@ -185,11 +183,7 @@ def get_package_internal_modules(package_dir: Path) -> set[str]:
     if src_dir.exists():
         # Add the main package name(s)
         for item in src_dir.iterdir():
-            if (
-                item.is_dir()
-                and not item.name.startswith(".")
-                and not item.name.startswith("__")
-            ):
+            if item.is_dir() and not item.name.startswith(".") and not item.name.startswith("__"):
                 internal_modules.add(item.name)
                 # Also add all Python module files in the package
                 for py_file in item.glob("*.py"):
@@ -329,11 +323,7 @@ def check_root_workspace(root_dir: Path) -> tuple[bool, list[str]]:
     config = load_pyproject(pyproject_path)
 
     # Check workspace configuration
-    if (
-        "tool" not in config
-        or "uv" not in config["tool"]
-        or "workspace" not in config["tool"]["uv"]
-    ):
+    if "tool" not in config or "uv" not in config["tool"] or "workspace" not in config["tool"]["uv"]:
         errors.append("Root pyproject.toml missing [tool.uv.workspace] configuration")
         return False, errors
 

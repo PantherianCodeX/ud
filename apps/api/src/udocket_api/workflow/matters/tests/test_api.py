@@ -21,7 +21,7 @@ def _create_matter(client: TestClient) -> dict[str, object]:
     }
     response = client.post("/api/v1/matters", json=payload)
     assert response.status_code == 201
-    return cast(dict[str, object], response.json())
+    return cast("dict[str, object]", response.json())
 
 
 def test_create_matter(client: TestClient) -> None:

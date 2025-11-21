@@ -45,9 +45,7 @@ def check_pyright_config(config_path: Path) -> list[str]:
 
     # Check strict mode
     if config.get("typeCheckingMode") != "strict":
-        errors.append(
-            f"{config_path}: typeCheckingMode must be 'strict', found '{config.get('typeCheckingMode')}'"
-        )
+        errors.append(f"{config_path}: typeCheckingMode must be 'strict', found '{config.get('typeCheckingMode')}'")
 
     return errors
 
@@ -114,9 +112,7 @@ def find_python_files(root: Path) -> list[Path]:
     }
 
     python_files: list[Path] = [
-        path
-        for path in root.rglob("*.py")
-        if not any(excluded in path.parts for excluded in exclude_dirs)
+        path for path in root.rglob("*.py") if not any(excluded in path.parts for excluded in exclude_dirs)
     ]
 
     return python_files
@@ -136,9 +132,7 @@ def check_inline_ignores(file_path: Path) -> list[str]:
 
     for line_num, line in enumerate(lines, 1):
         # Check if line contains an ignore pattern
-        has_ignore = any(
-            re.search(pattern, line, re.IGNORECASE) for pattern in IGNORE_PATTERNS
-        )
+        has_ignore = any(re.search(pattern, line, re.IGNORECASE) for pattern in IGNORE_PATTERNS)
 
         if has_ignore:
             # Check if there's a justification on this line or the previous line
@@ -160,9 +154,7 @@ def check_inline_ignores(file_path: Path) -> list[str]:
                             break
 
             if not has_justification:
-                errors.append(
-                    f"{file_path}:{line_num}: Inline ignore without justification: {line.strip()[:80]}"
-                )
+                errors.append(f"{file_path}:{line_num}: Inline ignore without justification: {line.strip()[:80]}")
 
     return errors
 

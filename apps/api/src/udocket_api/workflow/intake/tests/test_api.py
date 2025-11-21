@@ -21,7 +21,7 @@ def _create_submission(client: TestClient) -> dict[str, object]:
     }
     response = client.post("/api/v1/intake/submissions", json=payload)
     assert response.status_code == 201
-    return cast(dict[str, object], response.json())
+    return cast("dict[str, object]", response.json())
 
 
 def test_submit_intake(client: TestClient) -> None:

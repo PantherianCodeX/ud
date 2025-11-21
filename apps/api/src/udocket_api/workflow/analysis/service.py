@@ -28,7 +28,7 @@ class AnalysisService:
         Raises:
             TypeError: If the payload is not a valid AnalysisRequest.
         """
-        if not isinstance(cast(object, payload), AnalysisRequest):
+        if not isinstance(cast("object", payload), AnalysisRequest):
             msg = "payload must be an AnalysisRequest"
             raise TypeError(msg)
         summary = payload.transcript.strip().split(".")[0][:500]
@@ -48,7 +48,7 @@ class AnalysisService:
             KeyError: If the analysis is missing.
             TypeError: If the identifier is not a UUID.
         """
-        if not isinstance(cast(object, matter_id), UUID):
+        if not isinstance(cast("object", matter_id), UUID):
             msg = "matter_id must be a UUID"
             raise TypeError(msg)
         try:

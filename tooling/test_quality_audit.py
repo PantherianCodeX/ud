@@ -157,9 +157,7 @@ class TestScanFileForIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text(
-                "x = 1  # type: ignore[arg-type]  # because API mismatch\n"
-            )
+            test_file.write_text("x = 1  # type: ignore[arg-type]  # because API mismatch\n")
 
             entries = scan_file_for_ignores(test_file, tmp_path)
             assert len(entries) == 1
@@ -183,9 +181,7 @@ class TestScanFileForIgnores:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             test_file = tmp_path / "test.py"
-            test_file.write_text(
-                "x = 1  # pylint: disable=invalid-name  # because legacy\n"
-            )
+            test_file.write_text("x = 1  # pylint: disable=invalid-name  # because legacy\n")
 
             entries = scan_file_for_ignores(test_file, tmp_path)
             assert len(entries) == 1
@@ -265,10 +261,7 @@ ignore = [
             s101_entry = next((e for e in entries if "S101" in e.codes), None)
             assert s101_entry is not None
             assert s101_entry.applies_to == "tests/*.py"
-            assert (
-                "Assert" in s101_entry.justification
-                or "pytest" in s101_entry.justification
-            )
+            assert "Assert" in s101_entry.justification or "pytest" in s101_entry.justification
 
     def test_parse_nonexistent_config(self) -> None:
         """Test parsing nonexistent config returns empty list."""
@@ -292,10 +285,7 @@ ignore = [
             e501_entry = next((e for e in entries if "E501" in e.codes), None)
             assert e501_entry is not None
             # Should indicate missing justification
-            assert (
-                "No justification" in e501_entry.justification
-                or not e501_entry.justification
-            )
+            assert "No justification" in e501_entry.justification or not e501_entry.justification
 
 
 class TestParseMypyConfigIgnores:
@@ -321,9 +311,7 @@ ignore_missing_imports = true
 
             entries = parse_mypy_config_ignores(config_file)
             assert len(entries) >= 1
-            imports_entry = next(
-                (e for e in entries if "ignore_missing_imports" in e.codes), None
-            )
+            imports_entry = next((e for e in entries if "ignore_missing_imports" in e.codes), None)
             assert imports_entry is not None
             assert "jose.*" in imports_entry.applies_to
             assert "passlib.*" in imports_entry.applies_to
@@ -346,9 +334,7 @@ ignore_errors = true
 
             entries = parse_mypy_config_ignores(config_file)
             assert len(entries) >= 1
-            errors_entry = next(
-                (e for e in entries if "ignore_errors" in e.codes), None
-            )
+            errors_entry = next((e for e in entries if "ignore_errors" in e.codes), None)
             assert errors_entry is not None
             assert "alembic.versions.*" in errors_entry.applies_to
             assert "Auto-generated" in errors_entry.justification
@@ -371,19 +357,12 @@ disallow_untyped_decorators = false  # JUSTIFIED: pytest.mark decorators don't h
 
             entries = parse_mypy_config_ignores(config_file)
             # Should find both disallow_untyped_defs and disallow_untyped_decorators
-            defs_entry = next(
-                (e for e in entries if "disallow_untyped_defs" in e.codes), None
-            )
-            decorators_entry = next(
-                (e for e in entries if "disallow_untyped_decorators" in e.codes), None
-            )
+            defs_entry = next((e for e in entries if "disallow_untyped_defs" in e.codes), None)
+            decorators_entry = next((e for e in entries if "disallow_untyped_decorators" in e.codes), None)
             assert defs_entry is not None
             assert decorators_entry is not None
             assert "tests.*" in defs_entry.applies_to
-            assert (
-                "pytest" in defs_entry.justification.lower()
-                or "test" in defs_entry.justification.lower()
-            )
+            assert "pytest" in defs_entry.justification.lower() or "test" in defs_entry.justification.lower()
 
     def test_parse_multiple_overrides(self) -> None:
         """Test parsing multiple override sections."""
@@ -436,10 +415,7 @@ ignore_missing_imports = true
             entries = parse_mypy_config_ignores(config_file)
             assert len(entries) >= 1
             # Should have "No justification" or similar
-            assert any(
-                "No justification" in e.justification or not e.justification
-                for e in entries
-            )
+            assert any("No justification" in e.justification or not e.justification for e in entries)
 
 
 class TestParsePylintConfigIgnores:
@@ -466,15 +442,11 @@ disable = [
             assert len(entries) == 3
 
             # Check each rule has its own justification
-            line_too_long = next(
-                (e for e in entries if "line-too-long" in e.codes), None
-            )
+            line_too_long = next((e for e in entries if "line-too-long" in e.codes), None)
             assert line_too_long is not None
             assert "Ruff" in line_too_long.justification
 
-            pydantic = next(
-                (e for e in entries if "too-few-public-methods" in e.codes), None
-            )
+            pydantic = next((e for e in entries if "too-few-public-methods" in e.codes), None)
             assert pydantic is not None
             assert "Pydantic" in pydantic.justification
 
@@ -560,15 +532,11 @@ class TestParsePyrightConfigIgnores:
             entries = parse_pyright_config_ignores(config_file)
             assert len(entries) == 2
 
-            stubs_entry = next(
-                (e for e in entries if "reportMissingTypeStubs" in e.codes), None
-            )
+            stubs_entry = next((e for e in entries if "reportMissingTypeStubs" in e.codes), None)
             assert stubs_entry is not None
             assert "Third-party" in stubs_entry.justification
 
-            call_entry = next(
-                (e for e in entries if "reportUnusedCallResult" in e.codes), None
-            )
+            call_entry = next((e for e in entries if "reportUnusedCallResult" in e.codes), None)
             assert call_entry is not None
             assert "chaining" in call_entry.justification
 
@@ -904,9 +872,7 @@ class TestDiscoverConfigFiles:
             tmp_path = Path(tmpdir)
 
             # Create pyright config
-            (tmp_path / "pyrightconfig.json").write_text(
-                '{"typeCheckingMode": "strict"}'
-            )
+            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
 
             # Create configs directory with all toml files
             configs_dir = tmp_path / "configs"
@@ -955,9 +921,7 @@ class TestDiscoverConfigFiles:
             tmp_path = Path(tmpdir)
 
             # Only create pyright config, no configs dir
-            (tmp_path / "pyrightconfig.json").write_text(
-                '{"typeCheckingMode": "strict"}'
-            )
+            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
 
             discovered = discover_config_files(tmp_path)
             assert len(discovered) == 1
@@ -1005,9 +969,7 @@ class TestBaselineEnforcement:
 
         errors = check_config_strictness(root)
 
-        assert errors == [], (
-            f"CONFIG STRICTNESS VIOLATIONS:\n{chr(10).join(f'  - {e}' for e in errors)}"
-        )
+        assert errors == [], f"CONFIG STRICTNESS VIOLATIONS:\n{chr(10).join(f'  - {e}' for e in errors)}"
 
     def test_actual_codebase_no_unjustified_ignores(self) -> None:
         """CRITICAL: Verify no inline ignores without justification.
@@ -1039,9 +1001,7 @@ class TestConfigFileCompleteness:
             tmp_path = Path(tmpdir)
 
             # Create all config files
-            (tmp_path / "pyrightconfig.json").write_text(
-                '{"typeCheckingMode": "strict"}'
-            )
+            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
 
             configs_dir = tmp_path / "configs"
             configs_dir.mkdir()
@@ -1111,9 +1071,7 @@ disable = [
 """)
 
             # Parse all configs
-            pyright_entries = parse_pyright_config_ignores(
-                tmp_path / "pyrightconfig.json"
-            )
+            pyright_entries = parse_pyright_config_ignores(tmp_path / "pyrightconfig.json")
             mypy_entries = parse_mypy_config_ignores(configs_dir / "pyproject.toml")
             ruff_entries = parse_ruff_config_ignores(configs_dir / "ruff.toml")
             pylint_entries = parse_pylint_config_ignores(configs_dir / "pylint.toml")
@@ -1130,9 +1088,7 @@ disable = [
             tmp_path = Path(tmpdir)
 
             # Only create some config files
-            (tmp_path / "pyrightconfig.json").write_text(
-                '{"typeCheckingMode": "strict"}'
-            )
+            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
 
             configs_dir = tmp_path / "configs"
             configs_dir.mkdir()

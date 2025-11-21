@@ -36,9 +36,7 @@ def create_matter(
 
 
 @router.get("", response_model=list[Matter])
-def list_matters(
-    service: Annotated[MattersService, Depends(get_matters_service)]
-) -> list[Matter]:
+def list_matters(service: Annotated[MattersService, Depends(get_matters_service)]) -> list[Matter]:
     """List all matters.
 
     Returns:

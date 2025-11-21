@@ -161,11 +161,6 @@ error_summary = true
 # Strictness
 strict_concatenate = true
 # Import discovery
-namespace_packages = true
-explicit_package_bases = true
-# Module search paths
-# apps/api/src is added so 'from udocket_api.core' works
-mypy_path = "apps/api/src:apps/celery/src:packages/udocket_domain/src:packages/udocket_ai_core/src:packages/udocket_worker_core/src:tooling"
 # Extra checks
 extra_checks = true
 # Plugins

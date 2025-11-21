@@ -27,7 +27,7 @@ class MattersService:
         Raises:
             TypeError: If the payload is not a MatterCreateRequest.
         """
-        if not isinstance(cast(object, payload), matters_schemas.MatterCreateRequest):
+        if not isinstance(cast("object", payload), matters_schemas.MatterCreateRequest):
             msg = "payload must be a MatterCreateRequest"
             raise TypeError(msg)
         matter = Matter(
@@ -50,7 +50,7 @@ class MattersService:
             KeyError: If the matter is missing.
             TypeError: If the identifier is not a UUID.
         """
-        if not isinstance(cast(object, matter_id), uuid.UUID):
+        if not isinstance(cast("object", matter_id), uuid.UUID):
             msg = "matter_id must be a UUID"
             raise TypeError(msg)
         try:

@@ -131,10 +131,7 @@ def run_model(
             try:
                 for message in stream_json_output(process):
                     # Process each message as it arrives
-                    if (
-                        message.get("type") == "system"
-                        and message.get("subtype") == "init"
-                    ):
+                    if message.get("type") == "system" and message.get("subtype") == "init":
                         print(
                             f"Session started: {message.get('session_id')}",
                             file=sys.stderr,
@@ -158,9 +155,7 @@ def run_model(
                             f"  Duration: {message.get('duration_ms', 0)}ms",
                             file=sys.stderr,
                         )
-                        print(
-                            f"  Turns: {message.get('num_turns', 0)}", file=sys.stderr
-                        )
+                        print(f"  Turns: {message.get('num_turns', 0)}", file=sys.stderr)
                         if message.get("result"):
                             print(
                                 f"\nResult text:\n{message.get('result')}",
@@ -209,9 +204,7 @@ def run_model(
                         f"  Success: {not json_data.get('is_error', False)}",
                         file=sys.stderr,
                     )
-                    print(
-                        f"  Cost: ${json_data.get('cost_usd', 0):.4f}", file=sys.stderr
-                    )
+                    print(f"  Cost: ${json_data.get('cost_usd', 0):.4f}", file=sys.stderr)
                     print(
                         f"  Duration: {json_data.get('duration_ms', 0)}ms",
                         file=sys.stderr,
@@ -228,15 +221,9 @@ def run_model(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a PRP with an LLM agent.")
-    parser.add_argument(
-        "--prp-path", help="Relative path to PRP file eg: PRPs/feature.md"
-    )
-    parser.add_argument(
-        "--prp", help="The file name of the PRP without the .md extension eg: feature"
-    )
-    parser.add_argument(
-        "--interactive", action="store_true", help="Launch interactive chat session"
-    )
+    parser.add_argument("--prp-path", help="Relative path to PRP file eg: PRPs/feature.md")
+    parser.add_argument("--prp", help="The file name of the PRP without the .md extension eg: feature")
+    parser.add_argument("--interactive", action="store_true", help="Launch interactive chat session")
     parser.add_argument("--model", default="claude", help="Model CLI executable name")
     parser.add_argument(
         "--output-format",

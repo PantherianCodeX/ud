@@ -32,9 +32,7 @@ class IntakeService:
         self._records[record.id] = record
         return record
 
-    def update_status(
-        self, record_id: uuid.UUID, *, status: str
-    ) -> intake_schemas.IntakeRecord:
+    def update_status(self, record_id: uuid.UUID, *, status: str) -> intake_schemas.IntakeRecord:
         """Update the workflow status for a record.
 
         Returns:
@@ -44,7 +42,7 @@ class IntakeService:
             KeyError: If the record does not exist.
             TypeError: If the identifier is not a UUID.
         """
-        if not isinstance(cast(object, record_id), uuid.UUID):
+        if not isinstance(cast("object", record_id), uuid.UUID):
             msg = "record_id must be a UUID"
             raise TypeError(msg)
         if not (record := self._records.get(record_id)):
@@ -83,7 +81,7 @@ class IntakeService:
         Raises:
             TypeError: If the argument is not iterable.
         """
-        if not isinstance(cast(object, records), abc.Iterable):
+        if not isinstance(cast("object", records), abc.Iterable):
             msg = "records must be iterable"
             raise TypeError(msg)
         for record in records:

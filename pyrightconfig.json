@@ -7,7 +7,8 @@
   },
   "include": [
     "apps",
-    "packages"
+    "packages",
+    "tooling"
   ],
   "exclude": [
     "**/__pycache__",
@@ -87,35 +88,15 @@
   "venv": ".venv",
   "executionEnvironments": [
     {
-      "root": "apps/api",
-      "pythonVersion": "3.12",
+      "root": ".",
       "extraPaths": [
         "apps/api/src",
-        "packages/udocket_domain/src",
-        "packages/udocket_ai_core/src",
-        "packages/udocket_worker_core/src"
-      ]
-    },
-    {
-      "root": "apps/celery",
-      "pythonVersion": "3.12",
-      "extraPaths": [
         "apps/celery/src",
         "packages/udocket_domain/src",
-        "packages/udocket_worker_core/src"
+        "packages/udocket_ai_core/src",
+        "packages/udocket_worker_core/src",
+        "tooling"
       ]
-    },
-    {
-      "root": "packages/udocket_domain",
-      "pythonVersion": "3.12"
-    },
-    {
-      "root": "packages/udocket_ai_core",
-      "pythonVersion": "3.12"
-    },
-    {
-      "root": "packages/udocket_worker_core",
-      "pythonVersion": "3.12"
     }
   ]
 }

@@ -44,10 +44,7 @@ def print_box(title: str, content: str = "", icon: str = "🚀") -> None:
 
 
 def run_command(
-    command_name: str,
-    arguments: str = "",
-    output_format: str = "text",
-    capture_output: bool = False
+    command_name: str, arguments: str = "", output_format: str = "text", capture_output: bool = False
 ) -> tuple[int, str]:
     """Run a slash command using invoke_command.py.
 
@@ -55,11 +52,13 @@ def run_command(
         Tuple of (exit_code, output_text)
     """
     cmd = [
-        "uv", "run",
+        "uv",
+        "run",
         str(ROOT / ".claude/PRPs/scripts/invoke_command.py"),
         command_name,
         arguments,
-        "--output-format", output_format
+        "--output-format",
+        output_format,
     ]
 
     print(f"→ Running: {command_name} {arguments}", file=sys.stderr)
@@ -99,12 +98,7 @@ def workflow_create(feature_description: str) -> str | None:
     """
     print_box("Step 1: Creating PRP", feature_description, "📝")
 
-    exit_code, output = run_command(
-        "prp-core-create",
-        feature_description,
-        output_format="text",
-        capture_output=True
-    )
+    exit_code, output = run_command("prp-core-create", feature_description, output_format="text", capture_output=True)
 
     # Print output
     print(output)
@@ -131,12 +125,7 @@ def workflow_execute(prp_path: str) -> bool:
     """
     print_box("Step 2: Executing PRP", prp_path, "⚙️")
 
-    exit_code, _ = run_command(
-        "prp-core-execute",
-        prp_path,
-        output_format="text",
-        capture_output=False
-    )
+    exit_code, _ = run_command("prp-core-execute", prp_path, output_format="text", capture_output=False)
 
     if exit_code != 0:
         print("❌ PRP execution failed", file=sys.stderr)
@@ -154,12 +143,7 @@ def workflow_commit() -> bool:
     """
     print_box("Step 3: Committing Changes", "", "💾")
 
-    exit_code, _ = run_command(
-        "PRP-core-commit",
-        "",
-        output_format="text",
-        capture_output=False
-    )
+    exit_code, _ = run_command("PRP-core-commit", "", output_format="text", capture_output=False)
 
     if exit_code != 0:
         print("❌ Commit failed", file=sys.stderr)
@@ -178,12 +162,7 @@ def workflow_pr(pr_title: str | None = None) -> bool:
     title = pr_title or "PRP Implementation"
     print_box("Step 4: Creating Pull Request", title, "🚀")
 
-    exit_code, _ = run_command(
-        "prp-core-pr",
-        title,
-        output_format="text",
-        capture_output=False
-    )
+    exit_code, _ = run_command("prp-core-pr", title, output_format="text", capture_output=False)
 
     if exit_code != 0:
         print("❌ PR creation failed", file=sys.stderr)
@@ -213,37 +192,15 @@ Examples:
 
   # Create and execute only
   %(prog)s "Add feature" --no-commit
-        """
+        """,
     )
 
-    parser.add_argument(
-        "feature",
-        nargs="?",
-        help="Feature description for PRP creation"
-    )
-    parser.add_argument(
-        "--prp-path",
-        help="Path to existing PRP file (skips create step)"
-    )
-    parser.add_argument(
-        "--skip-create",
-        action="store_true",
-        help="Skip PRP creation (requires --prp-path)"
-    )
-    parser.add_argument(
-        "--no-commit",
-        action="store_true",
-        help="Skip commit step"
-    )
-    parser.add_argument(
-        "--no-pr",
-        action="store_true",
-        help="Skip PR creation step"
-    )
-    parser.add_argument(
-        "--pr-title",
-        help="Custom PR title (default: 'PRP Implementation')"
-    )
+    parser.add_argument("feature", nargs="?", help="Feature description for PRP creation")
+    parser.add_argument("--prp-path", help="Path to existing PRP file (skips create step)")
+    parser.add_argument("--skip-create", action="store_true", help="Skip PRP creation (requires --prp-path)")
+    parser.add_argument("--no-commit", action="store_true", help="Skip commit step")
+    parser.add_argument("--no-pr", action="store_true", help="Skip PR creation step")
+    parser.add_argument("--pr-title", help="Custom PR title (default: 'PRP Implementation')")
 
     args = parser.parse_args()
 

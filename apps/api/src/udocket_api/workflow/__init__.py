@@ -9,15 +9,15 @@
 
 from fastapi import FastAPI
 
+from .analysis import register_routes as register_analysis_routes
+from .intake import register_routes as register_intake_routes
+from .matters import register_routes as register_matter_routes
+
 __all__ = ["register_workflows"]
 
 
 def register_workflows(app: FastAPI) -> None:
     """Attach all workflow routers to the FastAPI app."""
-    from .analysis import register_routes as register_analysis_routes
-    from .intake import register_routes as register_intake_routes
-    from .matters import register_routes as register_matter_routes
-
     register_intake_routes(app)
     register_matter_routes(app)
     register_analysis_routes(app)

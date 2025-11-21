@@ -41,7 +41,7 @@ def submit_intake(
 
 @router.get("/submissions", response_model=list[intake_schemas.IntakeRecord])
 def list_intake_records(
-    service: Annotated[IntakeService, Depends(get_intake_service)]
+    service: Annotated[IntakeService, Depends(get_intake_service)],
 ) -> list[intake_schemas.IntakeRecord]:
     """List all intake submissions in creation order.
 
@@ -73,8 +73,6 @@ def update_intake_status(
 
 
 @router.get("/status", response_model=intake_schemas.IntakeStatus)
-def get_intake_status(
-    service: Annotated[IntakeService, Depends(get_intake_service)]
-) -> intake_schemas.IntakeStatus:
+def get_intake_status(service: Annotated[IntakeService, Depends(get_intake_service)]) -> intake_schemas.IntakeStatus:
     """Return aggregate status metrics."""
     return service.get_status()
