@@ -9,7 +9,7 @@ name: Quality Checks
 
 on:
   push:
-    branches: [main, develop, "feat/**"]
+    branches: [main, develop]
   pull_request:
     branches: [main, develop]
 
@@ -89,7 +89,7 @@ jobs:
 
       - name: Run ${{ matrix.check_name }}
         run: ${{ matrix.run }}
-        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }}
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
 
       - name: Upload coverage reports
         if: matrix.upload_coverage == 'true'
@@ -98,7 +98,7 @@ jobs:
           file: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
-        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }}
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
 
   security:
     name: Security ${{ matrix.check_name }}
@@ -130,7 +130,7 @@ jobs:
 
       - name: Run ${{ matrix.check_name }}
         run: ${{ matrix.run }}
-        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }}
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
 
   pre-commit:
     name: Pre-commit Hooks
@@ -153,4 +153,4 @@ jobs:
 
       - name: Run pre-commit hooks
         run: uv run pre-commit run --all-files
-        continue-on-error: ${{ env.IS_PROTECTED_BRANCH != 'true' }} # Some hooks may fail on CI but are informative
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }} # Some hooks may fail on CI but are informative
