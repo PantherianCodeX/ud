@@ -45,35 +45,35 @@ jobs:
   python-quality:
     name: Python ${{ matrix.check_name }}
     runs-on: ubuntu-latest
-  strategy:
-    fail-fast: false
-    matrix:
-      include:
-        - check_name: "Prettier"
-          run: "uv run prettier --check ."
-        - check_name: "Ruff Check"
-          run: "uv run ruff check ."
-        - check_name: "Ruff Format"
-          run: "uv run ruff format --check ."
-        - check_name: "Pylint"
-          run: "uv run pylint --rcfile configs/pylint.toml apps/ packages/ tooling/"
-        - check_name: "Mypy"
-          run: "uv run mypy apps/ packages/ tooling/"
-        - check_name: "Pyright"
-          run: "uv run pyright apps/ packages/ tooling/"
-        - check_name: "Quality Audit Config"
-          run: "uv run python -m tooling.run_quality_audit --config-only"
-        - check_name: "Tests"
-          run: |-
-            uv run pytest \
-              --cov=apps \
-              --cov=packages \
-              --cov=tooling \
-              --cov-report=term-missing \
-              --cov-report=xml \
-              --cov-report=html \
-              -v
-          upload_coverage: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check_name: "Prettier"
+            run: "uv run prettier --check ."
+          - check_name: "Ruff Check"
+            run: "uv run ruff check ."
+          - check_name: "Ruff Format"
+            run: "uv run ruff format --check ."
+          - check_name: "Pylint"
+            run: "uv run pylint --rcfile configs/pylint.toml apps/ packages/ tooling/"
+          - check_name: "Mypy"
+            run: "uv run mypy apps/ packages/ tooling/"
+          - check_name: "Pyright"
+            run: "uv run pyright apps/ packages/ tooling/"
+          - check_name: "Quality Audit Config"
+            run: "uv run python -m tooling.run_quality_audit --config-only"
+          - check_name: "Tests"
+            run: |-
+              uv run pytest \
+                --cov=apps \
+                --cov=packages \
+                --cov=tooling \
+                --cov-report=term-missing \
+                --cov-report=xml \
+                --cov-report=html \
+                -v
+            upload_coverage: true
     steps:
       - uses: actions/checkout@v4
 
