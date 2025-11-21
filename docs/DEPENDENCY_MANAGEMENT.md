@@ -100,7 +100,7 @@ Use for:
 - Testing tools (pytest, hypothesis)
 - Type checkers (mypy, pyright)
 - Linters/formatters (ruff, pylint, prettier)
-- Security scanners (bandit, safety, gitleaks)
+- Security scanners (bandit, gitleaks); Safety is consumed by CI via `uv run safety scan --policy-file .safety-policy.yml` with the repository secret and is not part of the workspace dev dependencies.
 - Build tools (doit, pre-commit)
 - Version management (commitizen, semantic-release)
 
