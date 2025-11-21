@@ -60,12 +60,13 @@ dev-dependencies = [
 
 [tool.pytest.ini_options]
 # Test discovery configuration
-testpaths = ["apps", "packages", "tooling"]
+testpaths = ["apps", "packages", "tooling", "tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 # Python path for imports - points directly to src packages
 pythonpath = [
+    ".",
     "apps/api/src",
     "apps/celery/src",
     "packages/udocket_domain/src",
@@ -248,9 +249,9 @@ unfixable = []
 preview = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["PLR2004", "D103", "PLR6301"]
-"**/tests/**/*.py" = ["PLR2004", "D103", "PLR6301"]
-"**/test_*.py" = ["PLR2004", "D103", "PLR6301", "INP001", "CPY001", "PLC0415"]
+"tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301"]
+"**/tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301"]
+"**/test_*.py" = ["PLR2004", "D103", "D102", "PLR6301", "INP001", "CPY001", "PLC0415"]
 "**/conftest.py" = ["D103", "ANN001", "ANN201", "DOC402", "DOC201", "INP001"]
 "tooling/*.py" = [
     "CPY001", "T201", "DOC201", "D107", "C901", "PLR0912", "PLR0915",

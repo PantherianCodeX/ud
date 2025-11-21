@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 # Copyright (c) 2025 uDocket. All Rights Reserved.
 """Tests for the dependency validation script."""
+
 import ast
 import tempfile
 from pathlib import Path
 
 import pytest
-from check_dependencies import (
+
+from tooling.check_dependencies import (
     IMPORT_TO_PACKAGE,
     ImportVisitor,
     check_package,

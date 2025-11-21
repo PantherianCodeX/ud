@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: check-quality-config
         name: Check quality configuration integrity
-        entry: python tooling/check_quality_config.py
+        entry: python tooling/run_quality_audit.py --config-only
         language: system
         pass_filenames: false
         always_run: true

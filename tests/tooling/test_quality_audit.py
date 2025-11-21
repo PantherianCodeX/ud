@@ -1,4 +1,10 @@
 # Copyright (c) 2025 uDocket. All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the confidential and proprietary information of uDocket.
+# You shall not disclose such confidential information and shall use it only
+# in accordance with the terms of the license agreement you entered into with uDocket.
 """Tests for the quality audit script."""
 
 import json
@@ -6,12 +12,17 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from quality_audit import (
+
+from tooling.quality_audit import (
     AuditReport,
     ConfigIgnoreEntry,
     IgnoreEntry,
     check_baseline_drift,
     check_config_strictness,
+    check_inline_ignores,
+    check_mypy_config,
+    check_pyright_config,
+    check_ruff_config,
     compute_file_hash,
     discover_config_files,
     extract_justification,
@@ -26,6 +37,9 @@ from quality_audit import (
     save_baseline,
     scan_file_for_ignores,
 )
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+BASELINE_PATH = PROJECT_ROOT / ".udocket_cache" / "quality_audit" / "quality_baseline.json"
 
 
 class TestComputeFileHash:
@@ -563,12 +577,10 @@ class TestParsePyrightConfigIgnores:
 }""")
             justification_file = tmp_path / "pyrightconfig.justifications.json"
             justification_file.write_text(
-                json.dumps(
-                    {
-                        "reportMissingTypeStubs": "Third-party libs without stubs",
-                        "reportUnusedCallResult": "Optional chaining pattern",
-                    }
-                )
+                json.dumps({
+                    "reportMissingTypeStubs": "Third-party libs without stubs",
+                    "reportUnusedCallResult": "Optional chaining pattern",
+                })
             )
 
             entries = parse_pyright_config_ignores(config_file)
@@ -843,7 +855,7 @@ class TestGenerateMarkdownManifest:
                 ],
                 config_ignores=[],
                 config_errors=[],
-                    baseline_drift=(),
+                baseline_drift=(),
                 summary={
                     "total_code_ignores": 1,
                     "errors": 1,
@@ -879,7 +891,7 @@ class TestGenerateMarkdownManifest:
                     )
                 ],
                 config_errors=[],
-                    baseline_drift=(),
+                baseline_drift=(),
                 summary={
                     "total_code_ignores": 0,
                     "errors": 0,
@@ -895,6 +907,161 @@ class TestGenerateMarkdownManifest:
             assert "## Config Ignores by File" in content
             assert "### ruff.toml" in content
             assert "| lint.ignore | E501, W503 | global | Long lines allowed |" in content
+
+
+class TestCheckPyrightConfig:
+    """Test pyright configuration validation."""
+
+    def test_valid_strict_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyrightconfig.json"
+            config_file.write_text('{"typeCheckingMode": "strict"}')
+
+            errors = check_pyright_config(config_file)
+            assert errors == []
+
+    def test_invalid_basic_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyrightconfig.json"
+            config_file.write_text('{"typeCheckingMode": "basic"}')
+
+            errors = check_pyright_config(config_file)
+            assert len(errors) == 1
+            assert "strict" in errors[0]
+
+    def test_missing_config_file(self) -> None:
+        errors = check_pyright_config(Path("/nonexistent/pyrightconfig.json"))
+        assert len(errors) == 1
+        assert "not found" in errors[0]
+
+
+class TestCheckMypyConfig:
+    """Test mypy configuration validation."""
+
+    def test_valid_strict_config(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                """
+[tool.mypy]
+strict = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+"""
+            )
+
+            errors = check_mypy_config(config_file)
+            assert errors == []
+
+    def test_missing_strict_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                """
+[tool.mypy]
+disallow_untyped_defs = true
+disallow_any_generics = true
+"""
+            )
+
+            errors = check_mypy_config(config_file)
+            assert any("strict = true" in err for err in errors)
+
+    def test_missing_disallow_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "pyproject.toml"
+            config_file.write_text(
+                """
+[tool.mypy]
+strict = true
+"""
+            )
+
+            errors = check_mypy_config(config_file)
+            assert any("disallow_untyped_defs" in err for err in errors)
+            assert any("disallow_any_generics" in err for err in errors)
+
+
+class TestCheckRuffConfig:
+    """Test ruff configuration validation."""
+
+    def test_valid_all_select(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "ruff.toml"
+            config_file.write_text(
+                """
+[lint]
+select = ["ALL"]
+"""
+            )
+
+            errors = check_ruff_config(config_file)
+            assert errors == []
+
+    def test_missing_all_select(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            config_file = tmp_path / "ruff.toml"
+            config_file.write_text(
+                """
+[lint]
+select = ["E", "F", "W"]
+"""
+            )
+
+            errors = check_ruff_config(config_file)
+            assert len(errors) == 1
+            assert "ALL" in errors[0]
+
+
+class TestCheckInlineIgnores:
+    """Test inline ignore validation helper."""
+
+    def test_justified_type_ignore(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            test_file = tmp_path / "test.py"
+            test_file.write_text("x = 1  # type: ignore  # because legacy API\n")
+
+            errors = check_inline_ignores(test_file)
+            assert errors == []
+
+    def test_unjustified_type_ignore(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            test_file = tmp_path / "test.py"
+            test_file.write_text("x = 1  # type: ignore\n")
+
+            errors = check_inline_ignores(test_file)
+            assert len(errors) == 1
+            assert "missing justification" in errors[0]
+
+    def test_unjustified_noqa(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            test_file = tmp_path / "test.py"
+            test_file.write_text("x = 'long'  # noqa: E501\n")
+
+            errors = check_inline_ignores(test_file)
+            assert len(errors) == 1
+
+    def test_justification_on_previous_line(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            test_file = tmp_path / "test.py"
+            test_file.write_text(
+                "# JUSTIFIED: This is necessary for compatibility\n"
+                "x = 1  # type: ignore\n"
+            )
+
+            errors = check_inline_ignores(test_file)
+            assert errors == []
 
 
 class TestIntegration:
@@ -1017,8 +1184,8 @@ class TestBaselineEnforcement:
         If this fails, someone modified quality configs without updating baseline.
         This is intentional - baseline updates require explicit approval.
         """
-        root = Path(__file__).parent.parent
-        baseline_path = root / "tooling" / ".quality_baseline.json"
+        root = PROJECT_ROOT
+        baseline_path = BASELINE_PATH
 
         if not baseline_path.exists():
             pytest.skip("No baseline file exists yet")
@@ -1028,12 +1195,12 @@ class TestBaselineEnforcement:
         # This test MUST pass for CI to succeed
         # If it fails, you must either:
         # 1. Revert unauthorized config changes
-        # 2. Get approval and run: uv run python tooling/quality_audit.py --update-baseline
+        # 2. Get approval and run: uv run python tooling/run_quality_audit.py --update-baseline
         assert not drift, (
             f"BASELINE DRIFT DETECTED - Config files modified without approval:\n"
             f"{chr(10).join(f'  - {d}' for d in drift)}\n\n"
             f"To fix: Either revert changes or get approval and update baseline with:\n"
-            f"  uv run python tooling/quality_audit.py --update-baseline"
+            f"  uv run python tooling/run_quality_audit.py --update-baseline"
         )
 
     def test_actual_codebase_configs_pass_strictness(self) -> None:
@@ -1044,7 +1211,7 @@ class TestBaselineEnforcement:
         - Mypy is in strict mode with required settings
         - Ruff selects ALL rules
         """
-        root = Path(__file__).parent.parent
+        root = PROJECT_ROOT
 
         errors = check_config_strictness(root)
 
@@ -1056,7 +1223,7 @@ class TestBaselineEnforcement:
         This test runs against the REAL codebase to ensure all inline
         ignores (type: ignore, noqa, pylint: disable) have justifications.
         """
-        root = Path(__file__).parent.parent
+        root = PROJECT_ROOT
         python_files = find_python_files(root)
 
         all_entries: list[IgnoreEntry] = []

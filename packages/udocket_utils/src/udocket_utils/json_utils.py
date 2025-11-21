@@ -44,10 +44,7 @@ def coerce_json_value(value: object) -> JSONValue:
         return value
     if isinstance(value, Mapping):
         mapping_value = cast("Mapping[object, object]", value)
-        return {
-            str(key): coerce_json_value(item)
-            for key, item in mapping_value.items()
-        }
+        return {str(key): coerce_json_value(item) for key, item in mapping_value.items()}
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         sequence_value = cast("Sequence[object]", value)
         return [coerce_json_value(item) for item in sequence_value]
@@ -75,10 +72,7 @@ def coerce_json_object(value: object, *, default: JSONObject | None = None) -> J
     """
     if isinstance(value, Mapping):
         mapping_value = cast("Mapping[object, object]", value)
-        return {
-            str(key): coerce_json_value(item)
-            for key, item in mapping_value.items()
-        }
+        return {str(key): coerce_json_value(item) for key, item in mapping_value.items()}
     return {} if default is None else dict(default)
 
 
@@ -245,10 +239,7 @@ def ensure_json_object(value: object, *, context: str | None = None) -> JSONObje
         message = f"Expected mapping for {label}, received {type(value)!r}"
         raise TypeError(message)
     mapping_value = cast("Mapping[object, object]", value)
-    return {
-        str(key): coerce_json_value(item)
-        for key, item in mapping_value.items()
-    }
+    return {str(key): coerce_json_value(item) for key, item in mapping_value.items()}
 
 
 def coerce_json_array(value: object) -> JSONArray:
@@ -494,7 +485,7 @@ def read_json_value(path: Path) -> JSONValue | None:
     """
     try:
         text = path.read_text(encoding="utf-8")
-    except (FileNotFoundError, OSError):
+    except OSError:
         return None
     try:
         raw = json.loads(text)
@@ -533,10 +524,7 @@ def write_json_object(
         indent: Pretty-print indentation.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    normalized: JSONObject = {
-        str(key): coerce_json_value(value)
-        for key, value in payload.items()
-    }
+    normalized: JSONObject = {str(key): coerce_json_value(value) for key, value in payload.items()}
     path.write_text(
         json.dumps(normalized, ensure_ascii=False, indent=indent),
         encoding="utf-8",

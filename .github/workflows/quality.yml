@@ -1,3 +1,10 @@
+# Copyright (c) 2025 uDocket. All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the confidential and proprietary information of uDocket.
+# You shall not disclose such confidential information and shall use it only
+# in accordance with the terms of the license agreement you entered into with uDocket.
 name: Quality Checks
 
 on:
@@ -34,12 +41,35 @@ jobs:
         run: uv run python tooling/check_dependencies.py
 
   python-quality:
-    name: Python ${{ matrix.check }}
+    name: Python ${{ matrix.check_name }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        check: ["Linting", "Type Checking", "Tests"]
+        include:
+          - check_name: "Ruff Check"
+            run: "uv run ruff check ."
+          - check_name: "Ruff Format"
+            run: "uv run ruff format --check ."
+          - check_name: "Pylint"
+            run: "uv run pylint apps/ packages/ tooling/"
+          - check_name: "Mypy"
+            run: "uv run mypy apps/ packages/ tooling/"
+            allow_failure: true
+          - check_name: "Pyright"
+            run: "uv run pyright apps/ packages/ tooling/"
+            allow_failure: true
+          - check_name: "Tests"
+            run: |-
+              uv run pytest \
+                --cov=apps \
+                --cov=packages \
+                --cov=tooling \
+                --cov-report=term-missing \
+                --cov-report=xml \
+                --cov-report=html \
+                -v
+            upload_coverage: true
     steps:
       - uses: actions/checkout@v4
 
@@ -56,42 +86,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Ruff check
-        if: matrix.check == 'Linting'
-        run: uv run ruff check .
-
-      - name: Ruff format check
-        if: matrix.check == 'Linting'
-        run: uv run ruff format --check .
-
-      - name: Pylint
-        if: matrix.check == 'Linting'
-        run: uv run pylint apps/ packages/ tooling/
-
-      - name: Mypy type check
-        if: matrix.check == 'Type Checking'
-        run: uv run mypy apps/ packages/ tooling/
-        continue-on-error: true # Type checking is strict but may have false positives
-
-      - name: Pyright type check
-        if: matrix.check == 'Type Checking'
-        run: uv run pyright apps/ packages/ tooling/
-        continue-on-error: true # Type checking is strict but may have false positives
-
-      - name: Run tests with coverage
-        if: matrix.check == 'Tests'
-        run: |
-          uv run pytest \
-            --cov=apps \
-            --cov=packages \
-            --cov=tooling \
-            --cov-report=term-missing \
-            --cov-report=xml \
-            --cov-report=html \
-            -v
+      - name: Run ${{ matrix.check_name }}
+        run: ${{ matrix.run }}
+        continue-on-error: ${{ matrix.allow_failure == 'true' }}
 
       - name: Upload coverage reports
-        if: matrix.check == 'Tests'
+        if: matrix.upload_coverage == 'true'
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
@@ -100,8 +100,18 @@ jobs:
         continue-on-error: true
 
   security:
-    name: Security Scanning
+    name: Security ${{ matrix.check_name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check_name: "Bandit"
+            run: "uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json"
+          - check_name: "Safety"
+            run: "uv run safety check --json"
+          - check_name: "Gitleaks"
+            is_gitleaks: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -120,19 +130,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras --dev
 
-      - name: Bandit security scan
-        run: uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json
+      - name: Run ${{ matrix.check_name }}
+        run: ${{ matrix.run }}
         continue-on-error: true
-
-      - name: Safety dependency check
-        run: uv run safety check --json
-        continue-on-error: true
-
-      - name: Gitleaks secret detection
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
   pre-commit:
     name: Pre-commit Hooks

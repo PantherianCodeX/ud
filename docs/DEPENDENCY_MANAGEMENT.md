@@ -299,10 +299,10 @@ The validation script has comprehensive tests:
 
 ```bash
 # Run the test suite
-uv run pytest tooling/test_check_dependencies.py -v
+uv run pytest tests/tooling/test_check_dependencies.py -v
 
 # Run with coverage
-uv run pytest tooling/test_check_dependencies.py --cov=tooling --cov-report=term-missing
+uv run pytest tests/tooling/test_check_dependencies.py --cov=tooling --cov-report=term-missing
 ```
 
 Tests cover:
@@ -317,7 +317,7 @@ Tests cover:
 
 - [`pyproject.toml`](../pyproject.toml) - Root workspace config
 - [`tooling/check_dependencies.py`](../tooling/check_dependencies.py) - Validation script
-- [`tooling/test_check_dependencies.py`](../tooling/test_check_dependencies.py) - Test suite
+- [`tests/tooling/test_check_dependencies.py`](../tests/tooling/test_check_dependencies.py) - Test suite
 - [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) - Pre-commit hooks
 - [`.github/workflows/quality.yml`](../.github/workflows/quality.yml) - CI configuration
 

@@ -51,16 +51,19 @@ preview = true
 "tests/**/*.py" = [
     "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
     "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
+    "D102",      # JUSTIFIED: Pytest-based tests rely on descriptive naming, not docstrings
     "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
 ]
 "**/tests/**/*.py" = [
     "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
     "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
+    "D102",      # JUSTIFIED: Pytest-based tests rely on descriptive naming, not docstrings
     "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
 ]
 "**/test_*.py" = [
     "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
     "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
+    "D102",      # JUSTIFIED: Test files rely on expressive names rather than docstrings
     "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
     "INP001",    # JUSTIFIED: Test files don't need to be in packages
     "CPY001",    # JUSTIFIED: Test files don't need copyright headers

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-# Copyright (c) 2025 uDocket. All Rights Reserved.
 # pylint: disable=R6102  # JUSTIFIED: Global lists mutated when building dependency tables
+# Copyright (c) 2025 uDocket. All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the confidential and proprietary information of uDocket.
+# You shall not disclose such confidential information and shall use it only
+# in accordance with the terms of the license agreement you entered into with uDocket.
 """Dependency validation script for uDocket monorepo.
 
 Ensures:
@@ -13,6 +19,7 @@ Ensures:
 import ast
 import sys
 import tomllib
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, override
 
@@ -172,44 +179,46 @@ def get_package_name(dep: str) -> str:
     return dep.strip()
 
 
+def _is_valid_module_name(name: str) -> bool:
+    return not name.startswith(".") and not name.startswith("__")
+
+
+def _collect_src_modules(src_dir: Path) -> set[str]:
+    modules: set[str] = set()
+    for init_file in src_dir.rglob("__init__.py"):
+        package_path = init_file.parent.relative_to(src_dir)
+        if not package_path.parts:
+            continue
+        for part in package_path.parts:
+            if _is_valid_module_name(part):
+                modules.add(part)
+    for py_file in src_dir.rglob("*.py"):
+        if py_file.name == "__init__.py":
+            continue
+        module_name = py_file.stem
+        if _is_valid_module_name(module_name):
+            modules.add(module_name)
+    return modules
+
+
+def _collect_flat_modules(package_dir: Path) -> set[str]:
+    modules: set[str] = set()
+    for item in package_dir.iterdir():
+        if (
+            item.is_dir()
+            and _is_valid_module_name(item.name)
+            and item.name not in {"tests", "docs", "scripts", "migrations"}
+        ):
+            modules.add(item.name)
+    return modules
+
+
 def get_package_internal_modules(package_dir: Path) -> set[str]:
-    """Get the internal module names for a package.
-
-    For example, udocket-domain has modules: udocket_domain, base, matter, analysis, etc.
-    Also detects internal app modules like 'core', 'config', etc.
-    """
-    internal_modules: set[str] = set()
-
-    # Check if this is a src-layout package
+    """Get the internal module names for a package."""
     src_dir = package_dir / "src"
     if src_dir.exists():
-        # Add every python package component (directories with __init__.py)
-        for init_file in src_dir.rglob("__init__.py"):
-            package_path = init_file.parent.relative_to(src_dir)
-            if package_path == Path():
-                continue
-            for part in package_path.parts:
-                if not part.startswith(".") and not part.startswith("__"):
-                    internal_modules.add(part)
-        # Add Python modules that live directly under package directories
-        for py_file in src_dir.rglob("*.py"):
-            if py_file.name == "__init__.py":
-                continue
-            module_name = py_file.stem
-            if not module_name.startswith(".") and not module_name.startswith("__"):
-                internal_modules.add(module_name)
-    else:
-        # For apps without src/ layout, look for top-level directories
-        for item in package_dir.iterdir():
-            if (
-                item.is_dir()
-                and not item.name.startswith(".")
-                and not item.name.startswith("__")
-                and item.name not in {"tests", "docs", "scripts", "migrations"}
-            ):
-                internal_modules.add(item.name)
-
-    return internal_modules
+        return _collect_src_modules(src_dir)
+    return _collect_flat_modules(package_dir)
 
 
 def _perform_initial_package_checks(package_dir: Path, pyproject_path: Path) -> tuple[bool, list[str], bool]:
@@ -241,6 +250,50 @@ def _get_declared_dependencies(config: dict[str, Any]) -> tuple[set[str], set[st
     return runtime_deps, dev_deps
 
 
+@dataclass(slots=True)
+class PackageContext:
+    """Container of per-package metadata used during dependency validation."""
+    package_dir: Path
+    root_dir: Path
+    pyproject_path: Path
+    package_name: str
+    runtime_deps: set[str]
+    dev_deps: set[str]
+    internal_modules: set[str]
+
+
+def _prepare_package_context(
+    package_dir: Path,
+    root_dir: Path,
+) -> tuple[PackageContext | None, list[str], bool]:
+    pyproject_path = package_dir / "pyproject.toml"
+    success, errors, should_skip = _perform_initial_package_checks(package_dir, pyproject_path)
+    if should_skip:
+        return None, [], True
+    if not success:
+        return None, errors, False
+
+    config = load_pyproject(pyproject_path)
+    if "project" not in config:
+        return None, [f"{package_dir}: Missing [project] section in pyproject.toml"], False
+
+    project = config["project"]
+    package_name = project.get("name", package_dir.name)
+    runtime_deps, dev_deps = _get_declared_dependencies(config)
+    internal_modules = get_package_internal_modules(package_dir)
+
+    context = PackageContext(
+        package_dir=package_dir,
+        root_dir=root_dir,
+        pyproject_path=pyproject_path,
+        package_name=package_name,
+        runtime_deps=runtime_deps,
+        dev_deps=dev_deps,
+        internal_modules=internal_modules,
+    )
+    return context, [], False
+
+
 def _get_all_imports(package_dir: Path) -> set[str]:
     """Find all Python files in a package and extract all imports."""
     python_files = find_python_files(package_dir)
@@ -251,9 +304,7 @@ def _get_all_imports(package_dir: Path) -> set[str]:
     return all_imports
 
 
-def _map_imports_to_packages(
-    all_imports: set[str], internal_modules: set[str], all_declared: set[str]
-) -> set[str]:
+def _map_imports_to_packages(all_imports: set[str], internal_modules: set[str], all_declared: set[str]) -> set[str]:
     """Map extracted imports to their corresponding package names."""
     required_packages: set[str] = set()
     for imp in all_imports:
@@ -329,52 +380,44 @@ def _check_dev_dependencies_missing_from_dev(
 
 
 def check_package(package_dir: Path, root_dir: Path) -> tuple[bool, list[str]]:
-    """Check a single package/app for dependency issues.
-
-    Returns:
-        Tuple of (success: bool, errors: list[str])
-    """
-    errors: list[str] = []
-    pyproject_path = package_dir / "pyproject.toml"
-
-    success, initial_errors, should_skip = _perform_initial_package_checks(package_dir, pyproject_path)
+    """Check a single package/app for dependency issues."""
+    context, prep_errors, should_skip = _prepare_package_context(package_dir, root_dir)
     if should_skip:
         return True, []
-    if not success:
-        return False, initial_errors
+    if prep_errors:
+        return False, prep_errors
+    assert context is not None
 
-    # Load pyproject.toml
-    config = load_pyproject(pyproject_path)
+    errors: list[str] = []
+    all_imports = _get_all_imports(context.package_dir)
+    all_declared = context.runtime_deps | context.dev_deps
+    required_packages = _map_imports_to_packages(all_imports, context.internal_modules, all_declared)
 
-    if "project" not in config:
-        errors.append(f"{package_dir}: Missing [project] section in pyproject.toml")
-        return False, errors
-
-    project = config["project"]
-    package_name = project.get("name", package_dir.name)
-
-    # Get internal modules to exclude from dependency checking
-    internal_modules = get_package_internal_modules(package_dir)
-
-    # Get declared dependencies
-    runtime_deps, dev_deps = _get_declared_dependencies(config)
-
-    # Find all Python files and extract imports
-    all_imports = _get_all_imports(package_dir)
-
-    # Map imports to package names
-    all_declared = runtime_deps | dev_deps
-    required_packages = _map_imports_to_packages(all_imports, internal_modules, all_declared)
-
-    # Check for missing dependencies
-    all_declared = runtime_deps | dev_deps
-    errors.extend(_check_missing_dependencies(package_name, required_packages, all_declared, pyproject_path, root_dir))
-
-    # Check for dev dependencies in runtime section
-    errors.extend(_check_dev_dependencies_in_runtime(package_name, runtime_deps, pyproject_path, root_dir))
-
-    # Check that dev dependencies are in dev section
-    errors.extend(_check_dev_dependencies_missing_from_dev(package_name, required_packages, dev_deps, runtime_deps))
+    errors.extend(
+        _check_missing_dependencies(
+            context.package_name,
+            required_packages,
+            all_declared,
+            context.pyproject_path,
+            context.root_dir,
+        )
+    )
+    errors.extend(
+        _check_dev_dependencies_in_runtime(
+            context.package_name,
+            context.runtime_deps,
+            context.pyproject_path,
+            context.root_dir,
+        )
+    )
+    errors.extend(
+        _check_dev_dependencies_missing_from_dev(
+            context.package_name,
+            required_packages,
+            context.dev_deps,
+            context.runtime_deps,
+        )
+    )
 
     return len(errors) == 0, errors
 

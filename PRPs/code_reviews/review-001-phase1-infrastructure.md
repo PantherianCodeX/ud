@@ -27,7 +27,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 | CI/CD Pipeline | ✅ | `.github/workflows/quality.yml` |
 | Docker Compose | ✅ | `ops/docker-compose.yml` with Postgres, RabbitMQ, Redis |
 | Dependency Validation | ✅ | `tooling/check_dependencies.py` with tests |
-| Quality Audit System | ✅ | `tooling/quality_audit.py` with baseline enforcement |
+| Quality Audit System | ✅ | `python tooling/run_quality_audit.py` with baseline enforcement |
 
 ### 🔶 Partially Complete
 
@@ -172,9 +172,8 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 - `apps/api/tests/conftest.py` - Fixtures (has import error)
 - `apps/api/tests/test_health.py` - Health endpoint test
 - `apps/api/tests/integration/__init__.py` - Empty
-- `tooling/test_check_dependencies.py` - 19 tests ✅
-- `tooling/test_check_quality_config.py` - Tests for quality config
-- `tooling/test_quality_audit.py` - Tests for quality audit
+- `tests/tooling/test_check_dependencies.py` - 19 tests ✅
+- `tests/tooling/test_quality_audit.py` - Tests for quality & config audits
 
 ## Alignment with ROADMAP.md Phase 1
 

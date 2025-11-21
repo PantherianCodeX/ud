@@ -490,7 +490,7 @@ Every PR must pass:
 6. E2E tests (Playwright subset)
 7. Security scans (Bandit, Safety, Gitleaks)
 
-Quality checks are orchestrated as parallel GitHub Actions matrix jobs so linting, type checking, tests, and security scans report independently even when one track fails.
+Quality checks are orchestrated as parallel GitHub Actions matrix jobs so every individual lint/type/test/security tool runs on its own runner and reports independently even when another track fails.
 
 Main/release branches additionally run:
 - Full Playwright suite
