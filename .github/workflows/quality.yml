@@ -99,15 +99,6 @@ jobs:
         run: ${{ matrix.run }}
         continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
 
-      - name: Upload coverage reports
-        if: matrix.upload_coverage == 'true'
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./out/test_reports/coverage/coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
-
   security:
     name: Security ${{ matrix.check_name }}
     runs-on: ubuntu-latest
