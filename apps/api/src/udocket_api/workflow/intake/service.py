@@ -35,7 +35,12 @@ class IntakeService:
         self._records[record.id] = record
         return record
 
-    def update_status(self, record_id: uuid.UUID, *, status: str) -> intake_schemas.IntakeRecord:
+    def update_status(
+        self,
+        record_id: uuid.UUID,
+        *,
+        status: intake_schemas.IntakeWorkflowStatus,
+    ) -> intake_schemas.IntakeRecord:
         """Update the workflow status for a record.
 
         Args:
@@ -74,8 +79,9 @@ class IntakeService:
         Returns:
             IntakeStatus: Aggregate counts for total, pending, and completed records.
         """
-        pending = sum(1 for record in self._records.values() if record.status != "complete")
-        completed = sum(1 for record in self._records.values() if record.status == "complete")
+        completed_state = intake_schemas.IntakeWorkflowStatus.COMPLETE
+        pending = sum(1 for record in self._records.values() if record.status != completed_state)
+        completed = sum(1 for record in self._records.values() if record.status == completed_state)
         return intake_schemas.IntakeStatus(
             total_records=len(self._records),
             pending_records=pending,

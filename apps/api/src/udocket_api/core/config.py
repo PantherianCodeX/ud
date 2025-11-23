@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     database_pool_size: int = 5
     database_max_overflow: int = 10
     database_echo: bool = False
+    database_healthcheck_timeout: float = 1.0
 
     # Auth
     jwt_secret_key: str

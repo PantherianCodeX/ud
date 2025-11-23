@@ -47,7 +47,8 @@ async_session_maker = async_sessionmaker(
 async def get_db() -> AsyncGenerator[AsyncSession]:
     """FastAPI dependency for database sessions.
 
-    Provides an async database session with automatic commit/rollback.
+    Provides an async database session and ensures clean rollback semantics.
+    Callers are responsible for explicitly committing write operations.
 
     Yields:
         AsyncSession: The database session for the request.
@@ -55,11 +56,14 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
     async with async_session_maker() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise
         finally:
+            # Roll back any lingering transaction so read-only requests
+            # don't accidentally commit.
+            if session.in_transaction():
+                await session.rollback()
             await session.close()
 
 
@@ -79,9 +83,10 @@ async def check_db_health() -> bool:
     Returns:
         True if database is reachable, False otherwise.
     """
+    health_check_statement = text("SELECT 1").execution_options(timeout=settings.database_healthcheck_timeout)
     try:
         async with engine.connect() as conn:
-            await conn.execute(text("SELECT 1"))
-    except SQLAlchemyError:
+            await conn.execute(health_check_statement)
+    except (TimeoutError, SQLAlchemyError):
         return False
     return True

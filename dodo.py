@@ -17,10 +17,13 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from doit.exceptions import TaskFailed
+
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 TaskConfig = dict[str, Any]
+ActionResult = TaskFailed | None
 
 # pylint: disable=missing-return-doc  # JUSTIFIED: Doit mandates specific return schemas
 
@@ -36,19 +39,58 @@ COVERAGE_DIR = OUT_DIR / "coverage"
 PRETTIER_BIN = ROOT / "node_modules" / ".bin" / "prettier"
 
 
+def _task_label(func_name: str) -> str:
+    return func_name.removeprefix("task_")
+
+
+def _log(message: str) -> None:
+    sys.stdout.write(message + "\n")
+    sys.stdout.flush()
+
+
+def _with_task_logging(task_name: str, action: Callable[[], ActionResult]) -> Callable[[], ActionResult]:
+    def _wrapper() -> ActionResult:
+        _log(f"[doit] Starting task '{task_name}'")
+        try:
+            result = action()
+        except Exception:
+            _log(f"[doit] Task '{task_name}' failed with exception.")
+            raise
+        if isinstance(result, TaskFailed):
+            _log(f"[doit] Task '{task_name}' failed.")
+        else:
+            _log(f"[doit] Finished task '{task_name}'.")
+        return result
+
+    return _wrapper
+
+
+def _task_config(task_func_name: str, action: Callable[[], ActionResult]) -> TaskConfig:
+    task_name = _task_label(task_func_name)
+    return {"actions": [_with_task_logging(task_name, action)], "verbosity": 2}
+
+
 def _ensure_dirs(directories: Iterable[Path]) -> None:
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
 
 
-def _run(cmd: list[str], *, env: dict[str, str] | None = None) -> None:
+def _run(cmd: list[str], *, env: dict[str, str] | None = None) -> int:
     final_env = os.environ | (env or {})
-    subprocess.run(  # noqa: S603  # nosec B603 - Commands are static strings defined in repo
+    result = subprocess.run(  # noqa: S603  # nosec B603 - Commands are static strings defined in repo
         cmd,
-        check=True,
+        check=False,
         cwd=ROOT,
         env=final_env,
     )
+    return result.returncode
+
+
+def _run_task_action(cmd: list[str], *, env: dict[str, str] | None = None) -> TaskFailed | None:
+    exit_code = _run(cmd, env=env)
+    if exit_code:
+        return _task_failure(cmd, exit_code)
+    return None
 
 
 def _run_capture(cmd: list[str]) -> subprocess.CompletedProcess[str]:
@@ -68,9 +110,20 @@ def _emit(result: subprocess.CompletedProcess[str]) -> None:
         sys.stderr.write(result.stderr)
 
 
-def _raise_on_error(result: subprocess.CompletedProcess[str], cmd: list[str]) -> None:
+def _raise_on_error(result: subprocess.CompletedProcess[str], cmd: list[str]) -> TaskFailed | None:
     if result.returncode:
-        raise subprocess.CalledProcessError(result.returncode, cmd)
+        return _task_failure(cmd, result.returncode)
+    return None
+
+
+def _command_failure_message(cmd: list[str], exit_code: int) -> str:
+    rendered_cmd = " ".join(cmd)
+    return f"Command `{rendered_cmd}` failed with exit code {exit_code}. See logs above for details."
+
+
+def _task_failure(cmd: list[str], exit_code: int) -> TaskFailed:
+    msg = _command_failure_message(cmd, exit_code)
+    return TaskFailed(msg)
 
 
 def _summarize_bandit(report_path: Path) -> str:
@@ -108,7 +161,7 @@ def task_prettier_check() -> TaskConfig:
         TaskConfig: doit task definition for Prettier.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         if not PRETTIER_BIN.exists():
             msg = "Prettier not installed. Run `npm install` before invoking this task."
             raise RuntimeError(msg)
@@ -120,9 +173,12 @@ def task_prettier_check() -> TaskConfig:
             "--check",
             *targets,
         ]
-        _run(cmd)
+        task_result = _run_task_action(cmd)
+        if task_result:
+            return task_result
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_prettier_check.__name__, _action)
 
 
 def task_ruff_check() -> TaskConfig:
@@ -132,7 +188,7 @@ def task_ruff_check() -> TaskConfig:
         TaskConfig: doit task definition for the lint job.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([LINT_DIR])
         output = LINT_DIR / "ruff-check.txt"
         cmd = [
@@ -148,9 +204,12 @@ def task_ruff_check() -> TaskConfig:
             if result.stderr:
                 log_file.write(result.stderr)
         _emit(result)
-        _raise_on_error(result, cmd)
+        task_result = _raise_on_error(result, cmd)
+        if task_result:
+            return task_result
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_ruff_check.__name__, _action)
 
 
 def task_ruff_format_check() -> TaskConfig:
@@ -160,7 +219,7 @@ def task_ruff_format_check() -> TaskConfig:
         TaskConfig: doit task definition for the format check.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([LINT_DIR])
         output = LINT_DIR / "ruff-format-check.txt"
         cmd = [
@@ -180,9 +239,11 @@ def task_ruff_format_check() -> TaskConfig:
         )
         output.write_text(result.stdout + result.stderr)
         if result.returncode:
-            raise subprocess.CalledProcessError(result.returncode, cmd)
+            msg = _command_failure_message(cmd, result.returncode)
+            return TaskFailed(msg)
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_ruff_format_check.__name__, _action)
 
 
 def task_ruff_format() -> TaskConfig:
@@ -191,7 +252,12 @@ def task_ruff_format() -> TaskConfig:
     Returns:
         TaskConfig: doit task definition for formatting.
     """
-    return {"actions": ["uv run ruff format ."], "verbosity": 2}
+
+    def _action() -> ActionResult:
+        cmd = ["uv", "run", "ruff", "format", "."]
+        return _run_task_action(cmd)
+
+    return _task_config(task_ruff_format.__name__, _action)
 
 
 def task_pylint() -> TaskConfig:
@@ -201,7 +267,7 @@ def task_pylint() -> TaskConfig:
         TaskConfig: doit task definition for pylint.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([LINT_DIR])
         log_path = LINT_DIR / "pylint.json"
         cmd = [
@@ -217,14 +283,18 @@ def task_pylint() -> TaskConfig:
             "tooling/",
         ]
         with log_path.open("w", encoding="utf-8") as log_file:
-            subprocess.run(  # noqa: S603  # nosec B603 - Running trusted pylint CLI for reports
+            result = subprocess.run(  # noqa: S603  # nosec B603 - Running trusted pylint CLI for reports
                 cmd,
-                check=True,
+                check=False,
                 cwd=ROOT,
                 stdout=log_file,
             )
+        if result.returncode:
+            msg = _command_failure_message(cmd, result.returncode)
+            return TaskFailed(msg)
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_pylint.__name__, _action)
 
 
 def task_mypy() -> TaskConfig:
@@ -234,7 +304,7 @@ def task_mypy() -> TaskConfig:
         TaskConfig: doit task definition for mypy.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([TYPECHECK_DIR])
         junit_path = TYPECHECK_DIR / "mypy-junit.xml"
         cmd = [
@@ -246,9 +316,12 @@ def task_mypy() -> TaskConfig:
             "tooling/",
             f"--junit-xml={junit_path}",
         ]
-        _run(cmd)
+        task_result = _run_task_action(cmd)
+        if task_result:
+            return task_result
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_mypy.__name__, _action)
 
 
 def task_pyright() -> TaskConfig:
@@ -258,16 +331,19 @@ def task_pyright() -> TaskConfig:
         TaskConfig: doit task definition for pyright.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([TYPECHECK_DIR])
         output = TYPECHECK_DIR / "pyright.json"
         cmd = ["uv", "run", "pyright", "--project", "configs/pyrightconfig.json"]
         result = _run_capture(cmd)
         output.write_text(result.stdout)
         _emit(result)
-        _raise_on_error(result, cmd)
+        task_result = _raise_on_error(result, cmd)
+        if task_result:
+            return task_result
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_pyright.__name__, _action)
 
 
 def task_quality_audit_config() -> TaskConfig:
@@ -277,7 +353,7 @@ def task_quality_audit_config() -> TaskConfig:
         TaskConfig: doit task definition for the config audit.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([QUALITY_DIR])
         cmd = [
             "uv",
@@ -287,9 +363,12 @@ def task_quality_audit_config() -> TaskConfig:
             "tooling.run_quality_audit",
             "--config-only",
         ]
-        _run(cmd)
+        task_result = _run_task_action(cmd)
+        if task_result:
+            return task_result
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_quality_audit_config.__name__, _action)
 
 
 def task_tests() -> TaskConfig:
@@ -299,7 +378,7 @@ def task_tests() -> TaskConfig:
         TaskConfig: doit task definition for pytest.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([COVERAGE_DIR, TEST_DIR])
         coverage_xml = COVERAGE_DIR / "coverage.xml"
         coverage_html = COVERAGE_DIR / "htmlcov"
@@ -320,9 +399,12 @@ def task_tests() -> TaskConfig:
             "-v",
             f"--junitxml={junit_xml}",
         ]
-        _run(cmd, env=env)
+        task_result = _run_task_action(cmd, env=env)
+        if task_result:
+            return task_result
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_tests.__name__, _action)
 
 
 def task_dependency_check() -> TaskConfig:
@@ -331,7 +413,12 @@ def task_dependency_check() -> TaskConfig:
     Returns:
         TaskConfig: doit task definition for the dependency checker.
     """
-    return {"actions": ["uv run python tooling/check_dependencies.py"], "verbosity": 2}
+
+    def _action() -> ActionResult:
+        cmd = ["uv", "run", "python", "tooling/check_dependencies.py"]
+        return _run_task_action(cmd)
+
+    return _task_config(task_dependency_check.__name__, _action)
 
 
 def task_bandit() -> TaskConfig:
@@ -341,7 +428,7 @@ def task_bandit() -> TaskConfig:
         TaskConfig: doit task definition for bandit.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([SECURITY_DIR])
         report_path = SECURITY_DIR / "bandit-report.json"
         cmd = [
@@ -361,10 +448,13 @@ def task_bandit() -> TaskConfig:
         ]
         result = _run_capture(cmd)
         _emit(result)
-        _raise_on_error(result, cmd)
+        task_result = _raise_on_error(result, cmd)
+        if task_result:
+            return task_result
         sys.stdout.write(_summarize_bandit(report_path) + "\n")
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_bandit.__name__, _action)
 
 
 def task_safety() -> TaskConfig:
@@ -374,7 +464,7 @@ def task_safety() -> TaskConfig:
         TaskConfig: doit task definition for the Safety scan.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         _ensure_dirs([SECURITY_DIR])
         report_path = SECURITY_DIR / "safety-report.json"
         cmd = [
@@ -389,10 +479,13 @@ def task_safety() -> TaskConfig:
         result = _run_capture(cmd)
         report_path.write_text(result.stdout)
         _emit(result)
-        _raise_on_error(result, cmd)
+        task_result = _raise_on_error(result, cmd)
+        if task_result:
+            return task_result
         sys.stdout.write(_summarize_safety(report_path) + "\n")
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_safety.__name__, _action)
 
 
 def task_precommit() -> TaskConfig:
@@ -401,10 +494,20 @@ def task_precommit() -> TaskConfig:
     Returns:
         TaskConfig: doit task definition for running hooks.
     """
-    return {
-        "actions": ["uv run pre-commit run --config configs/pre-commit-config.yaml --all-files"],
-        "verbosity": 2,
-    }
+
+    def _action() -> ActionResult:
+        cmd = [
+            "uv",
+            "run",
+            "pre-commit",
+            "run",
+            "--config",
+            "configs/pre-commit-config.yaml",
+            "--all-files",
+        ]
+        return _run_task_action(cmd)
+
+    return _task_config(task_precommit.__name__, _action)
 
 
 def task_lint() -> TaskConfig:
@@ -459,7 +562,7 @@ def task_clean_artifacts() -> TaskConfig:
         TaskConfig: doit task definition for cleaning artifacts.
     """
 
-    def _action() -> None:
+    def _action() -> ActionResult:
         paths = [
             ROOT / ".pytest_cache",
             ROOT / ".ruff_cache",
@@ -475,5 +578,6 @@ def task_clean_artifacts() -> TaskConfig:
                     shutil.rmtree(path)
                 else:
                     path.unlink()
+        return None
 
-    return {"actions": [_action], "verbosity": 2}
+    return _task_config(task_clean_artifacts.__name__, _action)

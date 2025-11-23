@@ -105,6 +105,7 @@ asyncio_mode = "auto"
 addopts = [
     "--strict-markers",
     "--strict-config",
+    "--benchmark-disable",
     "-ra",  # Show extra test summary for all except passed
     "-n",  # Enable pytest-xdist parallel execution by default
     "auto",  # Automatically determine optimal number of workers
@@ -266,9 +267,9 @@ unfixable = []
 preview = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301"]
-"**/tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301"]
-"**/test_*.py" = ["PLR2004", "D103", "D102", "PLR6301", "INP001", "CPY001", "PLC0415"]
+"tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301", "PLC2701"]
+"**/tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301", "PLC2701"]
+"**/test_*.py" = ["PLR2004", "D103", "D102", "PLR6301", "INP001", "CPY001", "PLC0415", "PLC2701"]
 "**/conftest.py" = ["D103", "ANN001", "ANN201", "DOC402", "DOC201", "INP001"]
 "tooling/*.py" = [
     "CPY001", "T201", "DOC201", "D107", "C901", "PLR0912", "PLR0915",

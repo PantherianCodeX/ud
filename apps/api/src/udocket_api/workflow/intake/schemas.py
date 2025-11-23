@@ -5,12 +5,18 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-IntakeStatusLiteral = Literal["pending", "in_review", "complete"]
+
+class IntakeWorkflowStatus(StrEnum):
+    """Workflow stages for intake records."""
+
+    PENDING = "pending"
+    IN_REVIEW = "in_review"
+    COMPLETE = "complete"
 
 
 class IntakeRequest(BaseModel):
@@ -28,7 +34,7 @@ class IntakeRecord(BaseModel):
     matter_title: str
     client_name: str
     summary: str
-    status: IntakeStatusLiteral = Field(default="pending")
+    status: IntakeWorkflowStatus = Field(default=IntakeWorkflowStatus.PENDING)
     created_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 

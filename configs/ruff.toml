@@ -53,12 +53,14 @@ preview = true
     "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
     "D102",      # JUSTIFIED: Pytest-based tests rely on descriptive naming, not docstrings
     "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
+    "PLC2701",   # JUSTIFIED: Tests may import private helpers to achieve coverage
 ]
 "**/tests/**/*.py" = [
     "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
     "D103",      # JUSTIFIED: Test functions are self-documenting via descriptive names
     "D102",      # JUSTIFIED: Pytest-based tests rely on descriptive naming, not docstrings
     "PLR6301",   # JUSTIFIED: Test methods don't need to be static for test organization
+    "PLC2701",   # JUSTIFIED: Tests may import private helpers to achieve coverage
 ]
 "**/test_*.py" = [
     "PLR2004",   # JUSTIFIED: Magic values in tests are often test fixtures/expected values
@@ -68,6 +70,7 @@ preview = true
     "INP001",    # JUSTIFIED: Test files don't need to be in packages
     "CPY001",    # JUSTIFIED: Test files don't need copyright headers
     "PLC0415",   # JUSTIFIED: Test methods may import in function body for isolation
+    "PLC2701",   # JUSTIFIED: Tests may import private helpers to achieve coverage
 ]
 # Conftest files
 "**/conftest.py" = [

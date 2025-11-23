@@ -62,7 +62,7 @@ def list_intake_records(
 def update_intake_status(
     record_id: uuid.UUID,
     *,
-    status: str,
+    status: intake_schemas.IntakeWorkflowStatus,
     service: Annotated[IntakeService, Depends(get_intake_service)],
 ) -> intake_schemas.IntakeRecord:
     """Update the state of a submission.
