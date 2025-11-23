@@ -56,7 +56,7 @@ jobs:
           - check_name: "Ruff Format"
             run: "uv run ruff format --check ."
           - check_name: "Pylint"
-            run: "uv run pylint --rcfile configs/pylint.toml apps/ packages/ tooling/"
+            run: "uv run pylint apps/ packages/ tooling/"
           - check_name: "Mypy"
             run: "uv run mypy apps/ packages/ tooling/"
           - check_name: "Pyright"

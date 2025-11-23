@@ -433,6 +433,8 @@ def task_bandit() -> TaskConfig:
             "uv",
             "run",
             "bandit",
+            "-c",
+            "pyproject.toml",
             "-r",
             "apps/",
             "packages/",

@@ -463,11 +463,10 @@ check-str-concat-over-line-jumps = true
 # === BANDIT CONFIGURATION ===
 [tool.bandit]
 exclude_dirs = [
-    "/tests/",  # JUSTIFIED: Test directories use asserts for pytest validation
-    "/.venv/",  # JUSTIFIED: Virtualenv contains third-party code outside our control
-    "/build/",  # JUSTIFIED: Generated build artifacts contain no source logic
-    "/dist/",  # JUSTIFIED: Generated distribution artifacts contain no source logic
+    "tests",  # JUSTIFIED: Test directories use asserts for pytest validation
+    ".venv",  # JUSTIFIED: Virtualenv contains third-party code outside our control
+    "build",  # JUSTIFIED: Generated build artifacts contain no source logic
+    "dist",  # JUSTIFIED: Generated distribution artifacts contain no source logic
 ]
 targets = ["apps", "packages", "tooling"]
-# B101 (assert_used) is enabled - tests excluded via exclude_dirs pattern
-# Deprecated/removed test IDs cleaned up (B309, B320, B410)
+# B101 (assert_used) is NOT skipped - tests excluded via exclude_dirs pattern
