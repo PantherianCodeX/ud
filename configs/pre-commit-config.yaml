@@ -1,0 +1,72 @@
+# Pre-commit hooks configuration for uDocket monorepo
+# Install: uv run pre-commit install --config configs/pre-commit-config.yaml
+# Run manually: uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
+# Update hooks: uv run pre-commit autoupdate --config configs/pre-commit-config.yaml
+
+# Heavy format/lint/type/security checks now live in CI so pre-commit can stay fast.
+repos:
+  # Quality configuration validation
+  - repo: local
+    hooks:
+      - id: check-quality-config
+        name: Check quality configuration integrity
+        entry: python -m tooling.run_quality_audit --config-only
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  # Dependency validation
+  - repo: local
+    hooks:
+      - id: check-dependencies
+        name: Check dependency configuration
+        entry: python tooling/check_dependencies.py
+        language: system
+        pass_filenames: false
+        files: 'pyproject\.toml$'
+        always_run: false
+
+  # Secret detection (still fast enough for pre-commit)
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        exclude: '^(\.claude|PRPs)/'
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
+      - id: check-toml
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
+      - id: check-json
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: detect-private-key
+        exclude: '^(\.venv|venv|\.git|\.claude|PRPs)/'
+
+  # Python-specific checks that stay lightweight
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-ast
+        exclude: '^(\.venv|venv|\.claude|PRPs)/'
+      - id: debug-statements
+        exclude: '^(\.venv|venv|\.claude|PRPs)/'
+      - id: check-docstring-first
+        exclude: '^(\.venv|venv|\.claude|PRPs)/'
+
+# Global settings
+default_language_version:
+  python: python3.12
+
+# Fail fast - stop running hooks after first failure
+fail_fast: false
+
+# Don't run on specific branches
+exclude: '^\.git/'

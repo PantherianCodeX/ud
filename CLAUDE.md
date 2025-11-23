@@ -21,12 +21,12 @@ apps/
   mobile/       # (future) React Native app
 
 packages/       # Shared libraries
-  py-domain/        # Canonical domain models (Matter, Party, Issue, Timeline, Action)
-  py-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation
-  py-worker-core/   # Celery factories, idempotency helpers
-  ts-api-types/     # Shared TypeScript API types
-  ts-ui-kit/        # Reusable UI primitives
-  ts-utils/         # Shared TypeScript utilities
+  udocket-domain/        # Canonical domain models (Matter, Party, Issue, Timeline, Action)
+  udocket-ai-core/       # LangGraph helpers, LangSmith/Langfuse instrumentation
+  udocket-celery-core/   # Celery factories, idempotency helpers
+  udocket_api_types/     # Shared TypeScript API types
+  udocket_ui_kit/        # Reusable UI primitives
+  udocket_utils/         # Shared TypeScript utilities
 
 configs/        # Lint, type-check, and security tool configs
 tooling/        # doit tasks, semantic-release, pre-commit
@@ -89,7 +89,7 @@ workflow/           # Feature slices mirroring backend
     api/
     tests/
 shared/
-  ui/               # Shared components (from ts-ui-kit)
+  ui/               # Shared components (from udocket_ui_kit)
   lib/              # Client utilities
   config/
 ```
@@ -149,35 +149,33 @@ source .venv/bin/activate
 
 ### Task Automation with doit
 
-The project uses **doit** for task automation. Once configured, common doit tasks will include:
+The repo ships a root-level `dodo.py` so you can replicate CI locally with simple commands:
 
 ```bash
 # List available tasks
 uv run doit list
 
-# Run all tests
-uv run doit test
-
-# Run linters
+# Re-run Prettier, Ruff, and Pylint
 uv run doit lint
 
-# Run type checkers
+# Strict type checking (mypy + pyright)
 uv run doit typecheck
 
-# Format code
-uv run doit format
+# Run pytest with coverage reports in out/test_reports/...
+uv run doit tests
 
-# Run full quality checks (lint + typecheck + test)
+# Apply the full CI-quality gate (lint + typecheck + tests + audit)
 uv run doit quality
 
-# Build documentation
-uv run doit docs
+# Security scans
+uv run doit security
 
-# Clean build artifacts
-uv run doit clean
+# Clean cached artifacts/reports
+uv run doit clean_artifacts
+
+# Install Node tooling used by prettier/doit tasks (one-time)
+npm install
 ```
-
-**Note**: doit configuration will be added to `tooling/dodo.py` as the project matures. Until then, use the individual commands documented below.
 
 ### Docker and Container Development
 
@@ -201,7 +199,7 @@ docker-compose up -d --build
 ### Running Tests
 
 ```bash
-# Python tests (all)
+# Python tests (all - parallel by default via pytest-xdist)
 uv run pytest
 
 # Python tests with coverage
@@ -210,7 +208,7 @@ uv run pytest --cov=apps --cov=packages --cov-report=term-missing
 # Python tests (specific module)
 uv run pytest apps/api/src/workflow/analysis/tests/
 
-# Python tests in parallel
+# Python tests in parallel (explicit)
 uv run pytest -n auto
 
 # TypeScript tests (from web app)
@@ -338,16 +336,16 @@ The project uses **pre-commit** to enforce quality checks before commits:
 
 ```bash
 # Install pre-commit hooks
-uv run pre-commit install
+uv run pre-commit install --config configs/pre-commit-config.yaml
 
 # Run pre-commit on all files
-uv run pre-commit run --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
 
 # Run specific hook
-uv run pre-commit run ruff --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml ruff --all-files
 
 # Update hooks to latest versions
-uv run pre-commit autoupdate
+uv run pre-commit autoupdate --config configs/pre-commit-config.yaml
 ```
 
 Pre-commit hooks automatically run:
@@ -404,10 +402,10 @@ Run security scans manually or let CI handle them:
 
 ```bash
 # Bandit - Python security static analysis
-uv run bandit -r apps/ packages/ -f json -o bandit-report.json
+uv run bandit -r apps/ packages/ -f json -o out/test_reports/security/bandit-report.json
 
 # Safety - Check Python dependencies for known vulnerabilities
-uv run safety check --json
+uv run safety scan --json --policy-file configs/safety-policy.yml
 
 # Gitleaks - Scan for secrets in git history
 uv run gitleaks detect --source . --verbose
@@ -490,6 +488,8 @@ Every PR must pass:
 6. E2E tests (Playwright subset)
 7. Security scans (Bandit, Safety, Gitleaks)
 
+Quality checks are orchestrated as parallel GitHub Actions matrix jobs so every individual lint/type/test/security tool runs on its own runner and reports independently even when another track fails.
+
 Main/release branches additionally run:
 - Full Playwright suite
 - LangSmith evaluation datasets
@@ -517,7 +517,7 @@ Main/release branches additionally run:
 
 ### Adding New Analysis Features
 
-1. Extend domain models in `packages/py-domain/`
+1. Extend domain models in `packages/udocket-domain/`
 2. Add LangGraph nodes in `apps/api/src/ai/graphs/`
 3. Create service logic in `apps/api/src/workflow/analysis/`
 4. Add frontend components in `apps/web/src/workflow/analysis/`
@@ -609,7 +609,7 @@ async def extract_entities_node(state: AnalysisState) -> AnalysisState:
 
 ```typescript
 import { useTranslations } from 'next-intl';
-import { MatterAnalysis } from '@/packages/ts-api-types';
+import { MatterAnalysis } from '@/packages/udocket_api_types';
 
 interface AnalysisViewProps {
   analysis: MatterAnalysis;

@@ -1,1 +1,0 @@
-# Compose tests package placeholder

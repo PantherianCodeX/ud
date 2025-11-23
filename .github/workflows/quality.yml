@@ -1,0 +1,159 @@
+# Copyright (c) 2025 uDocket. All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the confidential and proprietary information of uDocket.
+# You shall not disclose such confidential information and shall use it only
+# in accordance with the terms of the license agreement you entered into with uDocket.
+name: Quality Checks
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.5.21"
+  IS_PROTECTED_BRANCH: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'develop')) }}
+  SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+
+jobs:
+  dependency-check:
+    name: Dependency Configuration Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Check dependency configuration
+        run: uv run python tooling/check_dependencies.py
+
+  python-quality:
+    name: Python ${{ matrix.check_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check_name: "Prettier"
+            run: "npm run format:check"
+          - check_name: "Ruff Check"
+            run: "uv run ruff check ."
+          - check_name: "Ruff Format"
+            run: "uv run ruff format --check ."
+          - check_name: "Pylint"
+            run: "uv run pylint apps/ packages/ tooling/"
+          - check_name: "Mypy"
+            run: "uv run mypy apps/ packages/ tooling/"
+          - check_name: "Pyright"
+            run: "uv run pyright --project configs/pyrightconfig.json"
+          - check_name: "Quality Audit Config"
+            run: "uv run python -m tooling.run_quality_audit --config-only"
+          - check_name: "Tests"
+            run: |-
+              mkdir -p out/test_reports/coverage out/test_reports/tests
+              COVERAGE_FILE=out/test_reports/coverage/.coverage uv run pytest \
+                --cov=apps \
+                --cov=packages \
+                --cov=tooling \
+                --cov-report=term-missing \
+                --cov-report=xml:out/test_reports/coverage/coverage.xml \
+                --cov-report=html:out/test_reports/coverage/htmlcov \
+                --junitxml=out/test_reports/tests/pytest-junit.xml \
+                -v
+            upload_coverage: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run ${{ matrix.check_name }}
+        run: ${{ matrix.run }}
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
+
+  security:
+    name: Security ${{ matrix.check_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - check_name: "Bandit"
+            run: |-
+              mkdir -p out/test_reports/security
+              uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o out/test_reports/security/bandit-report.json
+          - check_name: "Safety"
+            run: |-
+              mkdir -p out/test_reports/security
+              uv run safety scan --json --policy-file configs/safety-policy.yml --key "$SAFETY_API_KEY" > out/test_reports/security/safety-report.json
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run ${{ matrix.check_name }}
+        run: ${{ matrix.run }}
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
+
+  pre-commit:
+    name: Pre-commit Hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pre-commit hooks
+        run: uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
+        continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }} # Some hooks may fail on CI but are informative

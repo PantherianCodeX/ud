@@ -4,38 +4,469 @@ version = "0.1.0"
 description = "Legal interview/consultation analysis and documentation tool."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "uv>=0.5.21<0.6.0",
-    "pytest>=8.4.2<9.0.0",
-    "pytest-cov>=7.0.0<8.0.0",
-    "pytest-benchmark>=5.2.3<6.0.0",
-    "pytest-xdist>=3.8.0<4.0.0",
-    "pytest-asyncio>=1.3.0<2.0.0",
-    "hypothesis>=6.148.1<7.0.0",
-    "mypy>=1.18.2<2.0.0",
-    "pyright>=1.1.407<2.0.0",
-    "ruff>=0.14.3<0.15.0",
-    "pylint>=4.0.3<5.0.0",
-    "prettier>=0.0.7<0.1.0",
-    "pre-commit>=4.4.0<5.0.0",
-    "bandit>=1.9.1<2.0.0",
-    "safety>=3.7.0<4.0.0",
-    "commitizen>=4.10.0<5.0.0",
-    "semantic-release>=0.1.0<0.2.0",
-    "helm>=0.4<0.5.0",
-    "langgraph>=1.0.3<2.0.0",
-    "langsmith>=0.4.43<0.5.0",
-    "langfuse>=3.10.0<4.0.0",
-    "structlog>=25.5.0<26.0.0",
-    "rabbitmq>=0.2.0<0.3.0",
-    "celery>=5.5.3<6.0.0",
-    "postgres>=4.0<5.0.0",
-    "pgvector>=0.4.1<0.5.0",
-    "alembic>=1.17.2<2.0.0",
-    "sqlalchemy>=2.0.44<3.0.0",
-    "pydantic>=2.12.4<3.0.0",
-    "pydantic-settings>=2.12.0<3.0.0",
-    "doit>=0.36.0<0.37.0",
-    "vitest>=2.0<3.0.0",
-    "presidio>=0.1.0<0.2.0",
+# Root workspace should have NO runtime dependencies
+# All runtime dependencies should be declared in individual packages/apps
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "apps/api",
+    "apps/celery",
+    "apps/web",
+    "packages/udocket_domain",
+    "packages/udocket_ai_core",
+    "packages/udocket_utils",
+    "packages/udocket_worker_core",
 ]
+
+[tool.uv]
+default-groups = ["dev", "workspace"]
+
+[dependency-groups]
+dev = [
+    # Testing
+    "pytest>=8.4.2,<9.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "pytest-benchmark>=5.2.3,<6.0.0",
+    "pytest-xdist>=3.8.0,<4.0.0",
+    "pytest-asyncio>=1.3.0,<2.0.0",
+    "hypothesis>=6.148.1,<7.0.0",
+    "aiosqlite>=0.20.0,<0.21.0",
+    "httpx>=0.28.0,<0.29.0",
+
+    # Type checking
+    "mypy>=1.18.2,<2.0.0",
+    "pyright>=1.1.407,<2.0.0",
+
+    # Linting and formatting
+    "ruff>=0.14.3,<0.15.0",
+    "pylint>=4.0.3,<5.0.0",
+
+    # Security
+    "bandit>=1.9.1,<2.0.0",
+    "safety>=3.7.0,<4.0.0",
+    "cryptography>=46.0.3,<47.0.0",
+
+    # Git and versioning
+    "pre-commit>=4.4.0,<5.0.0",
+    "commitizen>=4.10.0,<5.0.0",
+    "semantic-release>=0.1.0,<0.2.0",
+
+    # Build and automation
+    "doit>=0.36.0,<0.37.0",
+]
+workspace = [
+    "udocket-api",
+    "udocket-celery",
+    "udocket-domain",
+    "udocket-ai-core",
+    "udocket-utils",
+    "udocket-worker-core",
+]
+
+[tool.uv.sources]
+udocket-api = { workspace = true }
+udocket-celery = { workspace = true }
+udocket-domain = { workspace = true }
+udocket-ai-core = { workspace = true }
+udocket-utils = { workspace = true }
+udocket-worker-core = { workspace = true }
+
+
+[tool.pytest.ini_options]
+# Test discovery configuration
+testpaths = ["apps", "packages", "tooling", "tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# Python path for tests
+pythonpath = [
+    ".",
+    "apps/api/src",
+    "apps/celery/src",
+    "packages/udocket_domain/src",
+    "packages/udocket_ai_core/src",
+    "packages/udocket_utils/src",
+    "packages/udocket_worker_core/src",
+]
+# Standard exclusions
+norecursedirs = [
+    ".venv",
+    "node_modules",
+    "__pycache__",
+    ".git",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+# Async test support
+asyncio_mode = "auto"
+# Strict markers - unknown markers will fail
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--benchmark-disable",
+    "-ra",  # Show extra test summary for all except passed
+    "-n",  # Enable pytest-xdist parallel execution by default
+    "auto",  # Automatically determine optimal number of workers
+]
+# Custom markers
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests requiring external services",
+    "unit: Unit tests",
+    "smoke: Smoke tests",
+]
+
+[tool.coverage.run]
+source = ["apps", "packages", "tooling"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*/alembic/*",
+    "*/.venv/*",
+    "*/node_modules/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.html]
+directory = "out/test_reports/coverage/htmlcov"
+
+[tool.coverage.xml]
+output = "out/test_reports/coverage/coverage.xml"
+
+# === MYPY CONFIGURATION ===
+[tool.mypy]
+python_version = "3.12"
+# Strictness flags
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+# Additional strictness
+disallow_untyped_defs = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+# Extra warnings
+warn_incomplete_stub = true
+# Error messages
+show_error_context = true
+show_column_numbers = true
+show_error_codes = true
+pretty = true
+color_output = true
+error_summary = true
+# Strictness
+strict_concatenate = true
+# Import discovery
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = ".:apps/api/src:apps/celery/src:packages/udocket_domain/src:packages/udocket_ai_core/src:packages/udocket_utils/src:packages/udocket_worker_core/src"
+# Extra checks
+extra_checks = true
+# Plugins
+plugins = ["pydantic.mypy"]
+# Files to check
+files = ["apps", "packages", "tooling"]
+exclude = [
+    "node_modules",
+    "\\.venv",
+    "build",
+    "dist",
+    "__pycache__",
+]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "conftest"]
+disallow_untyped_defs = false
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = [
+    "jwt.*",
+    "passlib.*",
+    "structlog.*",
+    "alembic.*",
+    "celery.*",
+    "rabbitmq.*",
+    "uvicorn.*",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "alembic.versions.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "alembic.env"
+ignore_errors = true
+
+# === RUFF CONFIGURATION ===
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "alembic/versions",
+    "node_modules",
+    "PRPs",
+    ".claude",
+    "claude_md_files",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Trailing comma conflicts with formatter
+    "ISC001",  # Implicit string concatenation conflicts with formatter
+    "D100",    # Module docstrings enforced via per-file ignores
+    "D104",    # Package docstrings enforced via per-file ignores
+    "S101",    # Assert required by pytest
+    "TRY003",  # Detailed error messages improve debuggability
+    "DJ",      # Django rules not applicable to FastAPI
+    "FIX002",  # TODOs tracked externally
+    "TD002",   # TODO authors tracked in git
+    "TD003",   # TODO issue links tracked externally
+    "RUF012",  # Pydantic model_config is intentionally mutable
+]
+fixable = ["ALL"]
+unfixable = []
+preview = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301", "PLC2701"]
+"**/tests/**/*.py" = ["PLR2004", "D103", "D102", "PLR6301", "PLC2701"]
+"**/test_*.py" = ["PLR2004", "D103", "D102", "PLR6301", "INP001", "CPY001", "PLC0415", "PLC2701"]
+"**/conftest.py" = ["D103", "ANN001", "ANN201", "DOC402", "DOC201", "INP001"]
+"tooling/*.py" = [
+    "CPY001", "T201", "DOC201", "D107", "C901", "PLR0912", "PLR0915",
+    "PLR0914", "PLR1702", "PLR2004", "TRY300", "E501", "INP001", "PERF401",
+    "FBT001", "FBT002",
+]
+"**/alembic/versions/*.py" = ["D100", "D103", "INP001", "ANN001", "ANN201"]
+"**/alembic/env.py" = ["INP001", "ANN001", "ANN201"]
+# PRP and script directories
+"PRPs/**/*.py" = [
+    "CPY001", "T201", "DOC201", "DOC402", "D103", "S404", "S603", "FBT001", "FBT002",
+    "PLW1514", "PLW1510", "PLW2901", "SIM102", "PERF402", "INP001", "C901", "PLR0912",
+    "PLR1702", "RUF001", "EXE001", "TC003",
+]
+".claude/**/*.py" = [
+    "CPY001", "T201", "DOC201", "DOC402", "D103", "S404", "S603", "FBT001", "FBT002",
+    "PLW1514", "PLW1510", "PLW2901", "SIM102", "PERF402", "INP001", "C901", "PLR0912",
+    "PLR1702", "RUF001", "EXE001", "TC003",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+docstring-quotes = "double"
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "udocket_api",
+    "udocket_celery",
+    "udocket_domain",
+    "udocket_ai_core",
+    "udocket_worker_core",
+    "tooling",
+]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.pylint]
+max-args = 7
+max-branches = 12
+max-returns = 6
+max-statements = 50
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+preview = true
+docstring-code-format = true
+docstring-code-line-length = 88
+
+# === PYLINT CONFIGURATION ===
+[tool.pylint.main]
+py-version = "3.12"
+recursive = true
+# Ensure workspace packages are discoverable without installation
+init-hook = "import sys; from pathlib import Path; ROOT = Path.cwd(); sys.path[:0] = [str(ROOT / 'apps/api/src'), str(ROOT / 'apps/celery/src'), str(ROOT / 'apps/web/src'), str(ROOT / 'packages/udocket_domain/src'), str(ROOT / 'packages/udocket_ai_core/src'), str(ROOT / 'packages/udocket_utils/src'), str(ROOT / 'packages/udocket_worker_core/src')]"
+ignore-patterns = [
+    "^\\..*",
+    "^__pycache__$",
+    "\\.pyc$",
+    ".*\\.egg-info$",
+    "^build$",
+    "^dist$",
+    "^tests$",  # JUSTIFIED: pytest suites do not require docstring enforcement
+    "test_.*\\.py$",  # JUSTIFIED: allow expressive pytest names without docstrings
+    ".*_test\\.py$",  # JUSTIFIED: allow expressive pytest names without docstrings
+    "^alembic$",  # JUSTIFIED: Alembic autogenerates migration modules
+]
+load-plugins = [
+    "pylint.extensions.check_elif",
+    "pylint.extensions.bad_builtin",
+    "pylint.extensions.docparams",
+    "pylint.extensions.for_any_all",
+    "pylint.extensions.set_membership",
+    "pylint.extensions.code_style",
+    "pylint.extensions.overlapping_exceptions",
+    "pylint.extensions.typing",
+    "pylint.extensions.redefined_variable_type",
+    "pylint.extensions.comparison_placement",
+    "pylint.extensions.mccabe",
+    "pylint.extensions.confusing_elif",
+    "pylint.extensions.consider_refactoring_into_while_condition",
+]
+enable = "all"
+
+[tool.pylint.messages_control]
+disable = [
+    "line-too-long",  # JUSTIFIED: Ruff handles line length enforcement
+    "bad-indentation",  # JUSTIFIED: Ruff handles indentation
+    "too-few-public-methods",  # JUSTIFIED: Pydantic models are data classes with few methods
+    "no-self-argument",  # JUSTIFIED: Pydantic validators use cls as first argument
+    "redefined-outer-name",  # JUSTIFIED: pytest fixtures intentionally shadow outer names
+    "duplicate-code",  # JUSTIFIED: High false positive rate, better suited for periodic scans
+    "missing-module-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+    "missing-class-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+    "missing-function-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+]
+enable = [
+    "use-symbolic-message-instead",
+    "useless-suppression",
+]
+
+[tool.pylint.format]
+max-line-length = 120
+expected-line-ending-format = "LF"
+ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$"
+max-module-lines = 1000
+
+[tool.pylint.design]
+max-complexity = 10
+max-args = 7
+max-locals = 15
+max-returns = 6
+max-branches = 12
+max-statements = 50
+max-parents = 7
+max-attributes = 8
+min-public-methods = 0
+max-public-methods = 20
+max-bool-expr = 5
+
+[tool.pylint.basic]
+argument-naming-style = "snake_case"
+attr-naming-style = "snake_case"
+class-attribute-naming-style = "any"
+class-const-naming-style = "UPPER_CASE"
+class-naming-style = "PascalCase"
+const-naming-style = "UPPER_CASE"
+function-naming-style = "snake_case"
+inlinevar-naming-style = "any"
+method-naming-style = "snake_case"
+module-naming-style = "snake_case"
+variable-naming-style = "snake_case"
+docstring-min-length = 10
+no-docstring-rgx = "^_"
+good-names = ["i", "j", "k", "ex", "db", "id", "pk", "_", "e"]
+accept-no-param-doc = false
+accept-no-raise-doc = false
+accept-no-return-doc = false
+accept-no-yields-doc = false
+
+[tool.pylint.imports]
+deprecated-modules = ["optparse", "tkinter.tix"]
+allow-wildcard-with-all = false
+analyse-fallback-blocks = true
+
+[tool.pylint.exceptions]
+overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
+
+[tool.pylint.logging]
+logging-modules = ["logging"]
+logging-format-style = "new"
+
+[tool.pylint.refactoring]
+max-nested-blocks = 5
+never-returning-functions = ["sys.exit", "argparse.parse_error"]
+
+[tool.pylint.similarities]
+min-similarity-lines = 4
+ignore-comments = true
+ignore-docstrings = true
+
+[tool.pylint.typecheck]
+contextmanager-decorators = ["contextlib.contextmanager"]
+generated-members = []
+ignored-modules = []
+ignored-classes = ["SQLObject", "optparse.Values", "thread._local", "_thread._local"]
+mixin-class-rgx = ".*MixIn"
+
+[tool.pylint.variables]
+allowed-redefined-builtins = []
+dummy-variables-rgx = "_.*|dummy.*"
+ignored-argument-names = "_.*"
+init-import = false
+
+[tool.pylint.classes]
+defining-attr-methods = ["__init__", "__new__", "setUp", "asyncSetUp", "__post_init__"]
+exclude-protected = ["_asdict", "_fields", "_replace", "_source", "_make"]
+valid-classmethod-first-arg = ["cls"]
+valid-metaclass-classmethod-first-arg = ["mcs"]
+
+[tool.pylint.string]
+check-quote-consistency = true
+check-str-concat-over-line-jumps = true
+
+# === BANDIT CONFIGURATION ===
+[tool.bandit]
+exclude_dirs = [
+    "tests",  # JUSTIFIED: Test directories use asserts for pytest validation
+    ".venv",  # JUSTIFIED: Virtualenv contains third-party code outside our control
+    "build",  # JUSTIFIED: Generated build artifacts contain no source logic
+    "dist",  # JUSTIFIED: Generated distribution artifacts contain no source logic
+]
+targets = ["apps", "packages", "tooling"]
+# B101 (assert_used) is NOT skipped - tests excluded via exclude_dirs pattern

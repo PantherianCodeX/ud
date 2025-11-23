@@ -1,5 +1,3 @@
-______________________________________________________________________
-
 ## description: "Execute a feature PRP until fully complete"
 
 # Execute Feature PRP

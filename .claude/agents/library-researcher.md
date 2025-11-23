@@ -1,6 +1,9 @@
-______________________________________________________________________
-
-## name: "library-researcher" description: "Use proactivley to research external libraries and fetch relevant documentation for implementation" model: "sonnet"
+---
+name: "library-researcher"
+description: "Use proactivley to research external libraries and fetch relevant documentation for implementation"
+model: "sonnet"
+---
+# Library Researcher Agent
 
 You are a specialized library research agent focused on gathering implementation-critical documentation.
 

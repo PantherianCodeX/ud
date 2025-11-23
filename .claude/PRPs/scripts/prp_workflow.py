@@ -22,7 +22,6 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
@@ -45,10 +44,7 @@ def print_box(title: str, content: str = "", icon: str = "🚀") -> None:
 
 
 def run_command(
-    command_name: str,
-    arguments: str = "",
-    output_format: str = "text",
-    capture_output: bool = False
+    command_name: str, arguments: str = "", output_format: str = "text", capture_output: bool = False
 ) -> tuple[int, str]:
     """Run a slash command using invoke_command.py.
 
@@ -56,24 +52,25 @@ def run_command(
         Tuple of (exit_code, output_text)
     """
     cmd = [
-        "uv", "run",
+        "uv",
+        "run",
         str(ROOT / ".claude/PRPs/scripts/invoke_command.py"),
         command_name,
         arguments,
-        "--output-format", output_format
+        "--output-format",
+        output_format,
     ]
 
     print(f"→ Running: {command_name} {arguments}", file=sys.stderr)
 
     if capture_output:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=False, capture_output=True, text=True)
         return result.returncode, result.stdout
-    else:
-        result = subprocess.run(cmd)
-        return result.returncode, ""
+    result = subprocess.run(cmd, check=False)
+    return result.returncode, ""
 
 
-def extract_prp_path(output: str) -> Optional[str]:
+def extract_prp_path(output: str) -> str | None:
     """Extract PRP file path from prp-core-create output.
 
     Looks for patterns like:
@@ -81,19 +78,19 @@ def extract_prp_path(output: str) -> Optional[str]:
     - Full path to PRP file
     """
     # Try to find .claude/PRPs/features/*.md pattern
-    match = re.search(r'\.claude/PRPs/features/[a-z0-9_-]+\.md', output)
+    match = re.search(r"\.claude/PRPs/features/[a-z0-9_-]+\.md", output)
     if match:
         return match.group(0)
 
     # Try to find quoted path
-    match = re.search(r'`([^`]*\.claude/PRPs/features/[^`]+\.md)`', output)
+    match = re.search(r"`([^`]*\.claude/PRPs/features/[^`]+\.md)`", output)
     if match:
         return match.group(1)
 
     return None
 
 
-def workflow_create(feature_description: str) -> Optional[str]:
+def workflow_create(feature_description: str) -> str | None:
     """Step 1: Create PRP.
 
     Returns:
@@ -101,12 +98,7 @@ def workflow_create(feature_description: str) -> Optional[str]:
     """
     print_box("Step 1: Creating PRP", feature_description, "📝")
 
-    exit_code, output = run_command(
-        "prp-core-create",
-        feature_description,
-        output_format="text",
-        capture_output=True
-    )
+    exit_code, output = run_command("prp-core-create", feature_description, output_format="text", capture_output=True)
 
     # Print output
     print(output)
@@ -133,12 +125,7 @@ def workflow_execute(prp_path: str) -> bool:
     """
     print_box("Step 2: Executing PRP", prp_path, "⚙️")
 
-    exit_code, _ = run_command(
-        "prp-core-execute",
-        prp_path,
-        output_format="text",
-        capture_output=False
-    )
+    exit_code, _ = run_command("prp-core-execute", prp_path, output_format="text", capture_output=False)
 
     if exit_code != 0:
         print("❌ PRP execution failed", file=sys.stderr)
@@ -156,12 +143,7 @@ def workflow_commit() -> bool:
     """
     print_box("Step 3: Committing Changes", "", "💾")
 
-    exit_code, _ = run_command(
-        "PRP-core-commit",
-        "",
-        output_format="text",
-        capture_output=False
-    )
+    exit_code, _ = run_command("PRP-core-commit", "", output_format="text", capture_output=False)
 
     if exit_code != 0:
         print("❌ Commit failed", file=sys.stderr)
@@ -171,7 +153,7 @@ def workflow_commit() -> bool:
     return True
 
 
-def workflow_pr(pr_title: Optional[str] = None) -> bool:
+def workflow_pr(pr_title: str | None = None) -> bool:
     """Step 4: Create PR.
 
     Returns:
@@ -180,12 +162,7 @@ def workflow_pr(pr_title: Optional[str] = None) -> bool:
     title = pr_title or "PRP Implementation"
     print_box("Step 4: Creating Pull Request", title, "🚀")
 
-    exit_code, _ = run_command(
-        "prp-core-pr",
-        title,
-        output_format="text",
-        capture_output=False
-    )
+    exit_code, _ = run_command("prp-core-pr", title, output_format="text", capture_output=False)
 
     if exit_code != 0:
         print("❌ PR creation failed", file=sys.stderr)
@@ -215,37 +192,15 @@ Examples:
 
   # Create and execute only
   %(prog)s "Add feature" --no-commit
-        """
+        """,
     )
 
-    parser.add_argument(
-        "feature",
-        nargs="?",
-        help="Feature description for PRP creation"
-    )
-    parser.add_argument(
-        "--prp-path",
-        help="Path to existing PRP file (skips create step)"
-    )
-    parser.add_argument(
-        "--skip-create",
-        action="store_true",
-        help="Skip PRP creation (requires --prp-path)"
-    )
-    parser.add_argument(
-        "--no-commit",
-        action="store_true",
-        help="Skip commit step"
-    )
-    parser.add_argument(
-        "--no-pr",
-        action="store_true",
-        help="Skip PR creation step"
-    )
-    parser.add_argument(
-        "--pr-title",
-        help="Custom PR title (default: 'PRP Implementation')"
-    )
+    parser.add_argument("feature", nargs="?", help="Feature description for PRP creation")
+    parser.add_argument("--prp-path", help="Path to existing PRP file (skips create step)")
+    parser.add_argument("--skip-create", action="store_true", help="Skip PRP creation (requires --prp-path)")
+    parser.add_argument("--no-commit", action="store_true", help="Skip commit step")
+    parser.add_argument("--no-pr", action="store_true", help="Skip PR creation step")
+    parser.add_argument("--pr-title", help="Custom PR title (default: 'PRP Implementation')")
 
     args = parser.parse_args()
 

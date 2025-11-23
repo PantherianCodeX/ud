@@ -67,7 +67,7 @@ def strip_frontmatter(content: str) -> str:
         end_marker = content.find("\n---\n", 4)
         if end_marker != -1:
             # Return content after frontmatter
-            return content[end_marker + 5:].lstrip()
+            return content[end_marker + 5 :].lstrip()
     return content
 
 

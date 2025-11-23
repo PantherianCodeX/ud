@@ -1,5 +1,3 @@
-______________________________________________________________________
-
 ## description: "Create comprehensive feature PRP with deep codebase analysis and research"
 
 # Create Feature PRP

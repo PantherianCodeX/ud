@@ -23,8 +23,9 @@ import json
 import os
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent  # project root
 
@@ -68,7 +69,7 @@ def build_prompt(prp_path: Path) -> str:
     return META_HEADER + prp_path.read_text()
 
 
-def stream_json_output(process: subprocess.Popen) -> Iterator[Dict[str, Any]]:
+def stream_json_output(process: subprocess.Popen) -> Iterator[dict[str, Any]]:
     """Parse streaming JSON output line by line."""
     for line in process.stdout:
         line = line.strip()
@@ -80,7 +81,7 @@ def stream_json_output(process: subprocess.Popen) -> Iterator[Dict[str, Any]]:
                 print(f"Line content: {line}", file=sys.stderr)
 
 
-def handle_json_output(output: str) -> Dict[str, Any]:
+def handle_json_output(output: str) -> dict[str, Any]:
     """Parse the JSON output from Claude Code."""
     try:
         return json.loads(output)
@@ -130,10 +131,7 @@ def run_model(
             try:
                 for message in stream_json_output(process):
                     # Process each message as it arrives
-                    if (
-                        message.get("type") == "system"
-                        and message.get("subtype") == "init"
-                    ):
+                    if message.get("type") == "system" and message.get("subtype") == "init":
                         print(
                             f"Session started: {message.get('session_id')}",
                             file=sys.stderr,
@@ -157,9 +155,7 @@ def run_model(
                             f"  Duration: {message.get('duration_ms', 0)}ms",
                             file=sys.stderr,
                         )
-                        print(
-                            f"  Turns: {message.get('num_turns', 0)}", file=sys.stderr
-                        )
+                        print(f"  Turns: {message.get('num_turns', 0)}", file=sys.stderr)
                         if message.get("result"):
                             print(
                                 f"\nResult text:\n{message.get('result')}",
@@ -187,7 +183,7 @@ def run_model(
 
         elif output_format == "json":
             # Handle complete JSON output
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, check=False, capture_output=True, text=True)
             if result.returncode != 0:
                 print(
                     f"Claude Code failed with exit code {result.returncode}",
@@ -208,9 +204,7 @@ def run_model(
                         f"  Success: {not json_data.get('is_error', False)}",
                         file=sys.stderr,
                     )
-                    print(
-                        f"  Cost: ${json_data.get('cost_usd', 0):.4f}", file=sys.stderr
-                    )
+                    print(f"  Cost: ${json_data.get('cost_usd', 0):.4f}", file=sys.stderr)
                     print(
                         f"  Duration: {json_data.get('duration_ms', 0)}ms",
                         file=sys.stderr,
@@ -227,15 +221,9 @@ def run_model(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run a PRP with an LLM agent.")
-    parser.add_argument(
-        "--prp-path", help="Relative path to PRP file eg: PRPs/feature.md"
-    )
-    parser.add_argument(
-        "--prp", help="The file name of the PRP without the .md extension eg: feature"
-    )
-    parser.add_argument(
-        "--interactive", action="store_true", help="Launch interactive chat session"
-    )
+    parser.add_argument("--prp-path", help="Relative path to PRP file eg: PRPs/feature.md")
+    parser.add_argument("--prp", help="The file name of the PRP without the .md extension eg: feature")
+    parser.add_argument("--interactive", action="store_true", help="Launch interactive chat session")
     parser.add_argument("--model", default="claude", help="Model CLI executable name")
     parser.add_argument(
         "--output-format",
