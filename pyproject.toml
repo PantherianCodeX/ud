@@ -184,6 +184,9 @@ error_summary = true
 # Strictness
 strict_concatenate = true
 # Import discovery
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = ".:apps/api/src:apps/celery/src:packages/udocket_domain/src:packages/udocket_ai_core/src:packages/udocket_utils/src:packages/udocket_worker_core/src"
 # Extra checks
 extra_checks = true
 # Plugins
@@ -326,8 +329,8 @@ docstring-code-line-length = 88
 [tool.pylint.main]
 py-version = "3.12"
 recursive = true
-# Source directories - pylint will check these automatically
-source-roots = ["apps", "packages", "tooling"]
+# Ensure workspace packages are discoverable without installation
+init-hook = "import sys; from pathlib import Path; ROOT = Path.cwd(); sys.path[:0] = [str(ROOT / 'apps/api/src'), str(ROOT / 'apps/celery/src'), str(ROOT / 'apps/web/src'), str(ROOT / 'packages/udocket_domain/src'), str(ROOT / 'packages/udocket_ai_core/src'), str(ROOT / 'packages/udocket_utils/src'), str(ROOT / 'packages/udocket_worker_core/src')]"
 ignore-patterns = [
     "^\\..*",
     "^__pycache__$",
@@ -335,13 +338,15 @@ ignore-patterns = [
     ".*\\.egg-info$",
     "^build$",
     "^dist$",
-    "^node_modules$",
-    "test_.*\\.py",
-    ".*_test\\.py",
+    "^tests$",  # JUSTIFIED: pytest suites do not require docstring enforcement
+    "test_.*\\.py$",  # JUSTIFIED: allow expressive pytest names without docstrings
+    ".*_test\\.py$",  # JUSTIFIED: allow expressive pytest names without docstrings
+    "^alembic$",  # JUSTIFIED: Alembic autogenerates migration modules
 ]
 load-plugins = [
     "pylint.extensions.check_elif",
     "pylint.extensions.bad_builtin",
+    "pylint.extensions.docparams",
     "pylint.extensions.for_any_all",
     "pylint.extensions.set_membership",
     "pylint.extensions.code_style",
@@ -350,30 +355,32 @@ load-plugins = [
     "pylint.extensions.redefined_variable_type",
     "pylint.extensions.comparison_placement",
     "pylint.extensions.mccabe",
+    "pylint.extensions.confusing_elif",
+    "pylint.extensions.consider_refactoring_into_while_condition",
 ]
+enable = "all"
 
 [tool.pylint.messages_control]
 disable = [
-    "line-too-long",
-    "bad-indentation",
-    "too-few-public-methods",
-    "no-self-argument",
-    "redefined-outer-name",
-    "duplicate-code",
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "missing-function-docstring",
-    "import-error",
-    "no-member",
-    "broad-exception-caught",
-    "fixme",
-    "invalid-name",
-    "no-else-return",
+    "line-too-long",  # JUSTIFIED: Ruff handles line length enforcement
+    "bad-indentation",  # JUSTIFIED: Ruff handles indentation
+    "too-few-public-methods",  # JUSTIFIED: Pydantic models are data classes with few methods
+    "no-self-argument",  # JUSTIFIED: Pydantic validators use cls as first argument
+    "redefined-outer-name",  # JUSTIFIED: pytest fixtures intentionally shadow outer names
+    "duplicate-code",  # JUSTIFIED: High false positive rate, better suited for periodic scans
+    "missing-module-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+    "missing-class-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+    "missing-function-docstring",  # JUSTIFIED: Docstring rules handled by Ruff with Google style
+]
+enable = [
+    "use-symbolic-message-instead",
+    "useless-suppression",
 ]
 
 [tool.pylint.format]
 max-line-length = 120
 expected-line-ending-format = "LF"
+ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$"
 max-module-lines = 1000
 
 [tool.pylint.design]
@@ -384,7 +391,7 @@ max-returns = 6
 max-branches = 12
 max-statements = 50
 max-parents = 7
-max-attributes = 10
+max-attributes = 8
 min-public-methods = 0
 max-public-methods = 20
 max-bool-expr = 5
@@ -392,42 +399,75 @@ max-bool-expr = 5
 [tool.pylint.basic]
 argument-naming-style = "snake_case"
 attr-naming-style = "snake_case"
+class-attribute-naming-style = "any"
+class-const-naming-style = "UPPER_CASE"
 class-naming-style = "PascalCase"
 const-naming-style = "UPPER_CASE"
 function-naming-style = "snake_case"
+inlinevar-naming-style = "any"
 method-naming-style = "snake_case"
 module-naming-style = "snake_case"
 variable-naming-style = "snake_case"
-good-names = ["i", "j", "k", "ex", "db", "id", "pk", "_", "e", "op"]
+docstring-min-length = 10
+no-docstring-rgx = "^_"
+good-names = ["i", "j", "k", "ex", "db", "id", "pk", "_", "e"]
+accept-no-param-doc = false
+accept-no-raise-doc = false
+accept-no-return-doc = false
+accept-no-yields-doc = false
 
 [tool.pylint.imports]
 deprecated-modules = ["optparse", "tkinter.tix"]
 allow-wildcard-with-all = false
+analyse-fallback-blocks = true
 
 [tool.pylint.exceptions]
 overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
 
+[tool.pylint.logging]
+logging-modules = ["logging"]
+logging-format-style = "new"
+
 [tool.pylint.refactoring]
 max-nested-blocks = 5
+never-returning-functions = ["sys.exit", "argparse.parse_error"]
 
 [tool.pylint.similarities]
-min-similarity-lines = 6
+min-similarity-lines = 4
 ignore-comments = true
 ignore-docstrings = true
-ignore-imports = true
-ignore-signatures = true
+
+[tool.pylint.typecheck]
+contextmanager-decorators = ["contextlib.contextmanager"]
+generated-members = []
+ignored-modules = []
+ignored-classes = ["SQLObject", "optparse.Values", "thread._local", "_thread._local"]
+mixin-class-rgx = ".*MixIn"
+
+[tool.pylint.variables]
+allowed-redefined-builtins = []
+dummy-variables-rgx = "_.*|dummy.*"
+ignored-argument-names = "_.*"
+init-import = false
+
+[tool.pylint.classes]
+defining-attr-methods = ["__init__", "__new__", "setUp", "asyncSetUp", "__post_init__"]
+exclude-protected = ["_asdict", "_fields", "_replace", "_source", "_make"]
+valid-classmethod-first-arg = ["cls"]
+valid-metaclass-classmethod-first-arg = ["mcs"]
+
+[tool.pylint.string]
+check-quote-consistency = true
+check-str-concat-over-line-jumps = true
 
 # === BANDIT CONFIGURATION ===
 [tool.bandit]
 exclude_dirs = [
-    "tests",  # JUSTIFIED: Security scanner noise in unit test fixtures
-    "**/tests",  # JUSTIFIED: Security scanner noise in nested test suites
-    ".venv",  # JUSTIFIED: Virtualenv contains third-party code outside our control
-    "build",  # JUSTIFIED: Generated build artifacts contain no source logic
-    "dist",  # JUSTIFIED: Generated distribution artifacts contain no source logic
-    "node_modules",  # JUSTIFIED: Third-party JavaScript deps scanned separately
-    "tooling/test_*",  # JUSTIFIED: Tooling tests rely on asserts and fixtures
+    "/tests/",  # JUSTIFIED: Test directories use asserts for pytest validation
+    "/.venv/",  # JUSTIFIED: Virtualenv contains third-party code outside our control
+    "/build/",  # JUSTIFIED: Generated build artifacts contain no source logic
+    "/dist/",  # JUSTIFIED: Generated distribution artifacts contain no source logic
 ]
-skips = [
-    "B101",  # JUSTIFIED: pytest uses assert statements for validation
-]
+targets = ["apps", "packages", "tooling"]
+# B101 (assert_used) is enabled - tests excluded via exclude_dirs pattern
+# Deprecated/removed test IDs cleaned up (B309, B320, B410)

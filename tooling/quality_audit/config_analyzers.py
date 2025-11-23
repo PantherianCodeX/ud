@@ -411,11 +411,11 @@ def _check_pyright_strictness(root: Path) -> list[str]:
 
 
 def _check_mypy_strictness(root: Path) -> list[str]:
-    return check_mypy_config(root / "configs" / "pyproject.toml")
+    return check_mypy_config(root / "pyproject.toml")
 
 
 def _check_ruff_strictness(root: Path) -> list[str]:
-    return check_ruff_config(root / "configs" / "ruff.toml")
+    return check_ruff_config(root / "pyproject.toml")
 
 
 def check_config_strictness(root: Path) -> list[str]:

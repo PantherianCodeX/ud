@@ -446,7 +446,8 @@ def check_package(
         return True, []
     if prep_errors:
         return False, prep_errors
-    assert context is not None
+    if context is None:
+        return False, ["Internal error: context is None after preparation"]
 
     workspace_packages = workspace_packages or _load_workspace_package_names(root_dir)
     errors: list[str] = []

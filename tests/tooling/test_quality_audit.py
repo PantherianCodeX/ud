@@ -753,30 +753,32 @@ class TestCheckConfigStrictness:
         """Test validation of valid mypy config."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            configs_dir = tmp_path / "configs"
-            configs_dir.mkdir(exist_ok=True)
-            config_file = configs_dir / "pyproject.toml"
+            config_file = tmp_path / "pyproject.toml"
             config_file.write_text("""
 [tool.mypy]
 strict = true
 disallow_untyped_defs = true
 disallow_any_generics = true
+
+[tool.ruff.lint]
+select = ["ALL"]
 """)
 
             errors = check_config_strictness(tmp_path)
-            mypy_errors = [e for e in errors if "pyproject.toml" in e]
+            mypy_errors = [e for e in errors if "mypy" in e.lower()]
             assert len(mypy_errors) == 0
 
     def test_missing_mypy_strict(self) -> None:
         """Test detection of missing strict mode in mypy."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            configs_dir = tmp_path / "configs"
-            configs_dir.mkdir(exist_ok=True)
-            config_file = configs_dir / "pyproject.toml"
+            config_file = tmp_path / "pyproject.toml"
             config_file.write_text("""
 [tool.mypy]
 disallow_untyped_defs = true
+
+[tool.ruff.lint]
+select = ["ALL"]
 """)
 
             errors = check_config_strictness(tmp_path)
@@ -786,27 +788,29 @@ disallow_untyped_defs = true
         """Test validation of valid ruff config."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            configs_dir = tmp_path / "configs"
-            configs_dir.mkdir(exist_ok=True)
-            config_file = configs_dir / "ruff.toml"
+            config_file = tmp_path / "pyproject.toml"
             config_file.write_text("""
-[lint]
+[tool.mypy]
+strict = true
+
+[tool.ruff.lint]
 select = ["ALL"]
 """)
 
             errors = check_config_strictness(tmp_path)
-            ruff_errors = [e for e in errors if "ruff.toml" in e]
+            ruff_errors = [e for e in errors if "ruff" in e.lower()]
             assert len(ruff_errors) == 0
 
     def test_missing_all_in_ruff(self) -> None:
         """Test detection of missing ALL in ruff select."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            configs_dir = tmp_path / "configs"
-            configs_dir.mkdir(exist_ok=True)
-            config_file = configs_dir / "ruff.toml"
+            config_file = tmp_path / "pyproject.toml"
             config_file.write_text("""
-[lint]
+[tool.mypy]
+strict = true
+
+[tool.ruff.lint]
 select = ["E", "F"]
 """)
 
@@ -1338,19 +1342,17 @@ class TestIntegration:
             config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
-            configs_dir = tmp_path / "configs"
-            configs_dir.mkdir(exist_ok=True)
-
-            mypy_config = configs_dir / "pyproject.toml"
-            mypy_config.write_text("""
+            # All configs consolidated in root pyproject.toml
+            pyproject_config = tmp_path / "pyproject.toml"
+            pyproject_config.write_text("""
 [tool.mypy]
 strict = true
 disallow_untyped_defs = true
 disallow_any_generics = true
-""")
 
-            ruff_config = configs_dir / "ruff.toml"
-            ruff_config.write_text('[lint]\nselect = ["ALL"]')
+[tool.ruff.lint]
+select = ["ALL"]
+""")
 
             # Create a clean Python file (no ignores)
             (tmp_path / "clean.py").write_text("x: int = 1\n")
@@ -1379,23 +1381,26 @@ class TestDiscoverConfigFiles:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
 
-            # Create pyright config
+            # Create pyright config in configs/
             (_pyright_config_path(tmp_path)).write_text('{"typeCheckingMode": "strict"}')
 
-            # Create configs directory with all toml files
-            configs_dir = tmp_path / "configs"
-            configs_dir.mkdir(exist_ok=True)
-            (configs_dir / "pyproject.toml").write_text("[tool.mypy]\nstrict = true")
-            (configs_dir / "ruff.toml").write_text('[lint]\nselect = ["ALL"]')
-            (configs_dir / "pylint.toml").write_text("[tool.pylint]")
+            # Create root pyproject.toml with all tool configs (consolidated structure)
+            (tmp_path / "pyproject.toml").write_text("""
+[tool.mypy]
+strict = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+[tool.pylint]
+py-version = "3.12"
+""")
 
             discovered = discover_config_files(tmp_path)
             rel_paths = [str(f.relative_to(tmp_path)) for f in discovered]
 
             assert "configs/pyrightconfig.json" in rel_paths
-            assert "configs/pyproject.toml" in rel_paths
-            assert "configs/ruff.toml" in rel_paths
-            assert "configs/pylint.toml" in rel_paths
+            assert "pyproject.toml" in rel_paths
 
     def test_discover_root_pyproject_with_quality_tools(self) -> None:
         """Test that root pyproject.toml is discovered if it has quality configs."""

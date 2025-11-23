@@ -65,11 +65,12 @@ def run_audit(
         report.code_ignores.extend(scan_file_for_ignores(py_file, root))
 
     print("  Parsing config file ignores...")
-    report.config_ignores.extend(parse_ruff_config_ignores(root / "configs" / "ruff.toml"))
-    report.config_ignores.extend(parse_mypy_config_ignores(root / "configs" / "pyproject.toml"))
-    report.config_ignores.extend(parse_pylint_config_ignores(root / "configs" / "pylint.toml"))
+    pyproject_path = root / "pyproject.toml"
+    report.config_ignores.extend(parse_ruff_config_ignores(pyproject_path))
+    report.config_ignores.extend(parse_mypy_config_ignores(pyproject_path))
+    report.config_ignores.extend(parse_pylint_config_ignores(pyproject_path))
     report.config_ignores.extend(parse_pyright_config_ignores(root / "configs" / "pyrightconfig.json"))
-    report.config_ignores.extend(parse_bandit_config_ignores(root / "pyproject.toml"))
+    report.config_ignores.extend(parse_bandit_config_ignores(pyproject_path))
 
     print("  Checking config strictness...")
     report.config_errors = check_config_strictness(root)
@@ -126,9 +127,10 @@ def run_config_check(*, root: Path) -> int:
         int: Zero when checks pass, otherwise non-zero.
     """
     errors: list[str] = []
+    pyproject_path = root / "pyproject.toml"
     errors.extend(check_pyright_config(root / "configs" / "pyrightconfig.json"))
-    errors.extend(check_mypy_config(root / "configs" / "pyproject.toml"))
-    errors.extend(check_ruff_config(root / "configs" / "ruff.toml"))
+    errors.extend(check_mypy_config(pyproject_path))
+    errors.extend(check_ruff_config(pyproject_path))
 
     print("Checking inline ignores for justifications...")
     for py_file in find_python_files(root):

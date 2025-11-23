@@ -1,8 +1,5 @@
 {
-  "configs/pylint.toml": "04e6c9b21790419572b73a2da4158f71b21179c589e4ee2e36f121c593cbc1a2",
-  "configs/pyproject.toml": "7450cc00364ddf0c879b85f39fea61fb9a76f2ec5ef42b340de062cdf32741ed",
   "configs/pyrightconfig.json": "6c210ba5905bd1f1ec4bb0e805a3a287bdc4bd6adaa6f59fe8ea735467b1f8bb",
   "configs/pyrightconfig.justifications.json": "6a25b66e94ca9648e61a61527a9149574565a6bd61daa36db0f2c3490ed22ec3",
-  "configs/ruff.toml": "9241832633f305b60de5f2c185752355c58688cf5efaa4f404bac34e8dd20909",
-  "pyproject.toml": "647203063e3aaba4ea2f83459118fb3a73d1447d2cb65c92624590bff1bf69ad"
+  "pyproject.toml": "c93af80132ca1d64d50d0b1b9c508115eec3e2919bc884348a03e521b14f6487"
 }
