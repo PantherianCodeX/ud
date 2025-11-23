@@ -50,7 +50,7 @@ jobs:
       matrix:
         include:
           - check_name: "Prettier"
-            run: "uv run prettier --check ."
+            run: "npm run format:check"
           - check_name: "Ruff Check"
             run: "uv run ruff check ."
           - check_name: "Ruff Format"
@@ -91,6 +91,9 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --all-extras --dev
+
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Run ${{ matrix.check_name }}
         run: ${{ matrix.run }}

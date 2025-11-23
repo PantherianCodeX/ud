@@ -172,6 +172,9 @@ uv run doit security
 
 # Clean cached artifacts/reports
 uv run doit clean_artifacts
+
+# Install Node tooling used by prettier/doit tasks (one-time)
+npm install
 ```
 
 ### Docker and Container Development
