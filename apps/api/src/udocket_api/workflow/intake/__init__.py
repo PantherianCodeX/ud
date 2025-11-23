@@ -15,6 +15,10 @@ __all__ = ["register_routes"]
 
 
 def register_routes(app: FastAPI) -> None:
-    """Register intake routes."""
+    """Register intake API routes with the application.
+
+    Args:
+        app: FastAPI application instance.
+    """
     router_module = import_module("udocket_api.workflow.intake.api.router")
     app.include_router(router_module.router)

@@ -19,7 +19,17 @@ PartyRole = Literal["client", "opposing_party", "witness", "attorney", "other"]
 
 
 class Party(BaseEntity):
-    """A person or organization involved in a legal matter."""
+    """A person or organization involved in a legal matter.
+
+    Represents clients, opposing parties, witnesses, attorneys, or
+    other participants with their contact details and notes.
+
+    Attributes:
+        name: Full legal name of the party.
+        role: Role of the party in the matter.
+        contact_info: Optional contact details.
+        notes: Additional notes about the party.
+    """
 
     name: str = Field(..., min_length=1, max_length=255, description="Full name of the party")
     role: PartyRole = Field(..., description="Role of the party in the matter")
@@ -42,7 +52,17 @@ class Party(BaseEntity):
 
 
 class Relationship(BaseEntity):
-    """Relationship between two parties in a matter."""
+    """Relationship between two parties in a matter.
+
+    Represents directed connections between parties such as spouse,
+    employer, or attorney relationships.
+
+    Attributes:
+        from_party_id: Source party identifier.
+        to_party_id: Target party identifier.
+        relationship_type: Type of relationship (e.g., spouse, employer).
+        description: Optional description of the relationship.
+    """
 
     from_party_id: UUID = Field(..., description="Source party ID")
     to_party_id: UUID = Field(..., description="Target party ID")
@@ -65,7 +85,18 @@ class Relationship(BaseEntity):
 
 
 class Matter(BaseEntity):
-    """A legal matter or case."""
+    """A legal matter or case.
+
+    Central domain entity representing a legal case with its status,
+    classification, and primary client association.
+
+    Attributes:
+        title: Display title for the matter.
+        description: Optional detailed description.
+        status: Current workflow status of the matter.
+        matter_type: Classification of legal matter type.
+        client_id: UUID of the primary client party.
+    """
 
     title: str = Field(..., min_length=1, max_length=255, description="Matter title")
     description: str | None = Field(None, description="Detailed description of the matter")

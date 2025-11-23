@@ -23,11 +23,14 @@ def add_app_context(
 ) -> EventDict:
     """Add application context to all log entries.
 
+    Structlog processor that enriches log events with application metadata
+    including name, version, and environment.
+
     Args:
         event_dict: Event dictionary to enrich.
 
     Returns:
-        Enriched event dictionary with app context.
+        EventDict: Enriched event dictionary with app context fields.
     """
     event_dict["app_name"] = settings.app_name
     event_dict["app_version"] = settings.app_version
@@ -36,7 +39,12 @@ def add_app_context(
 
 
 def configure_logging() -> None:
-    """Configure structlog with appropriate processors."""
+    """Configure structlog with appropriate processors.
+
+    Sets up structlog with environment-appropriate output formatting.
+    Uses JSON rendering for production and colored console output for
+    development based on the log_json setting.
+    """
     # Determine processors based on environment
     processors: list[Processor] = [
         structlog.contextvars.merge_contextvars,

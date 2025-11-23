@@ -12,10 +12,14 @@ from udocket_domain import Matter
 
 
 class MattersService:
-    """Simple in-memory matter store."""
+    """In-memory matter storage and operations.
+
+    Provides CRUD operations for legal matters using an in-memory
+    dictionary store. Suitable for development and testing.
+    """
 
     def __init__(self) -> None:
-        """Initialize service storage."""
+        """Initialize the service with empty storage."""
         self._matters: dict[uuid.UUID, Matter] = {}
 
     def create(self, payload: matters_schemas.MatterCreateRequest) -> Matter:

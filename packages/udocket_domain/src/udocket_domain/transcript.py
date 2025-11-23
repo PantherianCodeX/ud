@@ -15,7 +15,20 @@ from .base import BaseEntity
 
 
 class SpeakerTurn(BaseEntity):
-    """A single speaker turn in a transcript."""
+    """A single speaker turn in a transcript.
+
+    Represents a continuous speech segment from one speaker with
+    timing and confidence metadata from the transcription service.
+
+    Attributes:
+        transcript_id: UUID of the parent transcript.
+        speaker_id: Identifier assigned to the speaker.
+        speaker_name: Human-readable name if identified.
+        start_time: Start time in seconds from audio beginning.
+        end_time: End time in seconds from audio beginning.
+        text: Transcribed speech text.
+        confidence: Transcription confidence score (0.0-1.0).
+    """
 
     transcript_id: UUID = Field(..., description="Associated transcript ID")
     speaker_id: str = Field(..., min_length=1, max_length=100, description="Speaker identifier")
@@ -44,7 +57,19 @@ class SpeakerTurn(BaseEntity):
 
 
 class Transcript(BaseEntity):
-    """A complete transcript of a legal interview or consultation."""
+    """A complete transcript of a legal interview or consultation.
+
+    Represents the transcription output from a legal interview or
+    consultation audio file with metadata about source and processing.
+
+    Attributes:
+        matter_id: UUID of the associated matter.
+        audio_url: URL to the source audio file.
+        language: ISO 639-1 language code.
+        duration_seconds: Total audio duration in seconds.
+        word_count: Total number of words in transcript.
+        transcription_service: Name of the service used (e.g., azure_speech).
+    """
 
     matter_id: UUID = Field(..., description="Associated matter ID")
     audio_url: str | None = Field(None, max_length=500, description="URL to source audio file")

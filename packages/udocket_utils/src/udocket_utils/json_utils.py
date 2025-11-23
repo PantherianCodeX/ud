@@ -61,6 +61,12 @@ def coerce_json_value(value: object) -> JSONValue:
 def json_payload(**items: object) -> JSONObject:
     """Build a JSON object from keyword arguments.
 
+    Convenience function for constructing JSON-compatible dictionaries
+    with automatic value coercion.
+
+    Args:
+        **items: Key-value pairs to include in the JSON object.
+
     Returns:
         JSONObject: JSON object containing coerced values.
     """

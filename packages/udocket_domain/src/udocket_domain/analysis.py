@@ -22,7 +22,18 @@ ActionStatus = Literal["pending", "in_progress", "completed", "cancelled"]
 
 
 class Issue(BaseEntity):
-    """A legal issue or concern identified in a matter."""
+    """A legal issue or concern identified in a matter.
+
+    Represents problems, risks, or areas of concern extracted from
+    matter analysis with severity classification.
+
+    Attributes:
+        matter_id: UUID of the associated matter.
+        title: Brief title describing the issue.
+        description: Detailed explanation of the issue.
+        severity: Risk severity level (low/medium/high/critical).
+        category: Classification category for the issue.
+    """
 
     matter_id: UUID = Field(..., description="Associated matter ID")
     title: str = Field(..., min_length=1, max_length=255, description="Issue title")
@@ -47,7 +58,18 @@ class Issue(BaseEntity):
 
 
 class TimelineEvent(BaseEntity):
-    """A chronological event in a matter timeline."""
+    """A chronological event in a matter timeline.
+
+    Represents significant dates and milestones extracted from
+    matter analysis for timeline visualization.
+
+    Attributes:
+        matter_id: UUID of the associated matter.
+        event_date: Date when the event occurred or is scheduled.
+        event_type: Classification of the event type.
+        title: Brief title describing the event.
+        description: Optional detailed description.
+    """
 
     matter_id: UUID = Field(..., description="Associated matter ID")
     event_date: date = Field(..., description="Date of the event")
@@ -72,7 +94,20 @@ class TimelineEvent(BaseEntity):
 
 
 class Action(BaseEntity):
-    """A follow-up action or task derived from matter analysis."""
+    """A follow-up action or task derived from matter analysis.
+
+    Represents work items generated from analysis that require
+    attention or completion with priority and assignment tracking.
+
+    Attributes:
+        matter_id: UUID of the associated matter.
+        title: Brief title describing the action.
+        description: Detailed explanation of what needs to be done.
+        priority: Urgency level for the action.
+        status: Current completion status.
+        assigned_to: Name or email of the responsible person.
+        due_date: Target completion date.
+    """
 
     matter_id: UUID = Field(..., description="Associated matter ID")
     title: str = Field(..., min_length=1, max_length=255, description="Action title")
@@ -101,7 +136,18 @@ class Action(BaseEntity):
 
 
 class Gap(BaseEntity):
-    """An information gap or missing detail identified in matter analysis."""
+    """An information gap or missing detail identified in matter analysis.
+
+    Represents missing information that needs to be collected or
+    clarified to complete the matter analysis.
+
+    Attributes:
+        matter_id: UUID of the associated matter.
+        title: Brief description of the missing information.
+        description: Detailed explanation of what is needed.
+        category: Classification of the gap type.
+        resolved: Whether the gap has been filled.
+    """
 
     matter_id: UUID = Field(..., description="Associated matter ID")
     title: str = Field(..., min_length=1, max_length=255, description="Gap title")
@@ -126,7 +172,16 @@ class Gap(BaseEntity):
 
 
 class MatterAnalysis(BaseEntity):
-    """Canonical analysis of a legal matter with all extracted information."""
+    """Canonical analysis of a legal matter with all extracted information.
+
+    Represents the complete analysis output including summary and
+    vector embedding for semantic search capabilities.
+
+    Attributes:
+        matter_id: UUID of the analyzed matter.
+        summary: Executive summary of the matter.
+        embedding: Vector embedding for similarity search.
+    """
 
     matter_id: UUID = Field(..., description="Associated matter ID")
     summary: str = Field(..., description="Executive summary of the matter")

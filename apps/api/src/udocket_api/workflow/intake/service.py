@@ -12,10 +12,15 @@ from udocket_api.workflow.intake import schemas as intake_schemas
 
 
 class IntakeService:
-    """In-memory implementation for managing intake records."""
+    """In-memory implementation for managing intake records.
+
+    Handles intake submission lifecycle including creation, status
+    updates, and aggregate statistics. Uses in-memory storage
+    suitable for development and testing.
+    """
 
     def __init__(self) -> None:
-        """Initialize storage."""
+        """Initialize the service with empty storage."""
         self._records: dict[uuid.UUID, intake_schemas.IntakeRecord] = {}
 
     def submit(self, request: intake_schemas.IntakeRequest) -> intake_schemas.IntakeRecord:

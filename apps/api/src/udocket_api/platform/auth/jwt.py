@@ -45,11 +45,14 @@ class UserStub(BaseModel):
 def create_access_token(user: UserStub) -> str:
     """Create a JWT access token for a user.
 
+    Generates a signed JWT containing user identity and role claims
+    with configured expiration time.
+
     Args:
-        user: User to create token for
+        user: User stub containing identity and role information.
 
     Returns:
-        Encoded JWT token string
+        str: Encoded JWT token string.
     """
     expire = datetime.now(UTC) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
 
@@ -68,14 +71,17 @@ def create_access_token(user: UserStub) -> str:
 def decode_access_token(token: str) -> TokenData:
     """Decode and validate a JWT access token.
 
+    Verifies signature and expiration, then extracts user claims
+    from the token payload.
+
     Args:
-        token: Encoded JWT token string
+        token: Encoded JWT token string.
 
     Returns:
-        Decoded token data
+        TokenData: Decoded token data containing user identity and roles.
 
     Raises:
-        AuthenticationError: If token is invalid or expired
+        AuthenticationError: If token is invalid, expired, or malformed.
     """
     try:
         payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])

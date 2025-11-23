@@ -8,7 +8,13 @@ from pydantic import BaseModel, Field
 
 
 class MatterCreateRequest(BaseModel):
-    """Payload for creating a matter."""
+    """Payload for creating a matter.
+
+    Attributes:
+        title: Display title for the matter.
+        description: Optional detailed description.
+        matter_type: Classification of legal matter type.
+    """
 
     title: str = Field(..., min_length=1, max_length=255)
     description: str | None = Field(None, max_length=2000)

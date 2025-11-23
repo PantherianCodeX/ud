@@ -17,7 +17,14 @@ __all__ = ["register_workflows"]
 
 
 def register_workflows(app: FastAPI) -> None:
-    """Attach all workflow routers to the FastAPI app."""
+    """Attach all workflow routers to the FastAPI app.
+
+    Registers intake, matters, and analysis workflow slices
+    with their respective API routes.
+
+    Args:
+        app: FastAPI application instance.
+    """
     register_intake_routes(app)
     register_matter_routes(app)
     register_analysis_routes(app)
