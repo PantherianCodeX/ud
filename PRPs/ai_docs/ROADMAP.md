@@ -71,7 +71,7 @@ Begin with basic logging and monitoring setup:
 * Ensure new developers or CI can spin up the whole system easily.
 * Include scripts for local setup (e.g., `make dev` to run tests and start services).
 
-### Milestone Deliverable
+### Milestone Deliverable (Phase 1)
 
 A repository with:
 
@@ -187,7 +187,7 @@ Since speed is a goal but quality must remain high, treat this slice as a protot
   * Assert the output contains certain expected fields or phrases
 * Code review this slice thoroughly, as it will set patterns for future slices.
 
-### Milestone Deliverable
+### Milestone Deliverable (Phase 2)
 
 A **working vertical slice** of the core pipeline:
 
@@ -288,7 +288,7 @@ With observability in place, use Langfuse and logs to assess baseline performanc
 * Use this data to inform scaling decisions later.
 * If obvious bottlenecks appear (e.g., slow LLM calls), note them but delay heavy optimizations until features are complete, unless trivial.
 
-### Milestone Deliverable
+### Milestone Deliverable (Phase 3)
 
 A **highly observable and reliable** core pipeline:
 
@@ -422,7 +422,7 @@ With more features and possibly more services, update documentation:
 
 * Document in the README how everything is modularized by feature so new contributors can onboard quickly.
 
-### Milestone Deliverable
+### Milestone Deliverable (Phase 4)
 
 The platform’s **feature set is complete**:
 
@@ -537,7 +537,7 @@ Extend CI/CD:
     * `.env` files
     * Platform-specific env settings
 
-### Milestone Deliverable
+### Milestone Deliverable (Phase 5)
 
 A **functional web application** for the main use case:
 
@@ -677,7 +677,7 @@ Set up **production deployment workflows**:
   * Feature flags for progressive rollout
 * Ensure **rollback** procedures are in place.
 
-### Milestone Deliverable
+### Milestone Deliverable (Phase 6)
 
 A **production-ready platform**, fully featured and polished:
 
@@ -694,7 +694,7 @@ A **production-ready platform**, fully featured and polished:
 
 ## Conclusion
 
-Throughout this roadmap, the guiding principle is delivering value in **vertical slices** – completing thin end-to-end features – rather than building broad technical layers in isolation. This approach, combined with early observability and CI/CD, ensures rapid development without sacrificing quality.[10][4]
+Throughout this roadmap, the guiding principle is delivering value in **vertical slices** – completing thin end-to-end features – rather than building broad technical layers in isolation. This approach, combined with early observability and CI/CD, ensures rapid development without sacrificing quality.[10] [4]
 
 By the time of full launch:
 
@@ -740,6 +740,6 @@ By the time of full launch:
 [10] The Power of Observability During Development | Honeycomb (development velocity)
 [https://www.honeycomb.io/blog/power-observability-during-development](https://www.honeycomb.io/blog/power-observability-during-development)
 
-```
+```text
 ::contentReference[oaicite:0]{index=0}
 ```

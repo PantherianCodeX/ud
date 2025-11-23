@@ -13,10 +13,15 @@ from udocket_domain import MatterAnalysis
 
 
 class AnalysisService:
-    """Stateless analysis engine using heuristics for demo purposes."""
+    """Analysis engine for processing matter transcripts.
+
+    Generates deterministic analysis summaries and pseudo-embeddings
+    for demonstration purposes. Uses heuristic-based processing
+    suitable for development and testing.
+    """
 
     def __init__(self) -> None:
-        """Initialize service cache."""
+        """Initialize the service with empty analysis cache."""
         self._analyses: dict[UUID, MatterAnalysis] = {}
 
     def run_analysis(self, payload: AnalysisRequest) -> MatterAnalysis:

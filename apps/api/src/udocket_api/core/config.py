@@ -12,7 +12,28 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings with validation."""
+    """Application settings with validation.
+
+    Loads configuration from environment variables with validation.
+    Required fields must be set via environment or .env file.
+
+    Attributes:
+        app_name: Application display name.
+        app_version: Semantic version string.
+        debug: Enable debug mode and API docs.
+        environment: Deployment environment (development/staging/production).
+        database_url: PostgreSQL connection URL.
+        database_pool_size: Connection pool size.
+        database_max_overflow: Maximum overflow connections.
+        database_echo: Log SQL statements.
+        database_healthcheck_timeout: Health check query timeout in seconds.
+        jwt_secret_key: Secret for JWT signing.
+        jwt_algorithm: JWT signing algorithm.
+        jwt_access_token_expire_minutes: Token expiration in minutes.
+        cors_origins: Allowed CORS origins.
+        log_level: Logging verbosity level.
+        log_json: Output logs as JSON.
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",

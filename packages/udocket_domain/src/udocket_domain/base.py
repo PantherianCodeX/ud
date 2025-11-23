@@ -23,7 +23,16 @@ def _utc_now() -> datetime:
 
 
 class BaseEntity(BaseModel):
-    """Base model for entities with ID and timestamps."""
+    """Base model for entities with ID and timestamps.
+
+    Provides common fields for all domain entities including unique
+    identification and audit timestamps.
+
+    Attributes:
+        id: Unique identifier for the entity.
+        created_at: Timestamp when the entity was created.
+        updated_at: Timestamp when the entity was last modified.
+    """
 
     id: UUID = Field(default_factory=uuid4, description="Unique identifier")
     created_at: datetime = Field(default_factory=_utc_now, description="Creation timestamp")
@@ -42,7 +51,11 @@ class BaseEntity(BaseModel):
 
 
 class BaseRequest(BaseModel):
-    """Base model for API requests."""
+    """Base model for API requests.
+
+    Configures string stripping and minimum length validation
+    for all request models.
+    """
 
     model_config = ConfigDict(
         str_strip_whitespace=True,
@@ -51,7 +64,10 @@ class BaseRequest(BaseModel):
 
 
 class BaseResponse(BaseModel):
-    """Base model for API responses."""
+    """Base model for API responses.
+
+    Enables ORM mode for converting SQLAlchemy models to responses.
+    """
 
     model_config = ConfigDict(
         from_attributes=True,

@@ -10,7 +10,12 @@ from pydantic import BaseModel, Field
 
 
 class AnalysisRequest(BaseModel):
-    """Request payload for running an analysis."""
+    """Request payload for running an analysis.
+
+    Attributes:
+        matter_id: UUID of the matter to analyze.
+        transcript: Interview transcript text to process.
+    """
 
     matter_id: uuid.UUID
     transcript: str = Field(..., min_length=20, max_length=10000)

@@ -30,16 +30,17 @@ def get_current_user(
 ) -> UserStub:
     """FastAPI dependency to get current authenticated user.
 
-    Validates JWT token and returns user information.
+    Validates JWT token and returns user information. In Phase 1, reconstructs
+    a stub user from token claims. Phase 2+ will query Keycloak or user service.
 
     Args:
-        credentials: HTTP Bearer token credentials
+        credentials: HTTP Bearer token credentials from request header.
 
     Returns:
-        Current user information
+        UserStub: Current user identity and role information.
 
     Raises:
-        HTTPException: If authentication fails
+        HTTPException: 401 if credentials are missing or token is invalid.
     """
     if not credentials:
         raise HTTPException(
@@ -75,11 +76,15 @@ def require_role(
 ) -> Callable[[UserStub], UserStub]:
     """FastAPI dependency factory to require a specific role.
 
+    Creates a dependency that validates the authenticated user has the
+    specified role before allowing access to the endpoint.
+
     Args:
-        required_role: Role required to access endpoint
+        required_role: Role string required to access the endpoint.
 
     Returns:
-        Dependency function that checks user role
+        Callable[[UserStub], UserStub]: Dependency function that validates
+            user role and returns the user if authorized.
     """
 
     def role_checker(user: Annotated[UserStub, Depends(get_current_user)]) -> UserStub:
