@@ -144,7 +144,7 @@ uv run pyright --level strict src/
 uv run pylint src/
 
 # Run pre-commit hooks
-uv run pre-commit run --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
 ```
 
 ### Project-wide engineering standards (Python)

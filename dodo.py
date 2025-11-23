@@ -9,9 +9,11 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess  # noqa: S404  # nosec B404 - Doit tasks must shell out to trusted CLIs
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -22,7 +24,7 @@ TaskConfig = dict[str, Any]
 
 # pylint: disable=missing-return-doc  # JUSTIFIED: Doit mandates specific return schemas
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parent
 CONFIG_DIR = ROOT / "configs"
 OUT_DIR = ROOT / "out" / "test_reports"
 LINT_DIR = OUT_DIR / "lint"
@@ -49,8 +51,62 @@ def _run(cmd: list[str], *, env: dict[str, str] | None = None) -> None:
     )
 
 
+def _run_capture(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603  # nosec B603 - Controlled command list
+        cmd,
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def _emit(result: subprocess.CompletedProcess[str]) -> None:
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+
+
+def _raise_on_error(result: subprocess.CompletedProcess[str], cmd: list[str]) -> None:
+    if result.returncode:
+        raise subprocess.CalledProcessError(result.returncode, cmd)
+
+
+def _summarize_bandit(report_path: Path) -> str:
+    try:
+        data = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return f"Bandit: scan complete. See {report_path}"
+    findings = data.get("results", [])
+    if not findings:
+        return f"Bandit: 0 findings (report: {report_path})"
+    severity_counts: dict[str, int] = {}
+    for finding in findings:
+        severity = str(finding.get("issue_severity", "UNKNOWN")).upper()
+        severity_counts[severity] = severity_counts.get(severity, 0) + 1
+    summary = ", ".join(f"{level}:{count}" for level, count in sorted(severity_counts.items()))
+    return f"Bandit: {len(findings)} findings ({summary}). Report: {report_path}"
+
+
+def _summarize_safety(report_path: Path) -> str:
+    try:
+        text = report_path.read_text(encoding="utf-8")
+    except OSError:
+        return f"Safety: scan complete. See {report_path}"
+    summary_line = next(
+        (line.strip() for line in text.splitlines() if "security issues" in line.lower()),
+        "Safety scan complete",
+    )
+    return f"{summary_line} (report: {report_path})"
+
+
 def task_prettier_check() -> TaskConfig:
-    """Run the Prettier formatting check used in CI."""
+    """Run the Prettier formatting check used in CI.
+
+    Returns:
+        TaskConfig: doit task definition for Prettier.
+    """
 
     def _action() -> None:
         if not PRETTIER_BIN.exists():
@@ -70,7 +126,11 @@ def task_prettier_check() -> TaskConfig:
 
 
 def task_ruff_check() -> TaskConfig:
-    """Run ruff check with output captured under out/test_reports."""
+    """Run ruff check with output captured under out/test_reports.
+
+    Returns:
+        TaskConfig: doit task definition for the lint job.
+    """
 
     def _action() -> None:
         _ensure_dirs([LINT_DIR])
@@ -81,16 +141,24 @@ def task_ruff_check() -> TaskConfig:
             "ruff",
             "check",
             ".",
-            "--output-format=full",
-            f"--output-file={output}",
         ]
-        _run(cmd)
+        result = _run_capture(cmd)
+        with output.open("w", encoding="utf-8") as log_file:
+            log_file.write(result.stdout)
+            if result.stderr:
+                log_file.write(result.stderr)
+        _emit(result)
+        _raise_on_error(result, cmd)
 
     return {"actions": [_action], "verbosity": 2}
 
 
 def task_ruff_format_check() -> TaskConfig:
-    """Ensure ruff format check matches CI behavior."""
+    """Ensure ruff format check matches CI behavior.
+
+    Returns:
+        TaskConfig: doit task definition for the format check.
+    """
 
     def _action() -> None:
         _ensure_dirs([LINT_DIR])
@@ -118,12 +186,20 @@ def task_ruff_format_check() -> TaskConfig:
 
 
 def task_ruff_format() -> TaskConfig:
-    """Format the repository using ruff."""
+    """Format the repository using ruff.
+
+    Returns:
+        TaskConfig: doit task definition for formatting.
+    """
     return {"actions": ["uv run ruff format ."], "verbosity": 2}
 
 
 def task_pylint() -> TaskConfig:
-    """Run pylint with logs stored under out/test_reports."""
+    """Run pylint with logs stored under out/test_reports.
+
+    Returns:
+        TaskConfig: doit task definition for pylint.
+    """
 
     def _action() -> None:
         _ensure_dirs([LINT_DIR])
@@ -152,7 +228,11 @@ def task_pylint() -> TaskConfig:
 
 
 def task_mypy() -> TaskConfig:
-    """Strict mypy check mirroring CI."""
+    """Strict mypy check mirroring CI.
+
+    Returns:
+        TaskConfig: doit task definition for mypy.
+    """
 
     def _action() -> None:
         _ensure_dirs([TYPECHECK_DIR])
@@ -172,26 +252,30 @@ def task_mypy() -> TaskConfig:
 
 
 def task_pyright() -> TaskConfig:
-    """Pyright strict type checking with JSON output."""
+    """Pyright strict type checking with JSON output.
+
+    Returns:
+        TaskConfig: doit task definition for pyright.
+    """
 
     def _action() -> None:
         _ensure_dirs([TYPECHECK_DIR])
         output = TYPECHECK_DIR / "pyright.json"
-        cmd = [
-            "uv",
-            "run",
-            "pyright",
-            "--project",
-            "configs/pyrightconfig.json",
-            f"--outputjson={output}",
-        ]
-        _run(cmd)
+        cmd = ["uv", "run", "pyright", "--project", "configs/pyrightconfig.json"]
+        result = _run_capture(cmd)
+        output.write_text(result.stdout)
+        _emit(result)
+        _raise_on_error(result, cmd)
 
     return {"actions": [_action], "verbosity": 2}
 
 
 def task_quality_audit_config() -> TaskConfig:
-    """Run the lightweight quality audit config validation."""
+    """Run the lightweight quality audit config validation.
+
+    Returns:
+        TaskConfig: doit task definition for the config audit.
+    """
 
     def _action() -> None:
         _ensure_dirs([QUALITY_DIR])
@@ -209,7 +293,11 @@ def task_quality_audit_config() -> TaskConfig:
 
 
 def task_tests() -> TaskConfig:
-    """Execute pytest with coverage artifacts in out/test_reports."""
+    """Execute pytest with coverage artifacts in out/test_reports.
+
+    Returns:
+        TaskConfig: doit task definition for pytest.
+    """
 
     def _action() -> None:
         _ensure_dirs([COVERAGE_DIR, TEST_DIR])
@@ -238,15 +326,24 @@ def task_tests() -> TaskConfig:
 
 
 def task_dependency_check() -> TaskConfig:
-    """Check python dependency configuration consistency."""
+    """Check python dependency configuration consistency.
+
+    Returns:
+        TaskConfig: doit task definition for the dependency checker.
+    """
     return {"actions": ["uv run python tooling/check_dependencies.py"], "verbosity": 2}
 
 
 def task_bandit() -> TaskConfig:
-    """Security scanning via bandit with reports under out/test_reports."""
+    """Security scanning via bandit with reports under out/test_reports.
+
+    Returns:
+        TaskConfig: doit task definition for bandit.
+    """
 
     def _action() -> None:
         _ensure_dirs([SECURITY_DIR])
+        report_path = SECURITY_DIR / "bandit-report.json"
         cmd = [
             "uv",
             "run",
@@ -260,18 +357,26 @@ def task_bandit() -> TaskConfig:
             "-f",
             "json",
             "-o",
-            str(SECURITY_DIR / "bandit-report.json"),
+            str(report_path),
         ]
-        _run(cmd)
+        result = _run_capture(cmd)
+        _emit(result)
+        _raise_on_error(result, cmd)
+        sys.stdout.write(_summarize_bandit(report_path) + "\n")
 
     return {"actions": [_action], "verbosity": 2}
 
 
 def task_safety() -> TaskConfig:
-    """Safety scan replicating the CI job."""
+    """Safety scan replicating the CI job.
+
+    Returns:
+        TaskConfig: doit task definition for the Safety scan.
+    """
 
     def _action() -> None:
         _ensure_dirs([SECURITY_DIR])
+        report_path = SECURITY_DIR / "safety-report.json"
         cmd = [
             "uv",
             "run",
@@ -279,41 +384,62 @@ def task_safety() -> TaskConfig:
             "scan",
             "--json",
             "--policy-file",
-            ".safety-policy.yml",
+            "configs/safety-policy.yml",
         ]
-        with (SECURITY_DIR / "safety-report.json").open("w", encoding="utf-8") as log_file:
-            subprocess.run(  # noqa: S603  # nosec B603 - Safety CLI invocation with fixed args
-                cmd,
-                check=True,
-                cwd=ROOT,
-                stdout=log_file,
-            )
+        result = _run_capture(cmd)
+        report_path.write_text(result.stdout)
+        _emit(result)
+        _raise_on_error(result, cmd)
+        sys.stdout.write(_summarize_safety(report_path) + "\n")
 
     return {"actions": [_action], "verbosity": 2}
 
 
 def task_precommit() -> TaskConfig:
-    """Run all pre-commit hooks."""
-    return {"actions": ["uv run pre-commit run --all-files"], "verbosity": 2}
+    """Run all pre-commit hooks.
+
+    Returns:
+        TaskConfig: doit task definition for running hooks.
+    """
+    return {
+        "actions": ["uv run pre-commit run --config configs/pre-commit-config.yaml --all-files"],
+        "verbosity": 2,
+    }
 
 
 def task_lint() -> TaskConfig:
-    """Aggregate lint tasks for convenience."""
+    """Aggregate lint tasks for convenience.
+
+    Returns:
+        TaskConfig: doit task definition for the lint bundle.
+    """
     return {"actions": [], "task_dep": ["prettier_check", "ruff_check", "ruff_format_check", "pylint"]}
 
 
 def task_typecheck() -> TaskConfig:
-    """Aggregate strict type checking tasks."""
+    """Aggregate strict type checking tasks.
+
+    Returns:
+        TaskConfig: doit task definition for the typecheck bundle.
+    """
     return {"actions": [], "task_dep": ["mypy", "pyright"]}
 
 
 def task_security() -> TaskConfig:
-    """Run all security-related checks."""
+    """Run all security-related checks.
+
+    Returns:
+        TaskConfig: doit task definition for the security bundle.
+    """
     return {"actions": [], "task_dep": ["bandit", "safety"]}
 
 
 def task_quality() -> TaskConfig:
-    """Full quality gate matching CI."""
+    """Full quality gate matching CI.
+
+    Returns:
+        TaskConfig: doit task definition for the full quality suite.
+    """
     return {
         "actions": [],
         "task_dep": [
@@ -326,8 +452,12 @@ def task_quality() -> TaskConfig:
     }
 
 
-def task_clean() -> TaskConfig:
-    """Clean cached artifacts and test outputs."""
+def task_clean_artifacts() -> TaskConfig:
+    """Clean cached artifacts and test outputs.
+
+    Returns:
+        TaskConfig: doit task definition for cleaning artifacts.
+    """
 
     def _action() -> None:
         paths = [

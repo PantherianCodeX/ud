@@ -149,35 +149,30 @@ source .venv/bin/activate
 
 ### Task Automation with doit
 
-The project uses **doit** for task automation. Once configured, common doit tasks will include:
+The repo ships a root-level `dodo.py` so you can replicate CI locally with simple commands:
 
 ```bash
 # List available tasks
 uv run doit list
 
-# Run all tests
-uv run doit test
-
-# Run linters
+# Re-run Prettier, Ruff, and Pylint
 uv run doit lint
 
-# Run type checkers
+# Strict type checking (mypy + pyright)
 uv run doit typecheck
 
-# Format code
-uv run doit format
+# Run pytest with coverage reports in out/test_reports/...
+uv run doit tests
 
-# Run full quality checks (lint + typecheck + test)
+# Apply the full CI-quality gate (lint + typecheck + tests + audit)
 uv run doit quality
 
-# Build documentation
-uv run doit docs
+# Security scans
+uv run doit security
 
-# Clean build artifacts
-uv run doit clean
+# Clean cached artifacts/reports
+uv run doit clean_artifacts
 ```
-
-**Note**: doit configuration will be added to `tooling/dodo.py` as the project matures. Until then, use the individual commands documented below.
 
 ### Docker and Container Development
 
@@ -338,16 +333,16 @@ The project uses **pre-commit** to enforce quality checks before commits:
 
 ```bash
 # Install pre-commit hooks
-uv run pre-commit install
+uv run pre-commit install --config configs/pre-commit-config.yaml
 
 # Run pre-commit on all files
-uv run pre-commit run --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
 
 # Run specific hook
-uv run pre-commit run ruff --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml ruff --all-files
 
 # Update hooks to latest versions
-uv run pre-commit autoupdate
+uv run pre-commit autoupdate --config configs/pre-commit-config.yaml
 ```
 
 Pre-commit hooks automatically run:
@@ -404,10 +399,10 @@ Run security scans manually or let CI handle them:
 
 ```bash
 # Bandit - Python security static analysis
-uv run bandit -r apps/ packages/ -f json -o bandit-report.json
+uv run bandit -r apps/ packages/ -f json -o out/test_reports/security/bandit-report.json
 
 # Safety - Check Python dependencies for known vulnerabilities
-uv run safety scan --json
+uv run safety scan --json --policy-file configs/safety-policy.yml
 
 # Gitleaks - Scan for secrets in git history
 uv run gitleaks detect --source . --verbose

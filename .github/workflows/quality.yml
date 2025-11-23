@@ -119,7 +119,7 @@ jobs:
           - check_name: "Safety"
             run: |-
               mkdir -p out/test_reports/security
-              uv run safety scan --json --policy-file .safety-policy.yml --key ${{ env.SAFETY_API_KEY }} > out/test_reports/security/safety-report.json
+              uv run safety scan --json --policy-file configs/safety-policy.yml --key ${{ env.SAFETY_API_KEY }} > out/test_reports/security/safety-report.json
 
     steps:
       - uses: actions/checkout@v4
@@ -161,5 +161,5 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run pre-commit hooks
-        run: uv run pre-commit run --all-files
+        run: uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
         continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }} # Some hooks may fail on CI but are informative

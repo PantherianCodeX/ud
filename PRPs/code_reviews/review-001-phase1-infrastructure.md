@@ -23,7 +23,7 @@ Phase 1 Core Infrastructure Setup is **substantially complete** with a solid fou
 | Domain Models | ✅ | `packages/udocket-domain/` with Matter, Party, Issue, Timeline, Action, Transcript |
 | Alembic Migrations | ✅ | Initial schema with pgvector extension |
 | Quality Tool Configs | ✅ | `configs/` with ruff, pylint, mypy, pytest, bandit |
-| Pre-commit Hooks | ✅ | `.pre-commit-config.yaml` |
+| Pre-commit Hooks | ✅ | `configs/pre-commit-config.yaml` |
 | CI/CD Pipeline | ✅ | `.github/workflows/quality.yml` |
 | Docker Compose | ✅ | `ops/docker-compose.yml` with Postgres, RabbitMQ, Redis |
 | Dependency Validation | ✅ | `tooling/check_dependencies.py` with tests |

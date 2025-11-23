@@ -1,7 +1,7 @@
 # Pre-commit hooks configuration for uDocket monorepo
-# Install: uv run pre-commit install
-# Run manually: uv run pre-commit run --all-files
-# Update hooks: uv run pre-commit autoupdate
+# Install: uv run pre-commit install --config configs/pre-commit-config.yaml
+# Run manually: uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
+# Update hooks: uv run pre-commit autoupdate --config configs/pre-commit-config.yaml
 
 # Heavy format/lint/type/security checks now live in CI so pre-commit can stay fast.
 repos:
@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: check-quality-config
         name: Check quality configuration integrity
-        entry: python tooling/run_quality_audit.py --config-only
+        entry: python -m tooling.run_quality_audit --config-only
         language: system
         pass_filenames: false
         always_run: true

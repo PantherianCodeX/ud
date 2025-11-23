@@ -199,7 +199,7 @@ Before adding an ignore:
 
 ```bash
 # Run all checks
-uv run pre-commit run --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml --all-files
 
 # Individual tools
 uv run ruff check . --config=configs/ruff.toml

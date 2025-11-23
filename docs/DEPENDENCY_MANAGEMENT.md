@@ -100,7 +100,7 @@ Use for:
 - Testing tools (pytest, hypothesis)
 - Type checkers (mypy, pyright)
 - Linters/formatters (ruff, pylint, prettier)
-- Security scanners (bandit, gitleaks); Safety is consumed by CI via `uv run safety scan --policy-file .safety-policy.yml` with the repository secret and is not part of the workspace dev dependencies.
+- Security scanners (bandit, gitleaks); Safety is consumed by CI via `uv run safety scan --policy-file configs/safety-policy.yml` with the repository secret and is not part of the workspace dev dependencies.
 - Build tools (doit, pre-commit)
 - Version management (commitizen, semantic-release)
 
@@ -128,10 +128,10 @@ The dependency checker runs automatically on commit:
 
 ```bash
 # Install pre-commit hooks (one-time)
-uv run pre-commit install
+uv run pre-commit install --config configs/pre-commit-config.yaml
 
 # Run manually
-uv run pre-commit run check-dependencies --all-files
+uv run pre-commit run --config configs/pre-commit-config.yaml check-dependencies --all-files
 ```
 
 ### CI/CD Pipeline
@@ -318,7 +318,7 @@ Tests cover:
 - [`pyproject.toml`](../pyproject.toml) - Root workspace config
 - [`tooling/check_dependencies.py`](../tooling/check_dependencies.py) - Validation script
 - [`tests/tooling/test_check_dependencies.py`](../tests/tooling/test_check_dependencies.py) - Test suite
-- [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) - Pre-commit hooks
+- [`configs/pre-commit-config.yaml`](../configs/pre-commit-config.yaml) - Pre-commit hooks
 - [`.github/workflows/quality.yml`](../.github/workflows/quality.yml) - CI configuration
 
 ## Best Practices
