@@ -1,13 +1,13 @@
 {
-  "include": ["apps", "packages", "tooling"],
+  "include": ["../apps", "../packages", "../tooling"],
   "extraPaths": [
-    "apps/api/src",
-    "apps/celery/src",
-    "apps/web/src",
-    "packages/udocket_domain/src",
-    "packages/udocket_ai_core/src",
-    "packages/udocket_utils/src",
-    "packages/udocket_worker_core/src"
+    "../apps/api/src",
+    "../apps/celery/src",
+    "../apps/web/src",
+    "../packages/udocket_domain/src",
+    "../packages/udocket_ai_core/src",
+    "../packages/udocket_utils/src",
+    "../packages/udocket_worker_core/src"
   ],
   "exclude": [
     "**/__pycache__",
@@ -83,6 +83,6 @@
   "reportCallInDefaultInitializer": true,
   "reportUnnecessaryTypeIgnoreComment": true,
   "reportImplicitOverride": true,
-  "venvPath": ".",
+  "venvPath": "..",
   "venv": ".venv"
 }

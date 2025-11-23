@@ -215,6 +215,7 @@ spans/*.json
 # SECURITY SCANNERS
 ###############################################
 bandit.json
+bandit-report.json
 safety.json
 gitleaks-results.json
 

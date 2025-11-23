@@ -46,6 +46,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 BASELINE_PATH = PROJECT_ROOT / ".udocket_cache" / "quality_audit" / "quality_baseline.json"
 
 
+def _pyright_config_path(tmp_path: Path) -> Path:
+    config_dir = tmp_path / "configs"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return config_dir / "pyrightconfig.json"
+
+
+def _pyright_justifications_path(tmp_path: Path) -> Path:
+    config_dir = tmp_path / "configs"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return config_dir / "pyrightconfig.justifications.json"
+
+
 def _empty_path_list(_: Path) -> list[Path]:
     return []
 
@@ -616,14 +628,14 @@ class TestParsePyrightConfigIgnores:
         """Test parsing report* settings set to false."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text("""{
   "typeCheckingMode": "strict",
   "reportMissingTypeStubs": false,
   "reportUnusedCallResult": false,
   "reportUnusedImport": true
 }""")
-            justification_file = tmp_path / "pyrightconfig.justifications.json"
+            justification_file = _pyright_justifications_path(tmp_path)
             justification_file.write_text(
                 json.dumps({
                     "reportMissingTypeStubs": "Third-party libs without stubs",
@@ -646,7 +658,7 @@ class TestParsePyrightConfigIgnores:
         """Test detection of disabled reports without justifications."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text("""{
   "typeCheckingMode": "strict",
   "reportMissingTypeStubs": false,
@@ -659,14 +671,14 @@ class TestParsePyrightConfigIgnores:
 
     def test_nonexistent_config(self) -> None:
         """Test handling of nonexistent config file."""
-        entries = parse_pyright_config_ignores(Path("/nonexistent/pyrightconfig.json"))
+        entries = parse_pyright_config_ignores(Path("/nonexistent/configs/pyrightconfig.json"))
         assert not entries
 
     def test_ignore_true_settings(self) -> None:
         """Test that report* = true settings are not tracked as ignores."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text("""{
   "typeCheckingMode": "strict",
   "reportUnusedImport": true,
@@ -720,7 +732,7 @@ class TestCheckConfigStrictness:
         """Test validation of valid pyright config."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
             errors = check_config_strictness(tmp_path)
@@ -731,7 +743,7 @@ class TestCheckConfigStrictness:
         """Test detection of non-strict pyright mode."""
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "basic"}')
 
             errors = check_config_strictness(tmp_path)
@@ -742,7 +754,7 @@ class TestCheckConfigStrictness:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
             config_file = configs_dir / "pyproject.toml"
             config_file.write_text("""
 [tool.mypy]
@@ -760,7 +772,7 @@ disallow_any_generics = true
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
             config_file = configs_dir / "pyproject.toml"
             config_file.write_text("""
 [tool.mypy]
@@ -775,7 +787,7 @@ disallow_untyped_defs = true
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
             config_file = configs_dir / "ruff.toml"
             config_file.write_text("""
 [lint]
@@ -791,7 +803,7 @@ select = ["ALL"]
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
             config_file = configs_dir / "ruff.toml"
             config_file.write_text("""
 [lint]
@@ -811,13 +823,13 @@ class TestBaselineDrift:
             tmp_path = Path(tmpdir)
 
             # Create config
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
             # Create baseline with same hash
             baseline_path = tmp_path / ".baseline.json"
             current_hash = compute_file_hash(config_file)
-            save_baseline(baseline_path, {"pyrightconfig.json": current_hash})
+            save_baseline(baseline_path, {"configs/pyrightconfig.json": current_hash})
 
             drift, _ = check_baseline_drift(tmp_path, baseline_path)
             assert len(drift) == 0
@@ -828,12 +840,12 @@ class TestBaselineDrift:
             tmp_path = Path(tmpdir)
 
             # Create config
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
             # Create baseline with different hash
             baseline_path = tmp_path / ".baseline.json"
-            save_baseline(baseline_path, {"pyrightconfig.json": "different_hash"})
+            save_baseline(baseline_path, {"configs/pyrightconfig.json": "different_hash"})
 
             drift, _ = check_baseline_drift(tmp_path, baseline_path)
             assert len(drift) > 0
@@ -845,7 +857,7 @@ class TestBaselineDrift:
             tmp_path = Path(tmpdir)
 
             # Create config in expected location
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
             # Create baseline with different file
@@ -1168,7 +1180,7 @@ class TestCheckPyrightConfig:
     def test_valid_strict_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
             errors = check_pyright_config(config_file)
@@ -1177,7 +1189,7 @@ class TestCheckPyrightConfig:
     def test_invalid_basic_mode(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "basic"}')
 
             errors = check_pyright_config(config_file)
@@ -1185,7 +1197,7 @@ class TestCheckPyrightConfig:
             assert "strict" in errors[0]
 
     def test_missing_config_file(self) -> None:
-        errors = check_pyright_config(Path("/nonexistent/pyrightconfig.json"))
+        errors = check_pyright_config(Path("/nonexistent/configs/pyrightconfig.json"))
         assert len(errors) == 1
         assert "not found" in errors[0]
 
@@ -1323,11 +1335,11 @@ class TestIntegration:
             tmp_path = Path(tmpdir)
 
             # Create minimal valid config structure
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "strict"}')
 
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
 
             mypy_config = configs_dir / "pyproject.toml"
             mypy_config.write_text("""
@@ -1352,7 +1364,7 @@ disallow_any_generics = true
             tmp_path = Path(tmpdir)
 
             # Create invalid config (non-strict)
-            config_file = tmp_path / "pyrightconfig.json"
+            config_file = _pyright_config_path(tmp_path)
             config_file.write_text('{"typeCheckingMode": "basic"}')
 
             errors = check_config_strictness(tmp_path)
@@ -1368,11 +1380,11 @@ class TestDiscoverConfigFiles:
             tmp_path = Path(tmpdir)
 
             # Create pyright config
-            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
+            (_pyright_config_path(tmp_path)).write_text('{"typeCheckingMode": "strict"}')
 
             # Create configs directory with all toml files
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
             (configs_dir / "pyproject.toml").write_text("[tool.mypy]\nstrict = true")
             (configs_dir / "ruff.toml").write_text('[lint]\nselect = ["ALL"]')
             (configs_dir / "pylint.toml").write_text("[tool.pylint]")
@@ -1380,7 +1392,7 @@ class TestDiscoverConfigFiles:
             discovered = discover_config_files(tmp_path)
             rel_paths = [str(f.relative_to(tmp_path)) for f in discovered]
 
-            assert "pyrightconfig.json" in rel_paths
+            assert "configs/pyrightconfig.json" in rel_paths
             assert "configs/pyproject.toml" in rel_paths
             assert "configs/ruff.toml" in rel_paths
             assert "configs/pylint.toml" in rel_paths
@@ -1417,11 +1429,11 @@ class TestDiscoverConfigFiles:
             tmp_path = Path(tmpdir)
 
             # Only create pyright config, no configs dir
-            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
+            (_pyright_config_path(tmp_path)).write_text('{"typeCheckingMode": "strict"}')
 
             discovered = discover_config_files(tmp_path)
             assert len(discovered) == 1
-            assert discovered[0].name == "pyrightconfig.json"
+            assert discovered[0].as_posix().endswith("configs/pyrightconfig.json")
 
 
 class TestBaselineEnforcement:
@@ -1497,10 +1509,10 @@ class TestConfigFileCompleteness:
             tmp_path = Path(tmpdir)
 
             # Create all config files
-            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
+            (_pyright_config_path(tmp_path)).write_text('{"typeCheckingMode": "strict"}')
 
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
 
             (configs_dir / "pyproject.toml").write_text("""
 [tool.mypy]
@@ -1520,7 +1532,7 @@ disable = []
 
             # Verify all expected config files are tracked
             expected_files = {
-                "pyrightconfig.json",
+                "configs/pyrightconfig.json",
                 "configs/pyproject.toml",
                 "configs/ruff.toml",
                 "configs/pylint.toml",
@@ -1533,16 +1545,16 @@ disable = []
             tmp_path = Path(tmpdir)
 
             # Create all config files with ignores
-            (tmp_path / "pyrightconfig.json").write_text("""{
+            (_pyright_config_path(tmp_path)).write_text("""{
   "typeCheckingMode": "strict",
   "reportMissingTypeStubs": false
 }""")
-            (tmp_path / "pyrightconfig.justifications.json").write_text(
+            (_pyright_justifications_path(tmp_path)).write_text(
                 json.dumps({"reportMissingTypeStubs": "Test justification"})
             )
 
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
 
             (configs_dir / "pyproject.toml").write_text("""
 [tool.mypy]
@@ -1569,7 +1581,7 @@ disable = [
 """)
 
             # Parse all configs
-            pyright_entries = parse_pyright_config_ignores(tmp_path / "pyrightconfig.json")
+            pyright_entries = parse_pyright_config_ignores(_pyright_config_path(tmp_path))
             mypy_entries = parse_mypy_config_ignores(configs_dir / "pyproject.toml")
             ruff_entries = parse_ruff_config_ignores(configs_dir / "ruff.toml")
             pylint_entries = parse_pylint_config_ignores(configs_dir / "pylint.toml")
@@ -1586,10 +1598,10 @@ disable = [
             tmp_path = Path(tmpdir)
 
             # Only create some config files
-            (tmp_path / "pyrightconfig.json").write_text('{"typeCheckingMode": "strict"}')
+            (_pyright_config_path(tmp_path)).write_text('{"typeCheckingMode": "strict"}')
 
             configs_dir = tmp_path / "configs"
-            configs_dir.mkdir()
+            configs_dir.mkdir(exist_ok=True)
             (configs_dir / "ruff.toml").write_text('[lint]\nselect = ["ALL"]')
 
             # Parsers should handle missing files gracefully

@@ -60,18 +60,20 @@ jobs:
           - check_name: "Mypy"
             run: "uv run mypy apps/ packages/ tooling/"
           - check_name: "Pyright"
-            run: "uv run pyright apps/ packages/ tooling/"
+            run: "uv run pyright --project configs/pyrightconfig.json"
           - check_name: "Quality Audit Config"
             run: "uv run python -m tooling.run_quality_audit --config-only"
           - check_name: "Tests"
             run: |-
-              uv run pytest \
+              mkdir -p out/test_reports/coverage out/test_reports/tests
+              COVERAGE_FILE=out/test_reports/coverage/.coverage uv run pytest \
                 --cov=apps \
                 --cov=packages \
                 --cov=tooling \
                 --cov-report=term-missing \
-                --cov-report=xml \
-                --cov-report=html \
+                --cov-report=xml:out/test_reports/coverage/coverage.xml \
+                --cov-report=html:out/test_reports/coverage/htmlcov \
+                --junitxml=out/test_reports/tests/pytest-junit.xml \
                 -v
             upload_coverage: true
     steps:
@@ -98,7 +100,7 @@ jobs:
         if: matrix.upload_coverage == 'true'
         uses: codecov/codecov-action@v4
         with:
-          file: ./coverage.xml
+          file: ./out/test_reports/coverage/coverage.xml
           flags: unittests
           name: codecov-umbrella
         continue-on-error: ${{ env.IS_PROTECTED_BRANCH == 'false' }}
@@ -111,9 +113,13 @@ jobs:
       matrix:
         include:
           - check_name: "Bandit"
-            run: "uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o bandit-report.json"
+            run: |-
+              mkdir -p out/test_reports/security
+              uv run bandit -c pyproject.toml -r apps/ packages/ tooling/ -f json -o out/test_reports/security/bandit-report.json
           - check_name: "Safety"
-            run: "uv run safety scan --json --policy-file .safety-policy.yml --key ${{ env.SAFETY_API_KEY }}"
+            run: |-
+              mkdir -p out/test_reports/security
+              uv run safety scan --json --policy-file .safety-policy.yml --key ${{ env.SAFETY_API_KEY }} > out/test_reports/security/safety-report.json
 
     steps:
       - uses: actions/checkout@v4

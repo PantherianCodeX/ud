@@ -407,7 +407,7 @@ def parse_bandit_config_ignores(pyproject_path: Path) -> list[ConfigIgnoreEntry]
 
 
 def _check_pyright_strictness(root: Path) -> list[str]:
-    return check_pyright_config(root / "pyrightconfig.json")
+    return check_pyright_config(root / "configs" / "pyrightconfig.json")
 
 
 def _check_mypy_strictness(root: Path) -> list[str]:
@@ -473,13 +473,16 @@ def discover_config_files(root: Path) -> list[Path]:
     """
     config_files: list[Path] = []
 
-    pyright_config = root / "pyrightconfig.json"
+    pyright_config = root / "configs" / "pyrightconfig.json"
     if pyright_config.exists():
         config_files.append(pyright_config)
 
     configs_dir = root / "configs"
     if configs_dir.exists():
         config_files.extend(configs_dir.glob("*.toml"))
+        config_files.extend(
+            file_path for file_path in configs_dir.glob("*.json") if file_path.name != "pyrightconfig.json"
+        )
 
     root_pyproject = root / "pyproject.toml"
     if root_pyproject.exists():

@@ -68,7 +68,7 @@ def run_audit(
     report.config_ignores.extend(parse_ruff_config_ignores(root / "configs" / "ruff.toml"))
     report.config_ignores.extend(parse_mypy_config_ignores(root / "configs" / "pyproject.toml"))
     report.config_ignores.extend(parse_pylint_config_ignores(root / "configs" / "pylint.toml"))
-    report.config_ignores.extend(parse_pyright_config_ignores(root / "pyrightconfig.json"))
+    report.config_ignores.extend(parse_pyright_config_ignores(root / "configs" / "pyrightconfig.json"))
     report.config_ignores.extend(parse_bandit_config_ignores(root / "pyproject.toml"))
 
     print("  Checking config strictness...")
@@ -126,7 +126,7 @@ def run_config_check(*, root: Path) -> int:
         int: Zero when checks pass, otherwise non-zero.
     """
     errors: list[str] = []
-    errors.extend(check_pyright_config(root / "pyrightconfig.json"))
+    errors.extend(check_pyright_config(root / "configs" / "pyrightconfig.json"))
     errors.extend(check_mypy_config(root / "configs" / "pyproject.toml"))
     errors.extend(check_ruff_config(root / "configs" / "ruff.toml"))
 
